@@ -10,6 +10,8 @@ is executed.
 - Exceptions must always be handled by callers.
 - Cancelling a future cancels child futures, and childless parent futures, recursively.
 - Can grab snapshots of callstacks of all threads working on your future.
+- VoidFuture is a native type.
+- futureA.andAfter(futureB).then(functionWithTwoArgs);
 
 ## History
 Futures are neat.
