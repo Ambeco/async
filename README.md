@@ -5,9 +5,32 @@ VoidFutures and ValueFutures are separate types that easily chain together, ther
 members, and all callbacks are required to handle exceptions, and be explicit about where the work
 is executed.
 
-## Concepts
+## History
+Futures are neat.
 
-### Basics
+When Java7 Added [futures](https://docs.oracle.com/javase/8/docs/api/index.html?java/util/concurrent/Future.html), 
+they forgot to add any of the useful parts. There was no way to chain subsequent work, and no 
+non-blocking way to retrieve the result. This is a complete abomination. 
+The [ExecutorServices](https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html)
+ produce Java7 Futures.
+
+Guava produced [ListenableFuture], which allows listeners, which is a huge step, but they're a 
+ awkward about handling exceptions, and you have to use [ListeningExecutorService](https://google.github.io/guava/releases/19.0/api/docs/com/google/common/util/concurrent/ListeningExecutorService.html)
+ everywhere, which is slightly inconvenient.  Also, since async programming is hard, people just 
+ keep calling the blocking .get() method, which half defeats the point of using features to start with.
+ 
+ Then Java8 produced [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html),
+ which split the future (used by the thing that sets the result) from the [CompletionStage](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletionStage.html),
+ which is for scheduling subsequent tasks. This allows the callers to only use CompletionStages, 
+ which prevent blocking operations, but also prevent cancelling. They also make it easy to schedule
+ work in their special threads.
+ 
+ In my real code, I would schedule async work across plural threads, then in production saw it was 
+ sometimes slow. I have code that can report when a single async operation was slow, but not when 
+ it was split across unpredictable threads. So I wanted to be able to get a snapshot of all the
+ threads' callstacks that were working on fulfilling a future. 
+
+## Basics
 
  - interface **Future**:  
    The reference to a step of of a chain of async operations.
@@ -54,7 +77,7 @@ is executed.
    - A method for blocking the current thread until a future is complete.
      - This is strongly discouraged, but necessary for working with non-Future Apis.
  
- ### Implementations
+ ## Implementations
  - **SettableFutureStep<R>** implements Future  
    A step for manually triggering a Future. Discouraged, but necessary in some cases. Useful as a base class.
    - SetResult(R) and SetFailed(RuntimeException).
@@ -71,7 +94,7 @@ is executed.
    - If all prerequisites succeed, the FutureProducer's onSuccess member is called.
    - **VoidFutureStep** implements VoidFuture, and **ValueFutureStep** implements ValueFuture.
    
-### Executors
+## Executors
 - **Executor**  
   Interface for scheduling work
   - Can be passed a Runnable or Supplier, returns a Future. There are no non-Future submission methods.
@@ -83,35 +106,9 @@ is executed.
   - Executor cannot be shut down, because that created lunacy.
   
 ## TODO
+Prerequisites and Callbacks: Set vs List
+RunnableFuture is new and only lightly integrated. Use in Executors.
 Child steps should wait for all parents, even when exceptions occur.
 Canceling a step needs to also cancel callbacks that depend on it.
-Current FailedFutures have too much overhead. Make actual classes that don't schedule work on executors.
-
-## History
-Futures are neat.
-
-When Java7 Added [futures](https://docs.oracle.com/javase/8/docs/api/index.html?java/util/concurrent/Future.html), 
-they forgot to add any of the useful parts. There was no way to chain subsequent work, and no 
-non-blocking way to retrieve the result. This is a complete abomination. 
-The [ExecutorServices](https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html)
- produce Java7 Futures.
-
-Guava produced [ListenableFuture], which allows listeners, which is a huge step, but they're a 
- awkward about handling exceptions, and you have to use [ListeningExecutorService](https://google.github.io/guava/releases/19.0/api/docs/com/google/common/util/concurrent/ListeningExecutorService.html)
- everywhere, which is slightly inconvenient.  Also, since async programming is hard, people just 
- keep calling the blocking .get() method, which half defeats the point of using features to start with.
- 
- Then Java8 produced [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html),
- which split the future (used by the thing that sets the result) from the [CompletionStage](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletionStage.html),
- which is for scheduling subsequent tasks. This allows the callers to only use CompletionStages, 
- which prevent blocking operations, but also prevent cancelling. They also make it easy to schedule
- work in their special threads.
- 
- In my real code, I would schedule async work across plural threads, then in production saw it was 
- sometimes slow. I have code that can report when a single async operation was slow, but not when 
- it was split across unpredictable threads. So I wanted to be able to get a snapshot of all the
- threads' callstacks that were working on fulfilling a future. 
- 
- 
- 
- 
+Current FailedFutures might be recursive on stopped Executors. Make real FailedFutures.
+Make a ThreadPool.
