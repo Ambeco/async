@@ -5,6 +5,12 @@ VoidFutures and ValueFutures are separate types that easily chain together, ther
 members, and all callbacks are required to handle exceptions, and be explicit about where the work
 is executed.
 
+## Why
+- Futures have no long-blocking members like .get()
+- Exceptions must always be handled by callers.
+- Cancelling a future cancels child futures, and childless parent futures, recursively.
+- Can grab snapshots of callstacks of all threads working on your future.
+
 ## History
 Futures are neat.
 
