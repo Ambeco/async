@@ -23,6 +23,16 @@ public class DirectExecutor
 	}
 
 	@Override
+	public void submit(RunnableFuture runnable) {
+		boolean interrupted = Thread.interrupted();
+		try {
+			runnable.run();
+		} finally {
+			restoreInterruptState(interrupted);
+		}
+	}
+
+	@Override
 	public VoidFuture submit(Runnable runnable) {
 		boolean interrupted = Thread.interrupted();
 		try {

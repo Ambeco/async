@@ -31,7 +31,7 @@ public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 	static final Iterator<FutureListener> NO_CALLBACKS_ITERATOR =
 			new CopyOnWriteArrayList<FutureListener>().iterator();
 
-	protected boolean started;
+	protected boolean submitted;
 	private Thread thread;
 	private boolean cancelled;
 
@@ -44,10 +44,10 @@ public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 			RuntimeException tempException = null;
 			try {
 				synchronized (lock) {
-					if (started) {
+					if (submitted) {
 						throw new IllegalStateException("RunnableFuture run twice");
 					}
-					started = true;
+					submitted = true;
 					thread = Thread.currentThread();
 					if (cancelled) {
 						throw new InterruptedException("Cancelled");

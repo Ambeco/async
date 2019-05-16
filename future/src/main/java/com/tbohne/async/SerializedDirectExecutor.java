@@ -65,6 +65,11 @@ public class SerializedDirectExecutor
 	}
 
 	@Override
+	public void submit(RunnableFuture runnable) {
+		processRunnable(runnable);
+	}
+
+	@Override
 	public VoidFuture submit(Runnable runnable) {
 		SettableVoidFutureStep future = new SettableVoidFutureStep();
 		Runnable realRunnable = () -> {

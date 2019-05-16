@@ -20,7 +20,6 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 	private static final Iterator<Future> NO_PREREQ_ITERATOR
 			= new CopyOnWriteArrayList<Future>().iterator();
 
-	private Future future;
 	private List<? extends Future> prerequisites;
 	private Executor executor;
 	private RuntimeException inputThrowable;
@@ -33,10 +32,13 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 
 	public void setPrerequisites(List<? extends Future> prerequisites) {
 		synchronized (lock) {
-			if (future != null || started) {
+			if (submitted) {
 				throw new IllegalStateException("setPrerequisites called after execution queued");
 			}
-			if (prerequisites != null) {
+			if (prerequisites == null) {
+				throw new NullPointerException("prerequisites cannot be null");
+			}
+			if (this.prerequisites != null) {
 				throw new IllegalStateException("setPrerequisites called twice");
 			}
 			this.prerequisites = prerequisites;
@@ -72,8 +74,8 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 	@Override
 	public void onSuccess() {
 		synchronized (lock) {
-			if (allPrereqsFinished() && future == null && !completed) {
-				future = executor.submit(this);
+			if (allPrereqsFinished() && !submitted) {
+				executor.submit(this);
 				prerequisites = null;
 				executor = null;
 			}
@@ -88,12 +90,13 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 			} else {
 				inputThrowable.addSuppressed(exception);
 			}
-			if (future == null && !completed) {
-				future = executor.submit(this);
+			if (!submitted) {
+				executor.submit(this);
+				submitted = true;
+				prerequisites = null;
+				executor = null;
+				inputThrowable = null;
 			}
-			prerequisites = null;
-			executor = null;
-			inputThrowable = null;
 		}
 	}
 
@@ -120,9 +123,6 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 		boolean result;
 		synchronized (lock) {
 			result = super.cancel();
-			if (future != null) {
-				future.cancel();
-			}
 			if (prerequisites != null) {
 				prerequisitesIterator = prerequisites.iterator();
 			} else {
