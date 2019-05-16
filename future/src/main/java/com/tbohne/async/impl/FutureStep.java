@@ -13,15 +13,58 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
+import static com.tbohne.async.impl.FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE;
 
 public class FutureStep<R> extends RunnableFutureBase<R>
 		implements FutureListener {
+
+	public enum PrereqStrategy {
+		ALL_PREREQS_COMPLETE {
+			boolean shouldExecute(Object lock, Iterator<? extends Future> prerequisites) {
+				while (prerequisites.hasNext()) {
+					if (!prerequisites.next().finished()) {
+						return false;
+					}
+				}
+				return true;
+			}
+		},
+		ALL_PREREQS_SUCCEED {
+			boolean shouldExecute(Object lock, Iterator<? extends Future> prerequisites) {
+				boolean allComplete = true;
+				while (prerequisites.hasNext()) {
+					Future fut = prerequisites.next();
+					if (!fut.succeeded()) {
+						return true;
+					}
+					if (!fut.finished()) {
+						allComplete = false;
+					}
+				}
+				return allComplete;
+			}
+		},
+		ANY_PREREQS_COMPLETE {
+			boolean shouldExecute(Object lock, Iterator<? extends Future> prerequisites) {
+				while (prerequisites.hasNext()) {
+					if (prerequisites.next().finished()) {
+						return true;
+					}
+				}
+				return false;
+			}
+		};
+
+		abstract boolean shouldExecute(Object lock, Iterator<? extends Future> prerequisites);
+	}
 
 	private static final Iterator<Future> NO_PREREQ_ITERATOR
 			= new CopyOnWriteArrayList<Future>().iterator();
 
 	private List<? extends Future> prerequisites;
+	private PrereqStrategy prereqStrategy;
 	private Executor executor;
+	private boolean submitted;
 	private RuntimeException inputThrowable;
 	private FutureProducer<R> runnable;
 
@@ -30,18 +73,26 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 		this.runnable = runnable;
 	}
 
-	public void setPrerequisites(List<? extends Future> prerequisites) {
+	protected boolean isSubmitted() {
+		return submitted;
+	}
+
+	public void setPrerequisites(List<? extends Future> prerequisites, PrereqStrategy prereqStrategy) {
 		synchronized (lock) {
 			if (submitted) {
 				throw new IllegalStateException("setPrerequisites called after execution queued");
 			}
-			if (prerequisites == null) {
-				throw new NullPointerException("prerequisites cannot be null");
-			}
 			if (this.prerequisites != null) {
 				throw new IllegalStateException("setPrerequisites called twice");
 			}
+			if (prerequisites == null) {
+				throw new NullPointerException("prerequisites cannot be null");
+			}
+			if (prereqStrategy == null) {
+				throw new NullPointerException("prereqStrategy cannot be null");
+			}
 			this.prerequisites = prerequisites;
+			this.prereqStrategy = prereqStrategy;
 			for (Future prerequisite : prerequisites) {
 				prerequisite.then(this);
 			}
@@ -52,32 +103,29 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 		CopyOnWriteArrayList<Future> prereqs = new CopyOnWriteArrayList<>();
 		prereqs.add(first);
 		prereqs.add(second);
-		setPrerequisites(prereqs);
+		setPrerequisites(prereqs, ALL_PREREQS_COMPLETE);
 	}
 
-	private boolean allPrereqsFinished() {
+	private boolean shouldExecute() {
 		Iterator<? extends Future> prereqIterator;
 		synchronized (lock) {
 			if (prerequisites != null) {
 				prereqIterator = prerequisites.iterator();
 			} else {
 				prereqIterator = NO_PREREQ_ITERATOR;
-		}
-		while (prereqIterator.hasNext())
-			if (!prereqIterator.next().finished()) {
-				return false;
 			}
 		}
-		return true;
+		return prereqStrategy.shouldExecute(lock, prereqIterator);
 	}
 
 	@Override
 	public void onSuccess() {
 		synchronized (lock) {
-			if (allPrereqsFinished() && !submitted) {
+			if (shouldExecute() && !submitted) {
 				executor.submit(this);
 				prerequisites = null;
 				executor = null;
+				submitted = true;
 			}
 		}
 	}
@@ -166,7 +214,7 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 	@Override
 	public VoidFuture childrenCannotCancel() {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), ALL_PREREQS_COMPLETE);
 		return step;
 	}
 }

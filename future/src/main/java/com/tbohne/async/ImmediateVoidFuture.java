@@ -1,6 +1,8 @@
 package com.tbohne.async;
 
 import com.tbohne.async.impl.BiValueFutureStep;
+import com.tbohne.async.impl.FutureStep;
+import com.tbohne.async.impl.FutureStep.PrereqStrategy;
 import com.tbohne.async.impl.ValueFutureStep;
 import com.tbohne.async.impl.VoidFutureStep;
 
@@ -39,7 +41,7 @@ public class ImmediateVoidFuture implements VoidFuture {
 	@Override
 	public VoidFuture andAfter(VoidFuture other) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Collections.singletonList(other));
+		step.setPrerequisites(Collections.singletonList(other), PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -56,14 +58,14 @@ public class ImmediateVoidFuture implements VoidFuture {
 				throw t;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(other));
+		step.setPrerequisites(Collections.singletonList(other), PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
 	@Override
 	public <T, U> BiValueFuture<T, U> andAfter(BiValueFuture<T, U> other) {
 		BiValueFutureStep<T,U> step = new BiValueFutureStep<>(other.getFirst(), other.getSecond());
-		step.setPrerequisites(Collections.singletonList(other));
+		step.setPrerequisites(Collections.singletonList(other), PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 

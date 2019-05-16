@@ -28,7 +28,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 	@Override
 	public VoidFuture thenIgnore() {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -47,14 +47,14 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
 	@Override
 	public VoidFuture thenIgnore(Executor executor, VoidFuture.FutureProducer<Void> followup) {
 		VoidFutureStep step = new VoidFutureStep(executor, followup);
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -73,7 +73,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -92,7 +92,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -109,7 +109,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				return followup.onFailure(t);
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -126,7 +126,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				return followup.apply(SettableValueFutureStep.this);
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 

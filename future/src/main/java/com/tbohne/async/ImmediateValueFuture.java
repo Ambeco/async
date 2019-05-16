@@ -2,6 +2,7 @@ package com.tbohne.async;
 
 import com.tbohne.async.VoidFuture.FutureProducer;
 import com.tbohne.async.impl.BiValueFutureStep;
+import com.tbohne.async.impl.FutureStep;
 import com.tbohne.async.impl.ValueFutureStep;
 
 import java.util.Collections;
@@ -27,7 +28,7 @@ public class ImmediateValueFuture<R>
 
 	@Override
 	public VoidFuture thenIgnore(Executor executor, VoidFuture.FutureListener followup) {
-		return Async.start(executor, (Runnable) followup::onSuccess);
+		return Async.start(executor, followup::onSuccess);
 	}
 
 	@Override
@@ -74,14 +75,14 @@ public class ImmediateValueFuture<R>
 				throw t;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(other));
+		step.setPrerequisites(Collections.singletonList(other), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
 	@Override
 	public <U> BiValueFuture<R, U> andAfter(ValueFuture<U> other) {
 		BiValueFutureStep<R, U> step = new BiValueFutureStep<>(this, other);
-		step.setPrerequisites(Collections.singletonList(other));
+		step.setPrerequisites(Collections.singletonList(other), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 

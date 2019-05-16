@@ -1,6 +1,7 @@
 package com.tbohne.async;
 
 import com.tbohne.async.VoidFuture.FutureProducer;
+import com.tbohne.async.impl.FutureStep.PrereqStrategy;
 import com.tbohne.async.impl.ValueFutureStep;
 import com.tbohne.async.impl.VoidFutureStep;
 
@@ -114,19 +115,19 @@ public class Async {
 		return step;
 	}
 
-	public static VoidFuture afterAllVoidDone(VoidFuture... futures) {
+	public static VoidFuture afterAllVoidComplete(VoidFuture... futures) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Arrays.asList(futures));
+		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
-	public static VoidFuture afterAllVoidDone(List<VoidFuture> futures) {
+	public static VoidFuture afterAllVoidComplete(List<VoidFuture> futures) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(futures);
+		step.setPrerequisites(futures, PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
-	public static <R> ValueFuture<List<R>> afterAllDone(ValueFuture<R>... futures) {
+	public static <R> ValueFuture<List<R>> afterAllComplete(ValueFuture<R>... futures) {
 		ValueFutureStep<List<R>>
 				step = new ValueFutureStep<>(getDirectExecutor(), new FutureProducer<List<R>>(){
 			@Override
@@ -143,11 +144,11 @@ public class Async {
 				throw t;
 			}
 		});
-		step.setPrerequisites(Arrays.asList(futures));
+		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
-	public static <R> ValueFuture<List<R>> afterAllDone(List<ValueFuture<R>> futures) {
+	public static <R> ValueFuture<List<R>> afterAllComplete(List<ValueFuture<R>> futures) {
 		ValueFutureStep<List<R>>
 				step = new ValueFutureStep<>(getDirectExecutor(), new FutureProducer<List<R>>(){
 			@Override
@@ -164,7 +165,115 @@ public class Async {
 				throw t;
 			}
 		});
-		step.setPrerequisites(futures);
+		step.setPrerequisites(futures, PrereqStrategy.ALL_PREREQS_COMPLETE);
+		return step;
+	}
+
+	public static VoidFuture afterAllVoidSucceed(VoidFuture... futures) {
+		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
+		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ALL_PREREQS_SUCCEED);
+		return step;
+	}
+
+	public static VoidFuture afterAllVoidSucceed(List<VoidFuture> futures) {
+		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
+		step.setPrerequisites(futures, PrereqStrategy.ALL_PREREQS_SUCCEED);
+		return step;
+	}
+
+	public static <R> ValueFuture<List<R>> afterAllSucceed(ValueFuture<R>... futures) {
+		ValueFutureStep<List<R>>
+				step = new ValueFutureStep<>(getDirectExecutor(), new FutureProducer<List<R>>(){
+			@Override
+			public List<R> onSuccess() {
+				List<R> results = new ArrayList<>(futures.length);
+				for (ValueFuture<R> future : futures) {
+					results.add(future.getNow());
+				}
+				return results;
+			}
+
+			@Override
+			public List<R> onFailure(RuntimeException t) {
+				throw t;
+			}
+		});
+		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ALL_PREREQS_SUCCEED);
+		return step;
+	}
+
+	public static <R> ValueFuture<List<R>> afterAllSucceed(List<ValueFuture<R>> futures) {
+		ValueFutureStep<List<R>>
+				step = new ValueFutureStep<>(getDirectExecutor(), new FutureProducer<List<R>>(){
+			@Override
+			public List<R> onSuccess() {
+				List<R> results = new ArrayList<>(futures.size());
+				for (ValueFuture<R> future : futures) {
+					results.add(future.getNow());
+				}
+				return results;
+			}
+
+			@Override
+			public List<R> onFailure(RuntimeException t) {
+				throw t;
+			}
+		});
+		step.setPrerequisites(futures, PrereqStrategy.ALL_PREREQS_SUCCEED);
+		return step;
+	}
+
+	public static VoidFuture afterAnyVoidSucceed(VoidFuture... futures) {
+		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
+		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ANY_PREREQS_COMPLETE);
+		return step;
+	}
+
+	public static VoidFuture afterAnyVoidSucceed(List<VoidFuture> futures) {
+		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
+		step.setPrerequisites(futures, PrereqStrategy.ANY_PREREQS_COMPLETE);
+		return step;
+	}
+
+	public static <R> ValueFuture<List<R>> afterAnySucceed(ValueFuture<R>... futures) {
+		ValueFutureStep<List<R>>
+				step = new ValueFutureStep<>(getDirectExecutor(), new FutureProducer<List<R>>(){
+			@Override
+			public List<R> onSuccess() {
+				List<R> results = new ArrayList<>(futures.length);
+				for (ValueFuture<R> future : futures) {
+					results.add(future.getNow());
+				}
+				return results;
+			}
+
+			@Override
+			public List<R> onFailure(RuntimeException t) {
+				throw t;
+			}
+		});
+		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ANY_PREREQS_COMPLETE);
+		return step;
+	}
+
+	public static <R> ValueFuture<List<R>> afterAnySucceed(List<ValueFuture<R>> futures) {
+		ValueFutureStep<List<R>>
+				step = new ValueFutureStep<>(getDirectExecutor(), new FutureProducer<List<R>>(){
+			@Override
+			public List<R> onSuccess() {
+				List<R> results = new ArrayList<>(futures.size());
+				for (ValueFuture<R> future : futures) {
+					results.add(future.getNow());
+				}
+				return results;
+			}
+
+			@Override
+			public List<R> onFailure(RuntimeException t) {
+				throw t;
+			}
+		});
+		step.setPrerequisites(futures, PrereqStrategy.ANY_PREREQS_COMPLETE);
 		return step;
 	}
 

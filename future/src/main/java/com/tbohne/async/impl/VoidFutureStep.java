@@ -20,7 +20,7 @@ public class VoidFutureStep
 	@Override
 	public <T> ValueFuture<T> then(Executor executor, FutureProducer<T> followup) {
 		ValueFutureStep<T> step = new ValueFutureStep<>(executor, followup);
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -38,7 +38,7 @@ public class VoidFutureStep
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this));
+		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
