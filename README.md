@@ -115,8 +115,6 @@ Guava produced [ListenableFuture], which allows listeners, which is a huge step,
   
 ## TODO
 - Prerequisites and Callbacks: Set vs List
-- RunnableFuture is new and only lightly integrated. Use in Executors.
-- Child steps should wait for all parents, even when exceptions occur.
 - Canceling a step needs to also cancel callbacks that depend on it.
 - Current FailedFutures might be recursive on stopped Executors. Make real FailedFutures.
 - Make a ThreadPool.
