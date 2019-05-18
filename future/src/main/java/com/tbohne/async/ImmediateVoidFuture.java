@@ -1,13 +1,11 @@
 package com.tbohne.async;
 
 import com.tbohne.async.impl.BiValueFutureStep;
-import com.tbohne.async.impl.FutureStep;
-import com.tbohne.async.impl.FutureStep.PrereqStrategy;
 import com.tbohne.async.impl.ValueFutureStep;
 import com.tbohne.async.impl.VoidFutureStep;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
 import static com.tbohne.async.impl.FutureStep.NO_OP_VOID_CALLBACK;
@@ -24,7 +22,7 @@ public class ImmediateVoidFuture implements VoidFuture {
 
 	@Override
 	public VoidFuture then(Executor executor, FutureListener followup) {
-		return Async.start(executor, followup::onSuccess);
+		return Async.start(executor, () -> followup.onSuccess(this));
 	}
 
 	@Override
@@ -34,14 +32,14 @@ public class ImmediateVoidFuture implements VoidFuture {
 
 	@Override
 	public <T extends Future & FutureListener> T then(T followup) {
-		followup.onSuccess();
+		followup.onSuccess(this);
 		return followup;
 	}
 
 	@Override
 	public VoidFuture andAfter(VoidFuture other) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Collections.singletonList(other), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(other);
 		return step;
 	}
 
@@ -58,14 +56,14 @@ public class ImmediateVoidFuture implements VoidFuture {
 				throw t;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(other), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(other);
 		return step;
 	}
 
 	@Override
 	public <T, U> BiValueFuture<T, U> andAfter(BiValueFuture<T, U> other) {
 		BiValueFutureStep<T,U> step = new BiValueFutureStep<>(other.getFirst(), other.getSecond());
-		step.setPrerequisites(Collections.singletonList(other), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(other);
 		return step;
 	}
 
@@ -90,12 +88,12 @@ public class ImmediateVoidFuture implements VoidFuture {
 	}
 
 	@Override
-	public boolean cancel() {
+	public boolean cancel(CancellationException exception) {
 		return false;
 	}
 
 	@Override
-	public void callbackWasCancelled(FutureListener callback) {
+	public void callbackWasCancelled(FutureListener callback, CancellationException exception) {
 	}
 
 	@Override

@@ -16,11 +16,6 @@ import static com.tbohne.async.impl.FutureStep.NO_OP_VOID_CALLBACK;
 public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements ValueFuture<R> {
 
 	@Override
-	public void setResult(R value) {
-		super.setResult(value);
-	}
-
-	@Override
 	public R getNow() {
 		return super.getNow();
 	}
@@ -28,7 +23,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 	@Override
 	public VoidFuture thenIgnore() {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -37,24 +32,24 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 		VoidFutureStep step = new VoidFutureStep(executor,  new VoidFuture.FutureProducer<Void>() {
 			@Override
 			public Void onSuccess() {
-				followup.onSuccess();
+				followup.onSuccess(SettableValueFutureStep.this);
 				return null;
 			}
 
 			@Override
 			public Void onFailure(RuntimeException t) {
-				followup.onFailure(t);
+				followup.onFailure(SettableValueFutureStep.this, t);
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
 	@Override
 	public VoidFuture thenIgnore(Executor executor, VoidFuture.FutureProducer<Void> followup) {
 		VoidFutureStep step = new VoidFutureStep(executor, followup);
-		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -73,7 +68,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -92,7 +87,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -109,7 +104,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				return followup.onFailure(t);
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -126,7 +121,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				return followup.apply(SettableValueFutureStep.this);
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -143,7 +138,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 				throw t;
 			}
 		});
-		step.setPrerequisites(this, other);
+		step.setPrerequisites(this, other, FutureStep.PrereqStrategy.ALL_PREREQS_SUCCEED);
 		other.then(getDirectExecutor(), step);
 		return step;
 	}
@@ -151,7 +146,7 @@ public class SettableValueFutureStep<R> extends SettableFutureStep<R> implements
 	@Override
 	public <U> BiValueFuture<R,U> andAfter(ValueFuture<U> other) {
 		BiValueFutureStep<R,U> step = new BiValueFutureStep<>(this, other);
-		step.setPrerequisites(this, other);
+		step.setPrerequisites(this, other, FutureStep.PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 }

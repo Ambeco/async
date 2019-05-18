@@ -2,12 +2,10 @@ package com.tbohne.async.impl;
 
 import com.tbohne.async.RunnableFuture;
 import com.tbohne.async.VoidFuture;
-import com.tbohne.async.VoidFuture.FutureListener;
 import com.tbohne.async.VoidFuture.FutureProducer;
-import com.tbohne.async.impl.FutureStep.PrereqStrategy;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
 
@@ -28,7 +26,6 @@ public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 
 	private boolean started;
 	private Thread thread;
-	private boolean cancelled;
 
 	protected boolean isStarted() {
 		return started;
@@ -44,49 +41,41 @@ public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 					throw new IllegalStateException("RunnableFuture run twice");
 				}
 				started = true;
+				if (isCompleted()) { //already processed an exception, usually a cancellation
+					return;
+				}
 				thread = Thread.currentThread();
-				if (cancelled) {
-					throw new InterruptedException("Cancelled");
+			}
+			R result;
+			try {
+				result = execute();
+			} finally {
+				synchronized (lock) {
+					thread = null;
 				}
 			}
-			setResult(execute());
+			setResult(result);
 		} catch (RuntimeException e) {
 			setFailed(e);
 		} catch (InterruptedException e) {
 			setFailed(new RuntimeException(e));
-		} finally {
-			synchronized (lock) {
-				thread = null;
-			}
 		}
 	}
 
 	@Override
-	public boolean isCancelled() {
-		synchronized (lock) {
-			return cancelled;
+	public boolean cancel(CancellationException exception) {
+		if (exception == null) {
+			exception = new CancellationException("cancelled");
 		}
-	}
-
-	@Override
-	public boolean cancel() {
+		if (!setFailed(exception)){
+			return false;
+		}
 		synchronized (lock) {
-			if (isCompleted()) {
-				return false;
-			}
-			cancelled = true;
 			if (thread != null) {
 				thread.interrupt();
 			}
-			return true;
 		}
-	}
-
-	@Override
-	public void callbackWasCancelled(FutureListener callback) {
-		if (removeCallbackGetEmpty(callback)) {
-			cancel();
-		}
+		return true;
 	}
 
 	@Override
@@ -103,7 +92,7 @@ public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 	@Override
 	public VoidFuture childrenCannotCancel() {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 }

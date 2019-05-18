@@ -45,7 +45,7 @@ public class BiValueFutureStep<T,U> extends FutureStep<Void> implements BiValueF
 				return followup.apply(first, second);
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -62,7 +62,7 @@ public class BiValueFutureStep<T,U> extends FutureStep<Void> implements BiValueF
 				return followup.onFailure(t);
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -81,14 +81,14 @@ public class BiValueFutureStep<T,U> extends FutureStep<Void> implements BiValueF
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
 	@Override
 	public BiValueFuture<T, U> andAfter(VoidFuture other) {
 		BiValueFutureStep<T,U> step = new BiValueFutureStep<>(first, second);
-		step.setPrerequisites(this, other);
+		step.setPrerequisites(this, other, PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 }

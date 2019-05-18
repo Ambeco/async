@@ -2,11 +2,10 @@ package com.tbohne.async;
 
 import com.tbohne.async.VoidFuture.FutureProducer;
 import com.tbohne.async.impl.BiValueFutureStep;
-import com.tbohne.async.impl.FutureStep;
 import com.tbohne.async.impl.ValueFutureStep;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -28,7 +27,7 @@ public class ImmediateValueFuture<R>
 
 	@Override
 	public VoidFuture thenIgnore(Executor executor, VoidFuture.FutureListener followup) {
-		return Async.start(executor, followup::onSuccess);
+		return Async.start(executor, () -> followup.onSuccess(this));
 	}
 
 	@Override
@@ -58,7 +57,7 @@ public class ImmediateValueFuture<R>
 
 	@Override
 	public <T extends Future & VoidFuture.FutureListener> T then(T followup) {
-		followup.onSuccess();
+		followup.onSuccess(this);
 		return followup;
 	}
 
@@ -75,14 +74,14 @@ public class ImmediateValueFuture<R>
 				throw t;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(other), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(other);
 		return step;
 	}
 
 	@Override
 	public <U> BiValueFuture<R, U> andAfter(ValueFuture<U> other) {
 		BiValueFutureStep<R, U> step = new BiValueFutureStep<>(this, other);
-		step.setPrerequisites(Collections.singletonList(other), FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(other);
 		return step;
 	}
 
@@ -116,12 +115,13 @@ public class ImmediateValueFuture<R>
 	}
 
 	@Override
-	public boolean cancel() {
+	public boolean cancel(CancellationException exception) {
 		return false;
 	}
 
 	@Override
-	public void callbackWasCancelled(VoidFuture.FutureListener callback) {
+	public void callbackWasCancelled(VoidFuture.FutureListener callback,
+									 CancellationException exception) {
 
 	}
 

@@ -6,7 +6,9 @@ import com.tbohne.async.impl.ValueFutureStep;
 import com.tbohne.async.impl.VoidFutureStep;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import java.util.concurrent.CountDownLatch;
@@ -26,10 +28,11 @@ public class Async {
 
 			@Override
 			public Void onFailure(RuntimeException t) {
-				throw new IllegalArgumentException("Root has failing dependency");
+				t.addSuppressed(new IllegalArgumentException("Root has failing dependency"));
+				throw t;
 			}
 		});
-		step.onSuccess();
+		step.onSuccess(null);
 		return step;
 	}
 
@@ -42,10 +45,11 @@ public class Async {
 
 			@Override
 			public R onFailure(RuntimeException t) {
-				throw new IllegalArgumentException("Root has failing dependency");
+				t.addSuppressed(new IllegalArgumentException("Root has failing dependency"));
+				throw t;
 			}
 		});
-		step.onSuccess();
+		step.onSuccess(null);
 		return step;
 	}
 
@@ -61,7 +65,7 @@ public class Async {
 				throw new IllegalArgumentException("Root has failing dependency");
 			}
 		});
-		step.onSuccess();
+		step.onSuccess(null);
 		return step;
 	}
 
@@ -78,7 +82,7 @@ public class Async {
 				throw new IllegalArgumentException("Root has failing dependency");
 			}
 		});
-		step.onSuccess();
+		step.onSuccess(null);
 		return step;
 	}
 
@@ -95,7 +99,7 @@ public class Async {
 				throw new IllegalArgumentException("Root has failing dependency");
 			}
 		});
-		step.onSuccess();
+		step.onSuccess(null);
 		return step;
 	}
 
@@ -111,19 +115,21 @@ public class Async {
 				throw new IllegalArgumentException("Root has failing dependency");
 			}
 		});
-		step.onSuccess();
+		step.onSuccess(null);
 		return step;
 	}
 
 	public static VoidFuture afterAllVoidComplete(VoidFuture... futures) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		HashSet<Future> prerequisites = new HashSet<>(futures.length);
+		Collections.addAll(prerequisites, futures);
+		step.setPrerequisites(prerequisites, PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
-	public static VoidFuture afterAllVoidComplete(List<VoidFuture> futures) {
+	public static VoidFuture afterAllVoidComplete(Collection<VoidFuture> futures) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(futures, PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(new HashSet<>(futures), PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -144,11 +150,13 @@ public class Async {
 				throw t;
 			}
 		});
-		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		HashSet<Future> prerequisites = new HashSet<>(futures.length);
+		Collections.addAll(prerequisites, futures);
+		step.setPrerequisites(prerequisites, PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
-	public static <R> ValueFuture<List<R>> afterAllComplete(List<ValueFuture<R>> futures) {
+	public static <R> ValueFuture<List<R>> afterAllComplete(Collection<ValueFuture<R>> futures) {
 		ValueFutureStep<List<R>>
 				step = new ValueFutureStep<>(getDirectExecutor(), new FutureProducer<List<R>>(){
 			@Override
@@ -165,19 +173,21 @@ public class Async {
 				throw t;
 			}
 		});
-		step.setPrerequisites(futures, PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(new HashSet<>(futures), PrereqStrategy.ALL_PREREQS_COMPLETE);
 		return step;
 	}
 
 	public static VoidFuture afterAllVoidSucceed(VoidFuture... futures) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ALL_PREREQS_SUCCEED);
+		HashSet<Future> prerequisites = new HashSet<>(futures.length);
+		Collections.addAll(prerequisites, futures);
+		step.setPrerequisites(prerequisites, PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 
-	public static VoidFuture afterAllVoidSucceed(List<VoidFuture> futures) {
+	public static VoidFuture afterAllVoidSucceed(Collection<VoidFuture> futures) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(futures, PrereqStrategy.ALL_PREREQS_SUCCEED);
+		step.setPrerequisites(new HashSet<>(futures), PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 
@@ -198,11 +208,13 @@ public class Async {
 				throw t;
 			}
 		});
-		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ALL_PREREQS_SUCCEED);
+		HashSet<Future> prerequisites = new HashSet<>(futures.length);
+		Collections.addAll(prerequisites, futures);
+		step.setPrerequisites(prerequisites, PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 
-	public static <R> ValueFuture<List<R>> afterAllSucceed(List<ValueFuture<R>> futures) {
+	public static <R> ValueFuture<List<R>> afterAllSucceed(Collection<ValueFuture<R>> futures) {
 		ValueFutureStep<List<R>>
 				step = new ValueFutureStep<>(getDirectExecutor(), new FutureProducer<List<R>>(){
 			@Override
@@ -219,19 +231,21 @@ public class Async {
 				throw t;
 			}
 		});
-		step.setPrerequisites(futures, PrereqStrategy.ALL_PREREQS_SUCCEED);
+		step.setPrerequisites(new HashSet<>(futures), PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 
 	public static VoidFuture afterAnyVoidSucceed(VoidFuture... futures) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ANY_PREREQS_COMPLETE);
+		HashSet<Future> prerequisites = new HashSet<>(futures.length);
+		Collections.addAll(prerequisites, futures);
+		step.setPrerequisites(prerequisites, PrereqStrategy.ANY_PREREQS_COMPLETE);
 		return step;
 	}
 
-	public static VoidFuture afterAnyVoidSucceed(List<VoidFuture> futures) {
+	public static VoidFuture afterAnyVoidSucceed(Collection<VoidFuture> futures) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(futures, PrereqStrategy.ANY_PREREQS_COMPLETE);
+		step.setPrerequisites(new HashSet<>(futures), PrereqStrategy.ANY_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -252,11 +266,13 @@ public class Async {
 				throw t;
 			}
 		});
-		step.setPrerequisites(Arrays.asList(futures), PrereqStrategy.ANY_PREREQS_COMPLETE);
+		HashSet<Future> prerequisites = new HashSet<>(futures.length);
+		Collections.addAll(prerequisites, futures);
+		step.setPrerequisites(prerequisites, PrereqStrategy.ANY_PREREQS_COMPLETE);
 		return step;
 	}
 
-	public static <R> ValueFuture<List<R>> afterAnySucceed(List<ValueFuture<R>> futures) {
+	public static <R> ValueFuture<List<R>> afterAnySucceed(Collection<ValueFuture<R>> futures) {
 		ValueFutureStep<List<R>>
 				step = new ValueFutureStep<>(getDirectExecutor(), new FutureProducer<List<R>>(){
 			@Override
@@ -273,7 +289,7 @@ public class Async {
 				throw t;
 			}
 		});
-		step.setPrerequisites(futures, PrereqStrategy.ANY_PREREQS_COMPLETE);
+		step.setPrerequisites(new HashSet<>(futures), PrereqStrategy.ANY_PREREQS_COMPLETE);
 		return step;
 	}
 
@@ -283,16 +299,15 @@ public class Async {
 		VoidFuture futureException = future
 				.then(getDirectExecutor(), new VoidFuture.FutureListener() {
 					@Override
-					public void onSuccess() {
+					public void onSuccess(Future future) {
 						latch.countDown();
 					}
 
 					@Override
-					public void onFailure(RuntimeException t) {
+					public void onFailure(Future future, RuntimeException t) {
 						latch.countDown();
 					}
 				});
-		//TODO ATTACH CANCEL LISTENER
 		latch.await();
 		if (future.getThrownException() != null) {
 			throw future.getThrownException();
@@ -314,7 +329,6 @@ public class Async {
 						latch.countDown();
 					}
 				});
-		//TODO ATTACH CANCEL LISTENER
 		latch.await();
 		return future.getNow();
 	}

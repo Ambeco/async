@@ -20,7 +20,7 @@ public class VoidFutureStep
 	@Override
 	public <T> ValueFuture<T> then(Executor executor, FutureProducer<T> followup) {
 		ValueFutureStep<T> step = new ValueFutureStep<>(executor, followup);
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -28,24 +28,24 @@ public class VoidFutureStep
 		VoidFutureStep step = new VoidFutureStep(executor, new FutureProducer<Void>() {
 			@Override
 			public Void onSuccess() {
-				followup.onSuccess();
+				followup.onSuccess(VoidFutureStep.this);
 				return null;
 			}
 
 			@Override
 			public Void onFailure(RuntimeException t) {
-				followup.onFailure(t);
+				followup.onFailure(VoidFutureStep.this, t);
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
 	@Override
 	public VoidFuture andAfter(VoidFuture other) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(this, other);
+		step.setPrerequisites(this, other, FutureStep.PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 
@@ -62,14 +62,14 @@ public class VoidFutureStep
 				throw t;
 			}
 		});
-		step.setPrerequisites(this, other);
+		step.setPrerequisites(this, other, FutureStep.PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 
 	@Override
 	public <T,U> BiValueFuture<T,U> andAfter(BiValueFuture<T,U> other) {
 		BiValueFutureStep<T,U> step = new BiValueFutureStep<>(other.getFirst(), other.getSecond());
-		step.setPrerequisites(this, other);
+		step.setPrerequisites(this, other, FutureStep.PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 }

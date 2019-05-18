@@ -12,8 +12,8 @@ public interface VoidFuture extends Future {
 
 
 	interface FutureListener {
-		void onSuccess();
-		void onFailure(RuntimeException t); //common implementation is merely to rethrow to children futures
+		void onSuccess(Future future);
+		void onFailure(Future future, RuntimeException t); //common implementation is merely to rethrow to children futures
 	}
 	interface FutureProducer<R> {
 		R onSuccess();

@@ -6,62 +6,54 @@ import com.tbohne.async.VoidFuture;
 import com.tbohne.async.VoidFuture.FutureListener;
 import com.tbohne.async.VoidFuture.FutureProducer;
 
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Set;
+import java.util.concurrent.CancellationException;
 
 
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
-import static com.tbohne.async.impl.FutureStep.PrereqStrategy.ALL_PREREQS_COMPLETE;
 
 public class FutureStep<R> extends RunnableFutureBase<R>
 		implements FutureListener {
 
 	public enum PrereqStrategy {
 		ALL_PREREQS_COMPLETE {
-			boolean shouldExecute(Object lock, Iterator<? extends Future> prerequisites) {
-				while (prerequisites.hasNext()) {
-					if (!prerequisites.next().finished()) {
-						return false;
-					}
-				}
-				return true;
+			boolean areReady(Set<Future> prerequisites,
+							 Future completedFuture,
+							 boolean futureSucceeded) {
+				prerequisites.remove(completedFuture);
+				return prerequisites.isEmpty();
 			}
 		},
 		ALL_PREREQS_SUCCEED {
-			boolean shouldExecute(Object lock, Iterator<? extends Future> prerequisites) {
-				boolean allComplete = true;
-				while (prerequisites.hasNext()) {
-					Future fut = prerequisites.next();
-					if (!fut.succeeded()) {
-						return true;
-					}
-					if (!fut.finished()) {
-						allComplete = false;
-					}
+			boolean areReady(Set<Future> prerequisites,
+							 Future completedFuture,
+							 boolean futureSucceeded) {
+				if (futureSucceeded) {
+					prerequisites.remove(completedFuture);
+					return prerequisites.isEmpty();
+				} else {
+					prerequisites.clear();
+					return true;
 				}
-				return allComplete;
 			}
 		},
 		ANY_PREREQS_COMPLETE {
-			boolean shouldExecute(Object lock, Iterator<? extends Future> prerequisites) {
-				while (prerequisites.hasNext()) {
-					if (prerequisites.next().finished()) {
-						return true;
-					}
-				}
-				return false;
+			boolean areReady(Set<Future> prerequisites,
+							 Future completedFuture,
+							 boolean futureSucceeded) {
+				prerequisites.clear();
+				return true;
 			}
 		};
 
-		abstract boolean shouldExecute(Object lock, Iterator<? extends Future> prerequisites);
+		abstract boolean areReady(Set<Future> prerequisites,
+								  Future completedFuture,
+								  boolean futureSucceeded);
 	}
 
-	private static final Iterator<Future> NO_PREREQ_ITERATOR
-			= new CopyOnWriteArrayList<Future>().iterator();
-
-	private List<? extends Future> prerequisites;
+	private Set<Future> prerequisites;
 	private PrereqStrategy prereqStrategy;
 	private Executor executor;
 	private boolean submitted;
@@ -77,12 +69,12 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 		return submitted;
 	}
 
-	public void setPrerequisites(List<? extends Future> prerequisites, PrereqStrategy prereqStrategy) {
+	public void setPrerequisites(Set<Future> prerequisites, PrereqStrategy prereqStrategy) {
 		synchronized (lock) {
 			if (submitted) {
 				throw new IllegalStateException("setPrerequisites called after execution queued");
 			}
-			if (this.prerequisites != null) {
+			if (this.prereqStrategy != null) {
 				throw new IllegalStateException("setPrerequisites called twice");
 			}
 			if (prerequisites == null) {
@@ -93,108 +85,114 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 			}
 			this.prerequisites = prerequisites;
 			this.prereqStrategy = prereqStrategy;
-			for (Future prerequisite : prerequisites) {
-				prerequisite.then(this);
-			}
+		}
+		for (Future prerequisite : prerequisites) {
+			prerequisite.then(this);
 		}
 	}
 
-	public void setPrerequisites(Future first, Future second) {
-		CopyOnWriteArrayList<Future> prereqs = new CopyOnWriteArrayList<>();
+	public void setPrerequisites(Future only) {
+		HashSet<Future> prereqs = new HashSet<>(1);
+		prereqs.add(only);
+		setPrerequisites(prereqs, PrereqStrategy.ALL_PREREQS_COMPLETE);
+	}
+
+	public void setPrerequisites(Future first, Future second, PrereqStrategy prereqStrategy) {
+		HashSet<Future> prereqs = new HashSet<>(2);
 		prereqs.add(first);
 		prereqs.add(second);
-		setPrerequisites(prereqs, ALL_PREREQS_COMPLETE);
-	}
-
-	private boolean shouldExecute() {
-		Iterator<? extends Future> prereqIterator;
-		synchronized (lock) {
-			if (prerequisites != null) {
-				prereqIterator = prerequisites.iterator();
-			} else {
-				prereqIterator = NO_PREREQ_ITERATOR;
-			}
-		}
-		return prereqStrategy.shouldExecute(lock, prereqIterator);
+		setPrerequisites(prereqs, prereqStrategy);
 	}
 
 	@Override
-	public void onSuccess() {
+	public void onSuccess(Future future) {
+		boolean doSubmit = false;
 		synchronized (lock) {
-			if (shouldExecute() && !submitted) {
-				executor.submit(this);
+			if (submitted) {
+				return;
+			}
+			if (prereqStrategy == null
+					|| future == null
+					|| prereqStrategy.areReady(prerequisites, future, true)) {
 				prerequisites = null;
 				executor = null;
 				submitted = true;
+				doSubmit = true;
 			}
+		}
+		if (doSubmit) {
+			executor.submit(this);
 		}
 	}
 
 	@Override
-	public void onFailure(RuntimeException exception) {
+	public void onFailure(Future future, RuntimeException exception) {
+		boolean doSubmit = false;
 		synchronized (lock) {
+			if (submitted) {
+				return;
+			}
 			if (inputThrowable == null) {
 				inputThrowable = exception;
 			} else {
 				inputThrowable.addSuppressed(exception);
 			}
-			if (!submitted) {
-				executor.submit(this);
-				submitted = true;
+			if (prereqStrategy == null || prereqStrategy.areReady(prerequisites, future, true)) {
 				prerequisites = null;
 				executor = null;
-				inputThrowable = null;
+				submitted = true;
 			}
+		}
+		if (doSubmit) {
+			executor.submit(this);
 		}
 	}
 
 	@Override
 	protected R execute() {
-		try {
-			if (inputThrowable == null) {
-				return runnable.onSuccess();
-			} else {
-				return runnable.onFailure(inputThrowable);
-			}
-		} finally {
-			synchronized (lock) {
-				prerequisites = null;
-				executor = null;
-				inputThrowable = null;
-			}
+		RuntimeException inputThrowable;
+		synchronized (lock) {
+			inputThrowable = this.inputThrowable;
+			this.inputThrowable = null;
+		}
+		if (inputThrowable == null) {
+			return runnable.onSuccess();
+		} else {
+			return runnable.onFailure(inputThrowable);
 		}
 	}
 
 	@Override
-	public boolean cancel() {
-		Iterator<? extends Future> prerequisitesIterator;
-		boolean result;
+	public boolean cancel(CancellationException exception) {
+		if (!super.cancel(exception)) {
+			return false;
+		}
+		Set<Future> prerequisites;
 		synchronized (lock) {
-			result = super.cancel();
-			if (prerequisites != null) {
-				prerequisitesIterator = prerequisites.iterator();
-			} else {
-				prerequisitesIterator = NO_PREREQ_ITERATOR;
-			}
+			prerequisites = this.prerequisites;
+			this.prerequisites = null;
 		}
-		while (result && prerequisitesIterator.hasNext()) {
-			prerequisitesIterator.next().callbackWasCancelled(this);
+		if (prerequisites == null) {
+			return true;
 		}
-		return result;
+		for (Future future : prerequisites) {
+			future.callbackWasCancelled(this, exception);
+		}
+		return true;
 	}
 
 	@Override
 	public void fillStackTraces(List<StackTraceElement[]> stacks) {
-		Iterator<? extends Future> prerequisitesIterator;
+		super.fillStackTraces(stacks);
+		Set<Future> prereqCopy;
 		synchronized (lock) {
-			if (prerequisites != null) {
-				prerequisitesIterator = prerequisites.iterator();
-			} else {
-				prerequisitesIterator = NO_PREREQ_ITERATOR;
+			if (prerequisites == null) {
+				return;
 			}
+			prereqCopy = new HashSet<>(prerequisites);
 		}
-		while (prerequisitesIterator.hasNext()) {
-			prerequisitesIterator.next().fillStackTraces(stacks);
+		for (Future prereq : prereqCopy) {
+			prereq.fillStackTraces(stacks);
 		}
 	}
 
@@ -206,7 +204,7 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 	@Override
 	public <T extends Future & FutureListener> T then(T followup) {
 		if (!isPrerequisite(followup)) {
-			throw new IllegalStateException("this must already be a prerequisite for followup before calling 'then'");
+			throw new IllegalStateException("this must already be a prerequisite before calling 'then'");
 		}
 		return super.then(followup);
 	}
@@ -214,7 +212,7 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 	@Override
 	public VoidFuture childrenCannotCancel() {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Collections.singletonList(this), ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 }

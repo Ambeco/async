@@ -114,10 +114,4 @@ Guava produced [ListenableFuture], which allows listeners, which is a huge step,
   - Executor cannot be shut down, because that created lunacy.
   
 ## TODO
-- Prerequisites and Callbacks: Set vs List.
-- Checking prereqs repeatedly redundant.
-- If futureListener.onSucceed/onFailed itself throws an exception, further listeners aren't triggered.
-- Canceling a step needs to also cancel callbacks that depend on it.
-- Is Future.cancel recursive?
-- Current FailedFutures might be recursive on stopped Executors. Make real FailedFutures.
 - Make a ThreadPool.

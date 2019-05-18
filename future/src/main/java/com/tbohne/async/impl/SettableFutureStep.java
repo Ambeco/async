@@ -4,68 +4,74 @@ import com.tbohne.async.Future;
 import com.tbohne.async.VoidFuture;
 import com.tbohne.async.VoidFuture.FutureListener;
 
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Set;
+import java.util.concurrent.CancellationException;
 
 class SettableFutureStep<R>
 		implements Future {
-
-	private static final Iterator<FutureListener> NO_CALLBACKS_ITERATOR =
-			new CopyOnWriteArrayList<FutureListener>().iterator();
 
 	protected final Object lock = new Object();
 	private R result;
 	private boolean completed;
 	private RuntimeException outputThrowable;
-	private List<FutureListener> callbacks;
+	private Set<FutureListener> listeners;
 
 	protected SettableFutureStep() {
 	}
 
-	protected boolean isCompleted() {
+	protected final boolean isCompleted() {
 		return completed;
 	}
 
-	protected void setResult(R result) {
-		Iterator<FutureListener> callbackIterator;
+	public boolean setResult(R result) {
+		return setResults(result, null);
+	}
+
+	public boolean setFailed(RuntimeException exception) {
+		return setResults(null, exception);
+	}
+
+	private boolean setResults(R result, RuntimeException exception) {
+		Set<FutureListener> listeners;
 		synchronized (lock) {
 			if (completed) {
-				throw new IllegalStateException("Settable future set twice");
+				return false;
 			}
 			this.completed = true;
 			this.result = result;
-			//grab a snapshot of the callbacks at the moment we finish
-			if (callbacks != null) {
-				callbackIterator = callbacks.iterator();
-			} else {
-				callbackIterator = NO_CALLBACKS_ITERATOR;
-			}
-			callbacks = null;
+			this.outputThrowable = exception;
+			//grab a snapshot of the listeners at the moment we finish
+			listeners = this.listeners;
+			this.listeners = null;
 		}
-		while (callbackIterator.hasNext()) {
-			callbackIterator.next().onSuccess();
-		}
+		notifyListeners(listeners, outputThrowable);
+		return true;
 	}
 
-	public void setFailed(RuntimeException exception) {
-		Iterator<FutureListener> callbackIterator;
-		synchronized (lock) {
-			if (completed) {
-				throw new IllegalStateException("Settable future set twice");
-			}
-			this.completed = true;
-			this.outputThrowable = exception;
-			//grab a snapshot of the callbacks at the moment we finish
-			if (callbacks != null) {
-				callbackIterator = callbacks.iterator();
-			} else {
-				callbackIterator = NO_CALLBACKS_ITERATOR;
-			}
-			callbacks = null;
+	private void notifyListeners(Set<FutureListener> listeners, RuntimeException outputThrowable) {
+		if (this.listeners != null) {
+			throw new IllegalStateException("Race condition notifying listeners while listeners member still set");
 		}
-		while (callbackIterator.hasNext()) {
-			callbackIterator.next().onFailure(exception);
+		RuntimeException fromListenerExceptions = null;
+		for (FutureListener listener : listeners) {
+			try {
+				if (outputThrowable == null) {
+					listener.onSuccess(this);
+				} else {
+					listener.onFailure(this, outputThrowable);
+				}
+			} catch (RuntimeException e) {
+				if (fromListenerExceptions == null) {
+					fromListenerExceptions = e;
+				} else {
+					fromListenerExceptions.addSuppressed(e);
+				}
+			}
+		}
+		if (fromListenerExceptions != null) {
+			throw fromListenerExceptions;
 		}
 	}
 
@@ -85,12 +91,14 @@ class SettableFutureStep<R>
 
 	@Override
 	public boolean isCancelled() {
-		return false;
+		return outputThrowable instanceof CancellationException;
 	}
 
 	@Override
-	public boolean cancel() {
-		throw new UnsupportedOperationException("Cannot cancel SettableFuture");
+	public boolean cancel(CancellationException exception) {
+		if (!isCompleted()) {
+			throw new UnsupportedOperationException("Cannot cancel SettableFuture");
+		}
 	}
 
 	protected R getNow() {
@@ -115,7 +123,10 @@ class SettableFutureStep<R>
 	}
 
 	@Override
-	public void callbackWasCancelled(FutureListener callback) {
+	public void callbackWasCancelled(FutureListener callback, CancellationException exception) {
+		if (removeCallbackGetEmpty(callback)) {
+			cancel(exception);
+		}
 	}
 
 	@Override
@@ -129,8 +140,8 @@ class SettableFutureStep<R>
 
 	protected boolean removeCallbackGetEmpty(FutureListener callback) {
 		synchronized (lock) {
-			callbacks.remove(callback);
-			return callbacks.isEmpty();
+			listeners.remove(callback);
+			return listeners.isEmpty();
 		}
 	}
 
@@ -139,18 +150,18 @@ class SettableFutureStep<R>
 		boolean isComplete;
 		synchronized (lock) {
 			if (!completed) {
-				if (callbacks == null) {
-					callbacks = new CopyOnWriteArrayList<>();
+				if (listeners == null) {
+					listeners = new HashSet<>();
 				}
-				callbacks.add(followup);
+				listeners.add(followup);
 			}
 			isComplete = completed;
 		}
 		if (isComplete) {
 			if (outputThrowable != null) {
-				followup.onFailure(outputThrowable);
+				followup.onFailure(this, outputThrowable);
 			} else {
-				followup.onSuccess();
+				followup.onSuccess(this);
 			}
 		}
 		return followup;

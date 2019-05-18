@@ -28,7 +28,7 @@ public class ValueFutureStep<R> extends FutureStep<R>
 	@Override
 	public VoidFuture thenIgnore() {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -37,24 +37,24 @@ public class ValueFutureStep<R> extends FutureStep<R>
 		VoidFutureStep step = new VoidFutureStep(executor,  new FutureProducer<Void>() {
 			@Override
 			public Void onSuccess() {
-				followup.onSuccess();
+				followup.onSuccess(ValueFutureStep.this);
 				return null;
 			}
 
 			@Override
 			public Void onFailure(RuntimeException t) {
-				followup.onFailure(t);
+				followup.onFailure(ValueFutureStep.this, t);
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
 	@Override
 	public VoidFuture thenIgnore(Executor executor, FutureProducer<Void> followup) {
 		VoidFutureStep step = new VoidFutureStep(executor, followup);
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -73,7 +73,7 @@ public class ValueFutureStep<R> extends FutureStep<R>
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -92,7 +92,7 @@ public class ValueFutureStep<R> extends FutureStep<R>
 				return null;
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -109,7 +109,7 @@ public class ValueFutureStep<R> extends FutureStep<R>
 				return followup.onFailure(t);
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -126,7 +126,7 @@ public class ValueFutureStep<R> extends FutureStep<R>
 				return followup.apply(ValueFutureStep.this);
 			}
 		});
-		step.setPrerequisites(Collections.singletonList(this), PrereqStrategy.ALL_PREREQS_COMPLETE);
+		step.setPrerequisites(this);
 		return step;
 	}
 
@@ -143,7 +143,7 @@ public class ValueFutureStep<R> extends FutureStep<R>
 				throw t;
 			}
 		});
-		step.setPrerequisites(this, other);
+		step.setPrerequisites(this, other, FutureStep.PrereqStrategy.ALL_PREREQS_SUCCEED);
 		other.then(getDirectExecutor(), step);
 		return step;
 	}
@@ -151,7 +151,7 @@ public class ValueFutureStep<R> extends FutureStep<R>
 	@Override
 	public <U> BiValueFuture<R,U> andAfter(ValueFuture<U> other) {
 		BiValueFutureStep<R,U> step = new BiValueFutureStep<>(this, other);
-		step.setPrerequisites(this, other);
+		step.setPrerequisites(this, other, FutureStep.PrereqStrategy.ALL_PREREQS_SUCCEED);
 		return step;
 	}
 }
