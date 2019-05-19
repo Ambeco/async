@@ -26,7 +26,7 @@ non-blocking way to retrieve the result. This is a complete abomination.
 The [ExecutorServices](https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html)
  produce Java7 Futures.
 
-Guava produced [ListenableFuture], which allows listeners, which is a huge step, but they're a 
+Guava produced [ListenableFuture](https://github.com/google/guava/wiki/ListenableFutureExplained), which allows listeners, which is a huge step, but they're a 
  awkward about handling exceptions, and you have to use [ListeningExecutorService](https://google.github.io/guava/releases/19.0/api/docs/com/google/common/util/concurrent/ListeningExecutorService.html)
  everywhere, which is slightly inconvenient.  Also, since async programming is hard, people just 
  keep calling the blocking .get() method, which half defeats the point of using features to start with.
