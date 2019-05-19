@@ -2,8 +2,6 @@ package com.tbohne.async;
 
 import java.util.function.Supplier;
 
-import static com.tbohne.async.ImmediateVoidFuture.getImmediateVoidFuture;
-
 public class DirectExecutor
 		implements Executor {
 	private static DirectExecutor instance = new DirectExecutor();
@@ -11,7 +9,7 @@ public class DirectExecutor
 		return instance;
 	}
 
-	public DirectExecutor() {}
+	private DirectExecutor() {}
 
 	private void restoreInterruptState(boolean interrupted) {
 		if (interrupted) {
@@ -37,7 +35,9 @@ public class DirectExecutor
 		boolean interrupted = Thread.interrupted();
 		try {
 			runnable.run();
-			return getImmediateVoidFuture();
+			return Async.immediateFuture();
+		} catch (RuntimeException e) {
+			return Async.failedVoidFuture(e);
 		} finally {
 			restoreInterruptState(interrupted);
 		}
@@ -47,7 +47,9 @@ public class DirectExecutor
 	public <T> ValueFuture<T> submit(Supplier<T> runnable) {
 		boolean interrupted = Thread.interrupted();
 		try {
-			return new ImmediateValueFuture<>(runnable.get());
+			return Async.immediateFuture(runnable.get());
+		} catch (RuntimeException e) {
+			return Async.failedValueFuture(e);
 		} finally {
 			restoreInterruptState(interrupted);
 		}
@@ -64,7 +66,7 @@ public class DirectExecutor
 	}
 
 	@Override
-	public void shutdownNow() throws InterruptedException {
+	public void shutdownNow() {
 		throw new UnsupportedOperationException("DirectExecutor is unstoppable");
 	}
 }

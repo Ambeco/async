@@ -1,8 +1,8 @@
 package com.tbohne.async.impl;
 
 import com.tbohne.async.Future;
+import com.tbohne.async.FutureListener;
 import com.tbohne.async.VoidFuture;
-import com.tbohne.async.VoidFuture.FutureListener;
 
 import java.util.HashSet;
 import java.util.List;
@@ -99,9 +99,10 @@ class SettableFutureStep<R>
 		if (!isCompleted()) {
 			throw new UnsupportedOperationException("Cannot cancel SettableFuture");
 		}
+		return false;
 	}
 
-	protected R getNow() {
+	public R getNow() {
 		synchronized (lock) {
 			if (!completed) {
 				throw new IllegalStateException("async is incomplete");
@@ -124,7 +125,12 @@ class SettableFutureStep<R>
 
 	@Override
 	public void callbackWasCancelled(FutureListener callback, CancellationException exception) {
-		if (removeCallbackGetEmpty(callback)) {
+		boolean cancelThis;
+		synchronized (lock) {
+			listeners.remove(callback);
+			cancelThis = listeners.isEmpty();
+		}
+		if (cancelThis) {
 			cancel(exception);
 		}
 	}
@@ -138,33 +144,25 @@ class SettableFutureStep<R>
 		return false;
 	}
 
-	protected boolean removeCallbackGetEmpty(FutureListener callback) {
-		synchronized (lock) {
-			listeners.remove(callback);
-			return listeners.isEmpty();
-		}
-	}
-
 	@Override
-	public <T extends Future & FutureListener> T then(T followup) {
+	public void addListener(FutureListener listener) {
 		boolean isComplete;
 		synchronized (lock) {
 			if (!completed) {
 				if (listeners == null) {
 					listeners = new HashSet<>();
 				}
-				listeners.add(followup);
+				listeners.add(listener);
 			}
 			isComplete = completed;
 		}
 		if (isComplete) {
 			if (outputThrowable != null) {
-				followup.onFailure(this, outputThrowable);
+				listener.onFailure(this, outputThrowable);
 			} else {
-				followup.onSuccess(this);
+				listener.onSuccess(this);
 			}
 		}
-		return followup;
 	}
 
 	@Override

@@ -3,7 +3,7 @@ package com.tbohne.async.impl;
 import com.tbohne.async.Executor;
 import com.tbohne.async.Future;
 import com.tbohne.async.VoidFuture;
-import com.tbohne.async.VoidFuture.FutureListener;
+import com.tbohne.async.FutureListener;
 import com.tbohne.async.VoidFuture.FutureProducer;
 
 import java.util.HashSet;
@@ -87,7 +87,7 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 			this.prereqStrategy = prereqStrategy;
 		}
 		for (Future prerequisite : prerequisites) {
-			prerequisite.then(this);
+			prerequisite.addListener(this);
 		}
 	}
 
@@ -106,7 +106,7 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 
 	@Override
 	public void onSuccess(Future future) {
-		boolean doSubmit = false;
+		Executor executor = null;
 		synchronized (lock) {
 			if (submitted) {
 				return;
@@ -115,19 +115,19 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 					|| future == null
 					|| prereqStrategy.areReady(prerequisites, future, true)) {
 				prerequisites = null;
-				executor = null;
+				executor = this.executor;
+				this.executor = null;
 				submitted = true;
-				doSubmit = true;
 			}
 		}
-		if (doSubmit) {
+		if (executor != null) {
 			executor.submit(this);
 		}
 	}
 
 	@Override
 	public void onFailure(Future future, RuntimeException exception) {
-		boolean doSubmit = false;
+		Executor executor = null;
 		synchronized (lock) {
 			if (submitted) {
 				return;
@@ -139,11 +139,12 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 			}
 			if (prereqStrategy == null || prereqStrategy.areReady(prerequisites, future, true)) {
 				prerequisites = null;
-				executor = null;
+				executor = this.executor;
+				this.executor = null;
 				submitted = true;
 			}
 		}
-		if (doSubmit) {
+		if (executor != null) {
 			executor.submit(this);
 		}
 	}
@@ -202,11 +203,11 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 	}
 
 	@Override
-	public <T extends Future & FutureListener> T then(T followup) {
-		if (!isPrerequisite(followup)) {
+	public void addListener(FutureListener listener) {
+		if (listener instanceof Future && !isPrerequisite((Future) listener)) {
 			throw new IllegalStateException("this must already be a prerequisite before calling 'then'");
 		}
-		return super.then(followup);
+		super.addListener(listener);
 	}
 
 	@Override

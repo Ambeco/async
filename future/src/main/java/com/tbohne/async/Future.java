@@ -1,6 +1,6 @@
 package com.tbohne.async;
 
-import com.tbohne.async.VoidFuture.FutureListener;
+import com.tbohne.async.FutureListener;
 
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -11,10 +11,10 @@ public interface Future {
 	RuntimeException getThrownException();
 	boolean isCancelled();
 	boolean cancel(CancellationException exception);
+
 	void callbackWasCancelled(FutureListener callback, CancellationException exception);
 	void fillStackTraces(List<StackTraceElement[]> stacks);
-
 	boolean isPrerequisite(Future future);
-	<T extends Future & FutureListener> T then(T followup); //if this is not already a prerequisite, throws IllegalStateException
+	void addListener(FutureListener followup); //if this is not already a prerequisite, throws IllegalStateException
 	VoidFuture childrenCannotCancel(); //Calling Future can only be canceled if the returned future is cancelled.
 }
