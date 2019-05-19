@@ -114,4 +114,5 @@ Guava produced [ListenableFuture], which allows listeners, which is a huge step,
   - Executor cannot be shut down, because that created lunacy.
   
 ## TODO
+- LeafVoidFuture as member to assure that all exceptions handled rather than waiting for listener to attach.
 - Make a ThreadPool.
