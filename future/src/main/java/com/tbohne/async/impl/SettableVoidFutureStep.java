@@ -2,6 +2,9 @@ package com.tbohne.async.impl;
 
 import com.tbohne.async.Combine;
 import com.tbohne.async.Executor;
+import com.tbohne.async.Listeners;
+import com.tbohne.async.Listeners.FutureEffect;
+import com.tbohne.async.Listeners.FutureProducer;
 import com.tbohne.async.ValueFuture;
 import com.tbohne.async.VoidFuture;
 

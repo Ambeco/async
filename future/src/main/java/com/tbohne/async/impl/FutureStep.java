@@ -2,9 +2,10 @@ package com.tbohne.async.impl;
 
 import com.tbohne.async.Executor;
 import com.tbohne.async.Future;
-import com.tbohne.async.FutureListener;
+import com.tbohne.async.Listeners;
+import com.tbohne.async.Listeners.FutureListener;
 import com.tbohne.async.VoidFuture;
-import com.tbohne.async.VoidFuture.FutureProducer;
+import com.tbohne.async.Listeners.FutureProducer;
 
 import java.util.HashSet;
 import java.util.List;

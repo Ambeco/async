@@ -1,7 +1,8 @@
 package com.tbohne.async.impl;
 
 import com.tbohne.async.Future;
-import com.tbohne.async.FutureListener;
+import com.tbohne.async.Listeners;
+import com.tbohne.async.Listeners.FutureListener;
 import com.tbohne.async.VoidFuture;
 
 import java.util.HashSet;

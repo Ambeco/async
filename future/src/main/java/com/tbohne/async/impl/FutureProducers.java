@@ -1,12 +1,13 @@
 package com.tbohne.async.impl;
 
-import com.tbohne.async.BiValueFuture.BiFutureConsumer;
-import com.tbohne.async.BiValueFuture.BiFutureTransformer;
+import com.tbohne.async.Listeners.BiFutureConsumer;
+import com.tbohne.async.Listeners.BiFutureTransformer;
 import com.tbohne.async.FutureResult;
-import com.tbohne.async.ValueFuture.FutureValueConsumer;
-import com.tbohne.async.ValueFuture.FutureValueTransformer;
-import com.tbohne.async.VoidFuture;
-import com.tbohne.async.VoidFuture.FutureProducer;
+import com.tbohne.async.Listeners;
+import com.tbohne.async.Listeners.FutureEffect;
+import com.tbohne.async.Listeners.FutureValueConsumer;
+import com.tbohne.async.Listeners.FutureValueTransformer;
+import com.tbohne.async.Listeners.FutureProducer;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -29,9 +30,9 @@ public class FutureProducers {
 	private FutureProducers() {}
 
 	public static class FutureEffectAsFutureProducer implements FutureProducer<Void> {
-		private final VoidFuture.FutureEffect listener;
+		private final FutureEffect listener;
 
-		public FutureEffectAsFutureProducer(VoidFuture.FutureEffect listener) {
+		public FutureEffectAsFutureProducer(FutureEffect listener) {
 			this.listener = listener;
 		}
 

@@ -1,11 +1,11 @@
 package com.tbohne.async;
 
-import com.tbohne.async.BiValueFuture.BiFutureConsumer;
-import com.tbohne.async.BiValueFuture.BiFutureTransformer;
-import com.tbohne.async.ValueFuture.FutureValueConsumer;
-import com.tbohne.async.ValueFuture.FutureValueTransformer;
-import com.tbohne.async.VoidFuture.FutureEffect;
-import com.tbohne.async.VoidFuture.FutureProducer;
+import com.tbohne.async.Listeners.BiFutureConsumer;
+import com.tbohne.async.Listeners.BiFutureTransformer;
+import com.tbohne.async.Listeners.FutureValueConsumer;
+import com.tbohne.async.Listeners.FutureValueTransformer;
+import com.tbohne.async.Listeners.FutureEffect;
+import com.tbohne.async.Listeners.FutureProducer;
 import com.tbohne.async.impl.FutureProducers.BiConsumerAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.BiFunctionAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.BiFutureConsumerAsFutureProducer;

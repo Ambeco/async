@@ -1,6 +1,7 @@
 package com.tbohne.async;
 
-import com.tbohne.async.VoidFuture.SimpleFutureProducer;
+import com.tbohne.async.Listeners.FutureListener;
+import com.tbohne.async.Listeners.SimpleFutureProducer;
 import com.tbohne.async.impl.SettableValueFutureStep;
 import com.tbohne.async.impl.SettableVoidFutureStep;
 import com.tbohne.async.impl.ValueFutureStep;
