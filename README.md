@@ -100,7 +100,7 @@ Guava produced [ListenableFuture](https://github.com/google/guava/wiki/Listenabl
      - ALL_PREREQS_SUCCEED: waits for all prerequisites to succeed, or one to fail.
      - ANY_PREREQS_COMPLETE: waits for any prerequisites to succeed or fail.
      - ANY_PREREQS_SUCCEED: waits for any prerequisites to succeed or all to fail.
-   - **VoidFutureStep** implements VoidFuture, and **ValueFutureStep** implements ValueFuture.
+   - **VoidFutureStep** implements VoidFuture, **ValueFutureStep** implements ValueFuture, and **BiValueFutureStep** implements BiValueFuture.
    
 ## Executors
 - **Executor**  
