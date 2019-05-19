@@ -2,8 +2,8 @@ package com.tbohne.async.impl;
 
 import com.tbohne.async.Executor;
 import com.tbohne.async.Future;
-import com.tbohne.async.VoidFuture;
 import com.tbohne.async.FutureListener;
+import com.tbohne.async.VoidFuture;
 import com.tbohne.async.VoidFuture.FutureProducer;
 
 import java.util.HashSet;
@@ -11,60 +11,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 
-
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
+import static com.tbohne.async.impl.FutureProducers.NO_OP_VOID_CALLBACK;
 
-public class FutureStep<R> extends RunnableFutureBase<R>
-		implements FutureListener {
-
-	public enum PrereqStrategy {
-		ALL_PREREQS_COMPLETE {
-			boolean areReady(Set<Future> prerequisites,
-							 Future completedFuture,
-							 boolean futureSucceeded) {
-				prerequisites.remove(completedFuture);
-				return prerequisites.isEmpty();
-			}
-		},
-		ALL_PREREQS_SUCCEED {
-			boolean areReady(Set<Future> prerequisites,
-							 Future completedFuture,
-							 boolean futureSucceeded) {
-				if (futureSucceeded) {
-					prerequisites.remove(completedFuture);
-					return prerequisites.isEmpty();
-				} else {
-					prerequisites.clear();
-					return true;
-				}
-			}
-		},
-		ANY_PREREQS_COMPLETE {
-			boolean areReady(Set<Future> prerequisites,
-							 Future completedFuture,
-							 boolean futureSucceeded) {
-				prerequisites.clear();
-				return true;
-			}
-		},
-		ANY_PREREQS_SUCCEED {
-			boolean areReady(Set<Future> prerequisites,
-							Future completedFuture,
-							boolean futureSucceeded) {
-				if (futureSucceeded) {
-					prerequisites.clear();
-					return true;
-				} else {
-					prerequisites.remove(completedFuture);
-					return prerequisites.isEmpty();
-				}
-			}
-		};
-
-		abstract boolean areReady(Set<Future> prerequisites,
-								  Future completedFuture,
-								  boolean futureSucceeded);
-	}
+public class FutureStep<R> extends RunnableFutureBase<R> implements FutureListener {
 
 	private Set<Future> prerequisites;
 	private PrereqStrategy prereqStrategy;
@@ -124,9 +74,9 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 			if (submitted) {
 				return;
 			}
-			if (prereqStrategy == null
-					|| future == null
-					|| prereqStrategy.areReady(prerequisites, future, true)) {
+			if (prereqStrategy == null || future == null || prereqStrategy.areReady(prerequisites,
+					future,
+					true)) {
 				prerequisites = null;
 				executor = this.executor;
 				this.executor = null;
@@ -218,7 +168,8 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 	@Override
 	public void addListener(FutureListener listener) {
 		if (listener instanceof Future && !isPrerequisite((Future) listener)) {
-			throw new IllegalStateException("this must already be a prerequisite before calling 'then'");
+			throw new IllegalStateException(
+					"this must already be a prerequisite before calling 'then'");
 		}
 		super.addListener(listener);
 	}
@@ -228,5 +179,54 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
 		step.setPrerequisites(this);
 		return step;
+	}
+
+	public enum PrereqStrategy {
+		ALL_PREREQS_COMPLETE {
+			boolean areReady(Set<Future> prerequisites,
+					Future completedFuture,
+					boolean futureSucceeded) {
+				prerequisites.remove(completedFuture);
+				return prerequisites.isEmpty();
+			}
+		},
+		ALL_PREREQS_SUCCEED {
+			boolean areReady(Set<Future> prerequisites,
+					Future completedFuture,
+					boolean futureSucceeded) {
+				if (futureSucceeded) {
+					prerequisites.remove(completedFuture);
+					return prerequisites.isEmpty();
+				} else {
+					prerequisites.clear();
+					return true;
+				}
+			}
+		},
+		ANY_PREREQS_COMPLETE {
+			boolean areReady(Set<Future> prerequisites,
+					Future completedFuture,
+					boolean futureSucceeded) {
+				prerequisites.clear();
+				return true;
+			}
+		},
+		ANY_PREREQS_SUCCEED {
+			boolean areReady(Set<Future> prerequisites,
+					Future completedFuture,
+					boolean futureSucceeded) {
+				if (futureSucceeded) {
+					prerequisites.clear();
+					return true;
+				} else {
+					prerequisites.remove(completedFuture);
+					return prerequisites.isEmpty();
+				}
+			}
+		};
+
+		abstract boolean areReady(Set<Future> prerequisites,
+				Future completedFuture,
+				boolean futureSucceeded);
 	}
 }

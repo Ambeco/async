@@ -8,16 +8,15 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.function.Supplier;
 
-public class SerializedDirectExecutor
-		implements Executor {
+public class SerializedDirectExecutor implements Executor {
 	private static SerializedDirectExecutor instance = new SerializedDirectExecutor();
-	public static SerializedDirectExecutor getSerializedDirectExecutor() {
-		return instance;
-	}
-
 	private ThreadLocal<Queue<Runnable>> queues;
 
 	public SerializedDirectExecutor() {}
+
+	public static SerializedDirectExecutor getSerializedDirectExecutor() {
+		return instance;
+	}
 
 	private boolean shouldRunNow(Runnable runnable) {
 		Queue<Runnable> queue = queues.get();

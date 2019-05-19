@@ -1,8 +1,6 @@
 package com.tbohne.async;
 
-import com.tbohne.async.VoidFuture.FutureProducer;
 import com.tbohne.async.VoidFuture.SimpleFutureProducer;
-import com.tbohne.async.impl.FutureProducers;
 import com.tbohne.async.impl.SettableValueFutureStep;
 import com.tbohne.async.impl.SettableVoidFutureStep;
 import com.tbohne.async.impl.ValueFutureStep;
@@ -11,11 +9,9 @@ import com.tbohne.async.impl.VoidFutureStep;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
-import static com.tbohne.async.DirectExecutor.getDirectExecutor;
-
 public class Async {
 	public static VoidFuture start(Executor executor, Runnable runnable) {
-		VoidFutureStep step = new VoidFutureStep(executor, new SimpleFutureProducer<Void>(){
+		VoidFutureStep step = new VoidFutureStep(executor, new SimpleFutureProducer<Void>() {
 			@Override
 			public Void onSuccess() {
 				runnable.run();
@@ -27,10 +23,10 @@ public class Async {
 	}
 
 	public static <R> ValueFuture<R> start(Executor executor, Supplier<R> runnable) {
-		ValueFutureStep<R> step = new ValueFutureStep<>(executor, new SimpleFutureProducer<R>(){
+		ValueFutureStep<R> step = new ValueFutureStep<>(executor, new SimpleFutureProducer<R>() {
 			@Override
 			public R onSuccess() {
-			return runnable.get();
+				return runnable.get();
 			}
 		});
 		step.onSuccess(null);
@@ -49,7 +45,8 @@ public class Async {
 		return future;
 	}
 
-	public static <R> ValueFuture<R> failedValueFuture(Class<R> valueType, RuntimeException exception) {
+	public static <R> ValueFuture<R> failedValueFuture(Class<R> valueType,
+			RuntimeException exception) {
 		SettableValueFutureStep<R> future = new SettableValueFutureStep<>();
 		future.setFailed(exception);
 		return future;
@@ -67,8 +64,7 @@ public class Async {
 		return future;
 	}
 
-	public static void blockThreadUntilComplete(VoidFuture future)
-			throws InterruptedException {
+	public static void blockThreadUntilComplete(VoidFuture future) throws InterruptedException {
 		CountDownLatch latch = new CountDownLatch(1);
 		future.addListener(new BlockingListener(latch));
 		latch.await();

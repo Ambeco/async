@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 
-class SettableFutureStep<R>
-		implements Future {
+class SettableFutureStep<R> implements Future {
 
 	protected final Object lock = new Object();
 	private R result;
@@ -52,7 +51,8 @@ class SettableFutureStep<R>
 
 	private void notifyListeners(Set<FutureListener> listeners, RuntimeException outputThrowable) {
 		if (this.listeners != null) {
-			throw new IllegalStateException("Race condition notifying listeners while listeners member still set");
+			throw new IllegalStateException(
+					"Race condition notifying listeners while listeners member still set");
 		}
 		RuntimeException fromListenerExceptions = null;
 		for (FutureListener listener : listeners) {

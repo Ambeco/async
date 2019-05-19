@@ -2,14 +2,14 @@ package com.tbohne.async;
 
 import java.util.function.Supplier;
 
-public class DirectExecutor
-		implements Executor {
+public class DirectExecutor implements Executor {
 	private static DirectExecutor instance = new DirectExecutor();
+
+	private DirectExecutor() {}
+
 	public static DirectExecutor getDirectExecutor() {
 		return instance;
 	}
-
-	private DirectExecutor() {}
 
 	private void restoreInterruptState(boolean interrupted) {
 		if (interrupted) {

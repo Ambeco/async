@@ -5,16 +5,12 @@ import com.tbohne.async.Executor;
 import com.tbohne.async.FutureResult;
 import com.tbohne.async.ValueFuture;
 import com.tbohne.async.VoidFuture;
-import com.tbohne.async.VoidFuture.FutureEffect;
 import com.tbohne.async.VoidFuture.FutureProducer;
-import com.tbohne.async.impl.FutureProducers.FutureEffectAsFutureProducer;
 
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class ValueFutureStep<R> extends FutureStep<R>
-		implements ValueFuture<R> {
+public class ValueFutureStep<R> extends FutureStep<R> implements ValueFuture<R> {
 
 	public ValueFutureStep(Executor executor, FutureProducer<R> function) {
 		super(executor, function);

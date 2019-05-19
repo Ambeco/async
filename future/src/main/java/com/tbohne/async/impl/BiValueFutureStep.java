@@ -7,13 +7,12 @@ import com.tbohne.async.FutureResult;
 import com.tbohne.async.ValueFuture;
 import com.tbohne.async.VoidFuture;
 
-import java.util.Collections;
-
 import java.util.function.BiFunction;
 
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
+import static com.tbohne.async.impl.FutureProducers.NO_OP_VOID_CALLBACK;
 
-public class BiValueFutureStep<T,U> extends FutureStep<Void> implements BiValueFuture<T,U> {
+public class BiValueFutureStep<T, U> extends FutureStep<Void> implements BiValueFuture<T, U> {
 	private final ValueFuture<T> first;
 	private final ValueFuture<U> second;
 
@@ -34,7 +33,8 @@ public class BiValueFutureStep<T,U> extends FutureStep<Void> implements BiValueF
 	}
 
 	@Override
-	public <R> ValueFuture<R> then(Executor executor, BiFunction<FutureResult<T>, FutureResult<U>, R> followup) {
+	public <R> ValueFuture<R> then(Executor executor,
+			BiFunction<FutureResult<T>, FutureResult<U>, R> followup) {
 		return Combine.afterComplete(this, executor, followup);
 	}
 

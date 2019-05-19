@@ -2,27 +2,15 @@ package com.tbohne.async.impl;
 
 import com.tbohne.async.RunnableFuture;
 import com.tbohne.async.VoidFuture;
-import com.tbohne.async.VoidFuture.FutureProducer;
 
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
+import static com.tbohne.async.impl.FutureProducers.NO_OP_VOID_CALLBACK;
 
 public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 		implements RunnableFuture {
-
-	public static final FutureProducer<Void> NO_OP_VOID_CALLBACK = new FutureProducer<Void>(){
-		@Override
-		public Void onSuccess() {
-			return null;
-		}
-
-		@Override
-		public Void onFailure(RuntimeException t) {
-			throw t;
-		}
-	};
 
 	private boolean started;
 	private Thread thread;
@@ -67,7 +55,7 @@ public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 		if (exception == null) {
 			exception = new CancellationException("cancelled");
 		}
-		if (!setFailed(exception)){
+		if (!setFailed(exception)) {
 			return false;
 		}
 		synchronized (lock) {

@@ -14,6 +14,18 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class FutureProducers {
+	public static final FutureProducer<Void> NO_OP_VOID_CALLBACK = new FutureProducer<Void>() {
+		@Override
+		public Void onSuccess() {
+			return null;
+		}
+
+		@Override
+		public Void onFailure(RuntimeException t) {
+			throw t;
+		}
+	};
+
 	private FutureProducers() {}
 
 	public static class FutureEffectAsFutureProducer implements FutureProducer<Void> {
@@ -40,7 +52,8 @@ public class FutureProducers {
 		private final FutureResult<T> result;
 		private final FutureValueConsumer<T> listener;
 
-		public ValueConsumerAsFutureProducer(FutureResult<T> result, FutureValueConsumer<T> listener) {
+		public ValueConsumerAsFutureProducer(FutureResult<T> result,
+				FutureValueConsumer<T> listener) {
 			this.result = result;
 			this.listener = listener;
 		}
@@ -62,7 +75,8 @@ public class FutureProducers {
 		private final FutureResult<T> result;
 		private final Consumer<FutureResult<T>> listener;
 
-		public ConsumerAsFutureProducer(FutureResult<T> result, Consumer<FutureResult<T>> listener) {
+		public ConsumerAsFutureProducer(FutureResult<T> result,
+				Consumer<FutureResult<T>> listener) {
 			this.result = result;
 			this.listener = listener;
 		}
@@ -84,7 +98,8 @@ public class FutureProducers {
 		private final FutureResult<T> result;
 		private final FutureValueTransformer<T, R> listener;
 
-		public ValueTransformerAsFutureProducer(FutureResult<T> result, FutureValueTransformer<T, R> listener) {
+		public ValueTransformerAsFutureProducer(FutureResult<T> result,
+				FutureValueTransformer<T, R> listener) {
 			this.result = result;
 			this.listener = listener;
 		}
@@ -104,7 +119,8 @@ public class FutureProducers {
 		private final FutureResult<T> result;
 		private final Function<FutureResult<T>, R> listener;
 
-		public FunctionAsFutureProducer(FutureResult<T> result, Function<FutureResult<T>, R> listener) {
+		public FunctionAsFutureProducer(FutureResult<T> result,
+				Function<FutureResult<T>, R> listener) {
 			this.result = result;
 			this.listener = listener;
 		}
@@ -125,7 +141,9 @@ public class FutureProducers {
 		private final FutureResult<U> second;
 		private final BiFutureConsumer<T, U> listener;
 
-		public BiFutureConsumerAsFutureProducer(FutureResult<T> first, FutureResult<U> second, BiFutureConsumer<T, U> listener) {
+		public BiFutureConsumerAsFutureProducer(FutureResult<T> first,
+				FutureResult<U> second,
+				BiFutureConsumer<T, U> listener) {
 			this.first = first;
 			this.second = second;
 			this.listener = listener;
@@ -149,7 +167,9 @@ public class FutureProducers {
 		private final FutureResult<U> second;
 		private final BiConsumer<FutureResult<T>, FutureResult<U>> listener;
 
-		public BiConsumerAsFutureProducer(FutureResult<T> first, FutureResult<U> second, BiConsumer<FutureResult<T>, FutureResult<U>> listener) {
+		public BiConsumerAsFutureProducer(FutureResult<T> first,
+				FutureResult<U> second,
+				BiConsumer<FutureResult<T>, FutureResult<U>> listener) {
 			this.first = first;
 			this.second = second;
 			this.listener = listener;
@@ -173,7 +193,9 @@ public class FutureProducers {
 		private final FutureResult<U> second;
 		private final BiFutureTransformer<T, U, R> listener;
 
-		public BiFutureTransformerAsFutureProducer(FutureResult<T> first, FutureResult<U> second, BiFutureTransformer<T, U, R> listener) {
+		public BiFutureTransformerAsFutureProducer(FutureResult<T> first,
+				FutureResult<U> second,
+				BiFutureTransformer<T, U, R> listener) {
 			this.first = first;
 			this.second = second;
 			this.listener = listener;
@@ -195,7 +217,9 @@ public class FutureProducers {
 		private final FutureResult<U> second;
 		private final BiFunction<FutureResult<T>, FutureResult<U>, R> listener;
 
-		public BiFunctionAsFutureProducer(FutureResult<T> first, FutureResult<U> second, BiFunction<FutureResult<T>, FutureResult<U>, R> listener) {
+		public BiFunctionAsFutureProducer(FutureResult<T> first,
+				FutureResult<U> second,
+				BiFunction<FutureResult<T>, FutureResult<U>, R> listener) {
 			this.first = first;
 			this.second = second;
 			this.listener = listener;
