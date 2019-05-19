@@ -57,8 +57,6 @@ Guava produced [ListenableFuture](https://github.com/google/guava/wiki/Listenabl
  - interface **VoidFuture** extends Future:  
    The reference to a step of a chain of async operations with no return type.
    - Attach a FutureListener, or a FutureProducer.
-   - Join with another VoidFuture to produce a child VoidFuture that waits for both, 
-   join with a ValueFuture to produce a child ValueFuture, or join with a BiValueFuture to produce a child BiValueFuture.
  - interface **FutureResult<R>**:  
    The return value from a future.
    - Check if it's succeeded.
@@ -68,12 +66,9 @@ Guava produced [ListenableFuture](https://github.com/google/guava/wiki/Listenabl
    The reference to a step of a chain of async operations with a return type.
    - Attach a FutureValueConsumer, a FutureValueTransformer, or a VoidFuture that explicitly ignores the result.
    - Attach a Consumer<FutureResult<R>> or Function<FutureResult<R>, R2>.
-   - Join with another VoidFuture to produce a child ValueFuture that waits for both, 
-   or join with a ValueFuture to produce a child BiValueFuture.
   - interface **BiValueFuture<T,U>** extends Future:   
     A holder of two ValueFutures, but doesn't actually _do_ anything.
     - Attach a BiFutureConsumer or BiFutureTransformer.
-    - Join with another VoidFuture to produce a child ValueFuture that waits for both. 
  - **Async**:  
    Static class with helper methods for starting async operations.
    - Create a VoidFuture that triggers when a list of other Futures are all complete.
