@@ -5,24 +5,69 @@ import com.tbohne.async.Listeners.FutureListener;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
+/**
+ * A generic Future.
+ * <p>
+ * Generally code will use ValueFuture or VoidFuture directly.  It's worth noting that a future
+ * can only complete once, and once it has completed, it will always contain that same result or
+ * exception.
+ */
 public interface Future {
-	boolean finished();
+	boolean completed();
 
 	boolean succeeded();
 
+	/**
+	 * @return The exception from the async work if the operation did not succeed, or null otherwise.
+	 * If the operation was cancelled, this will be a {@link CancellationException}.
+	 */
 	RuntimeException getThrownException();
 
+	/**
+	 * @return true if the operation was cancelled, false otherwise
+	 */
 	boolean isCancelled();
 
+	/**
+	 * @param exception optional exception to be the reason for chained cancellations
+	 * @return true if the operation was cancelled, or false if it was already completed for another reason.
+	 */
 	boolean cancel(CancellationException exception);
 
-	void callbackWasCancelled(FutureListener callback, CancellationException exception);
+	/**
+	 * Notifies the async work that one of the listeners was cancelled.
+	 * If all listeners are cancelled, this work will also be cancelled.
+	 *
+	 * @param listener  the listener that was cancelled.
+	 * @param exception optional exception to be the reason for chained cancellations.
+	 */
+	void callbackWasCancelled(FutureListener listener, CancellationException exception);
 
+	/**
+	 * Attempt to get the stack traces of any threads executing this work, or prerequisite work.
+	 * This is best effort, it is possible that threads may be executing callbacks rather than work,
+	 * so may be missed, or counted twice.
+	 *
+	 * @param stacks
+	 */
 	void fillStackTraces(List<StackTraceElement[]> stacks);
 
+	/**
+	 * @param future possible prerequisite
+	 * @return true if this work is waiting on that future directly, false otherwise
+	 */
 	boolean isPrerequisite(Future future);
 
-	void addListener(FutureListener followup); //if this is not already a prerequisite, throws IllegalStateException
+	/**
+	 * Adds a FutureListener to be called when this Future is complete.
+	 * <p>
+	 * If followup is not already a prerequisite, throws IllegalStateException
+	 */
+	void addListener(FutureListener followup);
 
-	VoidFuture childrenCannotCancel(); //Calling Future can only be canceled if the returned future is cancelled.
+	/**
+	 * Adds an anonymous listener, to prevent children from cancelling.
+	 * After this, the Future can only be cancelled directly.
+	 */
+	void childrenCannotCancel();
 }

@@ -10,6 +10,9 @@ import com.tbohne.async.impl.VoidFutureStep;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
+/**
+ * Helper methods for starting and stopping async work
+ */
 public class Async {
 	public static VoidFuture start(Executor executor, Runnable runnable) {
 		VoidFutureStep step = new VoidFutureStep(executor, new SimpleFutureProducer<Void>() {
@@ -40,12 +43,13 @@ public class Async {
 		return future;
 	}
 
-	public static <R> VoidFuture immediateFuture() {
+	public static VoidFuture immediateFuture() {
 		SettableVoidFutureStep future = new SettableVoidFutureStep();
 		future.setResult();
 		return future;
 	}
 
+	@Deprecated
 	public static <R> ValueFuture<R> failedValueFuture(Class<R> valueType,
 			RuntimeException exception) {
 		SettableValueFutureStep<R> future = new SettableValueFutureStep<>();
@@ -65,6 +69,12 @@ public class Async {
 		return future;
 	}
 
+	/**
+	 * Blocks the current thread until a future completes
+	 * <p>
+	 * This should only be used for finishing async work before returning from a library callback,
+	 * or similar pre-future code.
+	 */
 	public static void blockThreadUntilComplete(VoidFuture future) throws InterruptedException {
 		CountDownLatch latch = new CountDownLatch(1);
 		future.addListener(new BlockingListener(latch));

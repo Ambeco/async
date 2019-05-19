@@ -1,16 +1,19 @@
 package com.tbohne.async.impl;
 
 import com.tbohne.async.Future;
-import com.tbohne.async.Listeners;
 import com.tbohne.async.Listeners.FutureListener;
-import com.tbohne.async.VoidFuture;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 
-class SettableFutureStep<R> implements Future {
+/**
+ * Base implementation for all my futures.
+ *
+ * When completed one way or another, then notifies listeners.
+ */
+abstract class SettableFutureStep<R> implements Future {
 
 	protected final Object lock = new Object();
 	private R result;
@@ -77,21 +80,21 @@ class SettableFutureStep<R> implements Future {
 	}
 
 	@Override
-	public boolean finished() {
+	public final boolean completed() {
 		synchronized (lock) {
 			return completed;
 		}
 	}
 
 	@Override
-	public boolean succeeded() {
+	public final boolean succeeded() {
 		synchronized (lock) {
 			return completed && outputThrowable == null;
 		}
 	}
 
 	@Override
-	public boolean isCancelled() {
+	public final boolean isCancelled() {
 		return outputThrowable instanceof CancellationException;
 	}
 
@@ -115,7 +118,7 @@ class SettableFutureStep<R> implements Future {
 		}
 	}
 
-	public RuntimeException getThrownException() {
+	public final RuntimeException getThrownException() {
 		synchronized (lock) {
 			if (!completed) {
 				throw new IllegalStateException("async is incomplete");
@@ -125,10 +128,10 @@ class SettableFutureStep<R> implements Future {
 	}
 
 	@Override
-	public void callbackWasCancelled(FutureListener callback, CancellationException exception) {
+	public void callbackWasCancelled(FutureListener listener, CancellationException exception) {
 		boolean cancelThis;
 		synchronized (lock) {
-			listeners.remove(callback);
+			listeners.remove(listener);
 			cancelThis = listeners.isEmpty();
 		}
 		if (cancelThis) {
@@ -167,7 +170,7 @@ class SettableFutureStep<R> implements Future {
 	}
 
 	@Override
-	public VoidFuture childrenCannotCancel() {
+	public void childrenCannotCancel() {
 		throw new UnsupportedOperationException("Cannot cancel SettableFuture");
 	}
 }

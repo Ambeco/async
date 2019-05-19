@@ -2,10 +2,10 @@ package com.tbohne.async;
 
 import com.tbohne.async.Listeners.BiFutureConsumer;
 import com.tbohne.async.Listeners.BiFutureTransformer;
-import com.tbohne.async.Listeners.FutureValueConsumer;
-import com.tbohne.async.Listeners.FutureValueTransformer;
 import com.tbohne.async.Listeners.FutureEffect;
 import com.tbohne.async.Listeners.FutureProducer;
+import com.tbohne.async.Listeners.FutureValueConsumer;
+import com.tbohne.async.Listeners.FutureValueTransformer;
 import com.tbohne.async.impl.FutureProducers.BiConsumerAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.BiFunctionAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.BiFutureConsumerAsFutureProducer;
@@ -15,7 +15,7 @@ import com.tbohne.async.impl.FutureProducers.FunctionAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.FutureEffectAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.ValueConsumerAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.ValueTransformerAsFutureProducer;
-import com.tbohne.async.impl.FutureStep.PrereqStrategy;
+import com.tbohne.async.impl.PrereqStrategy;
 import com.tbohne.async.impl.ValueFutureStep;
 import com.tbohne.async.impl.VoidFutureStep;
 
@@ -32,6 +32,19 @@ import java.util.function.Function;
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
 import static com.tbohne.async.impl.FutureProducers.NO_OP_VOID_CALLBACK;
 
+/**
+ * Methods for adding work after other futures complete.
+ * <p>
+ * Categories are:
+ * <ul>
+ * <li>Ignoring resulting values</li>
+ * <li>Creating a new future that completes when a prior future does (can be useful for controlling cancellations)</li>
+ * <li>Creating a future for new work after existing future completes</li>
+ * <li>Creating a future for new work after two futures both succeed</li>
+ * <li>Creating a future for new work after two futures both complete or succeed</li>
+ * <li>Creating a new future that completes when a list of futures succeeds, including List&lt;Future&lt;X&gt;&gt; to Future&lt;List&lt;X&gt;&gt;</li>
+ * </ul>
+ */
 public class Combine {
 	public static <T> VoidFuture ignore(ValueFuture<T> future) {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);

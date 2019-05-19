@@ -1,13 +1,12 @@
 package com.tbohne.async.impl;
 
+import com.tbohne.async.FutureResult;
 import com.tbohne.async.Listeners.BiFutureConsumer;
 import com.tbohne.async.Listeners.BiFutureTransformer;
-import com.tbohne.async.FutureResult;
-import com.tbohne.async.Listeners;
 import com.tbohne.async.Listeners.FutureEffect;
+import com.tbohne.async.Listeners.FutureProducer;
 import com.tbohne.async.Listeners.FutureValueConsumer;
 import com.tbohne.async.Listeners.FutureValueTransformer;
-import com.tbohne.async.Listeners.FutureProducer;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;

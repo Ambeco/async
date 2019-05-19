@@ -5,6 +5,12 @@ import com.tbohne.async.Listeners.BiFutureTransformer;
 
 import java.util.function.BiFunction;
 
+/**
+ * Reference to two prior futures, that do not yet have a callback attached.
+ * <p>
+ * I doubt this is still useful, prefer to attach callbacks immediately, to reduce errors and
+ * allocations.
+ */
 public interface BiValueFuture<T, U> extends Future {
 	ValueFuture<T> getFirst();
 

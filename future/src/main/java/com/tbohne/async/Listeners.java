@@ -1,12 +1,19 @@
 package com.tbohne.async;
 
+/**
+ * Various listener types that can be attached to futures.
+ * For listeners that produce values, there are also simple base classes that merely propagate
+ * exceptions, for easier chaining.  These helpers deliberately not provided for non-returning
+ * listeners, to affirm that all exceptions are explicitly handled.
+ */
 public class Listeners {
 	private Listeners() {}
 
 	public interface FutureListener {
 		void onSuccess(Future future);
 
-		void onFailure(Future future, RuntimeException t); //common implementation is merely to rethrow to children futures
+		void onFailure(Future future,
+				RuntimeException t); //common implementation is merely to rethrow to children futures
 	}
 
 	public interface FutureEffect {
@@ -21,12 +28,6 @@ public class Listeners {
 		R onFailure(RuntimeException t); //common implementation is merely to rethrow to children futures
 	}
 
-	public abstract static class SimpleFutureProducer<R> implements FutureProducer<R> {
-		public R onFailure(RuntimeException t) {
-			throw t;
-		}
-	}
-
 	public interface FutureValueConsumer<T> {
 		void onSuccess(T result);
 
@@ -37,12 +38,6 @@ public class Listeners {
 		R onSuccess(T result);
 
 		R onFailure(RuntimeException t); //common implementation is merely to rethrow to children futures
-	}
-
-	public abstract static class SimpleFutureTransformer<T, R> implements FutureValueTransformer<T, R> {
-		public R onFailure(RuntimeException t) {
-			throw t;
-		}
 	}
 
 	public interface BiFutureConsumer<T, U> {
@@ -57,7 +52,21 @@ public class Listeners {
 		R onFailure(RuntimeException t); //common implementation is merely to rethrow to children futures
 	}
 
-	public abstract static class SimpleBiFutureTransformer<T, U, R> implements BiFutureTransformer<T, U, R> {
+	public abstract static class SimpleFutureProducer<R> implements FutureProducer<R> {
+		public R onFailure(RuntimeException t) {
+			throw t;
+		}
+	}
+
+	public abstract static class SimpleFutureTransformer<T, R>
+			implements FutureValueTransformer<T, R> {
+		public R onFailure(RuntimeException t) {
+			throw t;
+		}
+	}
+
+	public abstract static class SimpleBiFutureTransformer<T, U, R>
+			implements BiFutureTransformer<T, U, R> {
 		public R onFailure(RuntimeException t) {
 			throw t;
 		}

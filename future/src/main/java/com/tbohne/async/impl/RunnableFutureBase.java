@@ -1,7 +1,6 @@
 package com.tbohne.async.impl;
 
 import com.tbohne.async.RunnableFuture;
-import com.tbohne.async.VoidFuture;
 
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -9,13 +8,16 @@ import java.util.concurrent.CancellationException;
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
 import static com.tbohne.async.impl.FutureProducers.NO_OP_VOID_CALLBACK;
 
+/**
+ * Helper class that represents a RunnableFuture. Not particularly useful in itself, except for organization.
+ */
 public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 		implements RunnableFuture {
 
 	private boolean started;
 	private Thread thread;
 
-	protected boolean isStarted() {
+	protected final boolean isStarted() {
 		return started;
 	}
 
@@ -34,19 +36,16 @@ public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 				}
 				thread = Thread.currentThread();
 			}
-			R result;
-			try {
-				result = execute();
-			} finally {
-				synchronized (lock) {
-					thread = null;
-				}
-			}
+			R result = execute();
 			setResult(result);
 		} catch (RuntimeException e) {
 			setFailed(e);
 		} catch (InterruptedException e) {
 			setFailed(new RuntimeException(e));
+		} finally {
+			synchronized (lock) {
+				thread = null;
+			}
 		}
 	}
 
@@ -78,9 +77,8 @@ public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 	}
 
 	@Override
-	public VoidFuture childrenCannotCancel() {
+	public void childrenCannotCancel() {
 		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
 		step.setPrerequisites(this);
-		return step;
 	}
 }

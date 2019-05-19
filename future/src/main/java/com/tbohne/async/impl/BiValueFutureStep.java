@@ -4,7 +4,6 @@ import com.tbohne.async.BiValueFuture;
 import com.tbohne.async.Combine;
 import com.tbohne.async.Executor;
 import com.tbohne.async.FutureResult;
-import com.tbohne.async.Listeners;
 import com.tbohne.async.Listeners.BiFutureConsumer;
 import com.tbohne.async.Listeners.BiFutureTransformer;
 import com.tbohne.async.ValueFuture;

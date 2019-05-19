@@ -3,7 +3,6 @@ package com.tbohne.async.impl;
 import com.tbohne.async.Combine;
 import com.tbohne.async.Executor;
 import com.tbohne.async.FutureResult;
-import com.tbohne.async.Listeners;
 import com.tbohne.async.Listeners.FutureValueConsumer;
 import com.tbohne.async.Listeners.FutureValueTransformer;
 import com.tbohne.async.ValueFuture;
