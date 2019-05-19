@@ -13,6 +13,10 @@ is executed.
 - VoidFuture is a native type.
 - futureA.andAfter(futureB).then(functionWithTwoArgs);
 
+## Vocab
+- Future.complete: the future has completed with a result or exception
+- Future.success: the future has completed with a result and no exception
+
 ## History
 Futures are neat.
 
@@ -70,20 +74,19 @@ Guava produced [ListenableFuture], which allows listeners, which is a huge step,
     A holder of two ValueFutures, but doesn't actually _do_ anything.
     - Attach a BiFutureConsumer or BiFutureTransformer.
     - Join with another VoidFuture to produce a child ValueFuture that waits for both. 
-  - class **ImmediateVoidFuture** implements VoidFuture  
-    A step that already completed before the call.
-  - class **ImmediateValueFuture<R>** implements ValueFuture<R>  
-    A step that already completed before the call with a return type.
-  - class **FailedVoidFuture** implements VoidFuture   
-    A step that already failed before the call.
-  - class **FailedValueFuture<R>** implements ValueFuture<R>  
-    A step that already failed before the call with a return type.
  - **Async**:  
-   Static class with helper methods.
+   Static class with helper methods for starting async operations.
    - Create a VoidFuture that triggers when a list of other Futures are all complete.
    - Create a ValueFuture<List<R>> from a list of ValueFuture<R>.
    - A method for blocking the current thread until a future is complete.
      - This is strongly discouraged, but necessary for working with non-Future Apis.
+ - **Combine**:  
+   Static class with helper methods for combining futures.
+   - Methods for ignoring the result of a future.
+   - Methods for chaining work after a future.
+   - Methods for chaining work combining two futures complete or succeed.
+   - Methods for chaining work after N futures complete or succeed.
+   - Methods for chaining work after any of N futures completes.
  
  ## Implementations
  - **SettableFutureStep<R>** implements Future  
@@ -95,11 +98,13 @@ Guava produced [ListenableFuture], which allows listeners, which is a huge step,
  - **RunnableFutureBase<R>** extends SettableFutureStep<R> implements RunnableFutur
    - Cancellable Runnable that fulfills itself as a Future, then kicks off all the dependencies. 
  - **FutureStep<R>**
-   Step that waits for all prerequisites to complete before executing a FutureProducer as a runnable.
+   Step that waits for prerequisites to complete before executing a FutureProducer as a runnable.
    - Has a Set of Future prerequisites
-   - If any prerequisites fail, the first exception is passed to the FutureProducer, with subsequent
-   exceptions attached as suppressed exceptions.
-   - If all prerequisites succeed, the FutureProducer's onSuccess member is called.
+   - Has four prerequisite strategies (PrereqStrategy):
+     - ALL_PREREQS_COMPLETE: waits for all prerequisites to complete.
+     - ALL_PREREQS_SUCCEED: waits for all prerequisites to succeed, or one to fail.
+     - ANY_PREREQS_COMPLETE: waits for any prerequisites to succeed or fail.
+     - ANY_PREREQS_SUCCEED: waits for any prerequisites to succeed or all to fail.
    - **VoidFutureStep** implements VoidFuture, and **ValueFutureStep** implements ValueFuture.
    
 ## Executors
@@ -112,6 +117,11 @@ Guava produced [ListenableFuture], which allows listeners, which is a huge step,
 - **SerializedDirectExecutor** implements Executor
   - Executes all work, in the calling thread, but one at a time. This prevents recursion in methods assumed to be serialized.
   - Executor cannot be shut down, because that created lunacy.
+  
+## NOTES
+- I try to be super careful to minimize the number of methods called in synchronized block. I think there's only one non-java.lang method call in a block right now, and it's a getter that is 'final'.
+- Trying to make sure classes are designed to be inherited from, and generic. That's why ANY_PREREQS_SUCCEED exists, but is unused.
+- Trying to keep BiValueFuture as a second-class citizen, as evidence the API is generic enough to handle custom future types.
   
 ## TODO
 - LeafVoidFuture as member to assure that all exceptions handled rather than waiting for listener to attach.

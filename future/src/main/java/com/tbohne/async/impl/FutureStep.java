@@ -46,6 +46,19 @@ public class FutureStep<R> extends RunnableFutureBase<R>
 				prerequisites.clear();
 				return true;
 			}
+		},
+		ANY_PREREQS_SUCCEED {
+			boolean areReady(Set<Future> prerequisites,
+							Future completedFuture,
+							boolean futureSucceeded) {
+				if (futureSucceeded) {
+					prerequisites.clear();
+					return true;
+				} else {
+					prerequisites.remove(completedFuture);
+					return prerequisites.isEmpty();
+				}
+			}
 		};
 
 		abstract boolean areReady(Set<Future> prerequisites,

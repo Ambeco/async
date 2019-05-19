@@ -6,8 +6,6 @@ import com.tbohne.async.ValueFuture.FutureValueConsumer;
 import com.tbohne.async.ValueFuture.FutureValueTransformer;
 import com.tbohne.async.VoidFuture.FutureEffect;
 import com.tbohne.async.VoidFuture.FutureProducer;
-import com.tbohne.async.VoidFuture.SimpleFutureProducer;
-import com.tbohne.async.impl.BiValueFutureStep;
 import com.tbohne.async.impl.FutureProducers.BiConsumerAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.BiFunctionAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.BiFutureConsumerAsFutureProducer;
