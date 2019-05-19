@@ -47,7 +47,7 @@ public class SerializedDirectExecutor implements Executor {
 		Queue<Runnable> queue = queues.get();
 		Runnable next;
 		while ((next = queue.poll()) != null) {
-			boolean interrupted = Thread.interrupted(); //TODO: MARK RUNNABLES AS CANCELLED
+			boolean interrupted = Thread.interrupted();
 			try {
 				next.run();
 			} finally {
