@@ -123,4 +123,5 @@ Guava produced [ListenableFuture](https://github.com/google/guava/wiki/Listenabl
 - Trying to keep BiValueFuture as a second-class citizen, as evidence the API is generic enough to handle custom future types.
   
 ## TODO
+- When combining features, pass in PrereqStrategy.
 - Make a ThreadPool.
