@@ -1,7 +1,5 @@
 package com.tbohne.async;
 
-import com.tbohne.async.Listeners.FutureListener;
-
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
@@ -41,7 +39,7 @@ public interface Future {
 	 * @param listener  the listener that was cancelled.
 	 * @param exception optional exception to be the reason for chained cancellations.
 	 */
-	void callbackWasCancelled(FutureListener listener, CancellationException exception);
+	void cancelListener(FutureListener listener, CancellationException exception);
 
 	/**
 	 * Attempt to get the stack traces of any threads executing this work, or prerequisite work.
@@ -61,13 +59,29 @@ public interface Future {
 	/**
 	 * Adds a FutureListener to be called when this Future is complete.
 	 * <p>
-	 * If followup is not already a prerequisite, throws IllegalStateException
+	 * If followup is a Future that is not already a prerequisite, throws IllegalStateException.
+	 * These methods should not throw an exception, or it will propagate to the Executor, and
+	 * usually cause the application to crash.
+	 *
+	 * @return a leaf future that you cannot attach followups to. By guaranteeing that every chain
+	 * ends in this generic Future, you know all paths are complete and no exceptions will be lost.
 	 */
-	void addListener(FutureListener followup);
+	Future addListener(FutureListener followup);
 
 	/**
 	 * Adds an anonymous listener, to prevent children from cancelling.
 	 * After this, the Future can only be cancelled directly.
 	 */
 	void childrenCannotCancel();
+
+	/**
+	 * Listener for a future completing.  These methods should not throw an exception, or it
+	 * will propagate to the Executor, and usually cause the application to crash.
+	 */
+	interface FutureListener {
+		void onSuccess(Future future);
+
+		void onFailure(Future future,
+				RuntimeException t); //common implementation is merely to rethrow to children futures
+	}
 }

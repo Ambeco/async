@@ -1,7 +1,7 @@
 package com.tbohne.async;
 
-import com.tbohne.async.Listeners.BiFutureConsumer;
-import com.tbohne.async.Listeners.BiFutureTransformer;
+import com.tbohne.async.TaskCallbacks.BiConsumerTask;
+import com.tbohne.async.TaskCallbacks.BiTransformerTask;
 
 import java.util.function.BiFunction;
 
@@ -19,7 +19,7 @@ public interface BiValueFuture<T, U> extends Future {
 	<R> ValueFuture<R> then(Executor executor,
 			BiFunction<FutureResult<T>, FutureResult<U>, R> followup);
 
-	<R> ValueFuture<R> then(Executor executor, BiFutureTransformer<T, U, R> followup);
+	<R> ValueFuture<R> then(Executor executor, BiTransformerTask<T, U, R> followup);
 
-	VoidFuture then(Executor executor, BiFutureConsumer<T, U> followup);
+	VoidFuture then(Executor executor, BiConsumerTask<T, U> followup);
 }

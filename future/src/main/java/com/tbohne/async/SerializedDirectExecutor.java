@@ -1,8 +1,8 @@
 package com.tbohne.async;
 
 
-import com.tbohne.async.impl.SettableValueFutureStep;
-import com.tbohne.async.impl.SettableVoidFutureStep;
+import com.tbohne.async.impl.SettableValueFuture;
+import com.tbohne.async.impl.SettableVoidFuture;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -89,7 +89,7 @@ public class SerializedDirectExecutor implements Executor {
 
 	@Override
 	public VoidFuture submit(Runnable runnable) {
-		SettableVoidFutureStep future = new SettableVoidFutureStep();
+		SettableVoidFuture future = new SettableVoidFuture();
 		Runnable realRunnable = () -> {
 			try {
 				runnable.run();
@@ -104,7 +104,7 @@ public class SerializedDirectExecutor implements Executor {
 
 	@Override
 	public <T> ValueFuture<T> submit(Supplier<T> runnable) {
-		SettableValueFutureStep<T> future = new SettableValueFutureStep<>();
+		SettableValueFuture<T> future = new SettableValueFuture<>();
 		Runnable realRunnable = () -> {
 			try {
 				future.setResult(runnable.get());

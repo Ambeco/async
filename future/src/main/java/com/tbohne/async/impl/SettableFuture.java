@@ -1,7 +1,6 @@
 package com.tbohne.async.impl;
 
 import com.tbohne.async.Future;
-import com.tbohne.async.Listeners.FutureListener;
 
 import java.util.HashSet;
 import java.util.List;
@@ -10,10 +9,10 @@ import java.util.concurrent.CancellationException;
 
 /**
  * Base implementation for all my futures.
- *
+ * <p>
  * When completed one way or another, then notifies listeners.
  */
-abstract class SettableFutureStep<R> implements Future {
+abstract class SettableFuture<R> implements Future {
 
 	protected final Object lock = new Object();
 	private R result;
@@ -21,7 +20,7 @@ abstract class SettableFutureStep<R> implements Future {
 	private RuntimeException outputThrowable;
 	private Set<FutureListener> listeners;
 
-	protected SettableFutureStep() {
+	protected SettableFuture() {
 	}
 
 	protected final boolean isCompleted() {
@@ -128,7 +127,7 @@ abstract class SettableFutureStep<R> implements Future {
 	}
 
 	@Override
-	public void callbackWasCancelled(FutureListener listener, CancellationException exception) {
+	public void cancelListener(FutureListener listener, CancellationException exception) {
 		boolean cancelThis;
 		synchronized (lock) {
 			listeners.remove(listener);
@@ -149,7 +148,7 @@ abstract class SettableFutureStep<R> implements Future {
 	}
 
 	@Override
-	public void addListener(FutureListener listener) {
+	public Future addListener(FutureListener listener) {
 		boolean isComplete;
 		synchronized (lock) {
 			if (!completed) {
@@ -167,10 +166,78 @@ abstract class SettableFutureStep<R> implements Future {
 				listener.onSuccess(this);
 			}
 		}
+		if (listener instanceof Future) {
+			return (Future) listener;
+		} else {
+			return new ListenerFuture(this, listener);
+		}
 	}
 
 	@Override
 	public void childrenCannotCancel() {
 		throw new UnsupportedOperationException("Cannot cancel SettableFuture");
+	}
+
+	private static class ListenerFuture implements Future {
+		private final Future attachedTo;
+		private final FutureListener listener;
+		private boolean cancelled;
+
+		ListenerFuture(Future attachedTo, FutureListener listener) {
+			this.attachedTo = attachedTo;
+			this.listener = listener;
+		}
+
+		@Override
+		public boolean completed() {
+			return attachedTo.completed();
+		}
+
+		@Override
+		public boolean succeeded() {
+			return attachedTo.completed() && !attachedTo.isCancelled();
+		}
+
+		@Override
+		public RuntimeException getThrownException() {
+			return null;
+		}
+
+		@Override
+		public boolean isCancelled() {
+			return cancelled;
+		}
+
+		@Override
+		public boolean cancel(CancellationException exception) {
+			cancelled = true;
+			attachedTo.cancelListener(listener, exception);
+			return cancelled;
+		}
+
+		@Override
+		public void cancelListener(FutureListener listener, CancellationException exception) {
+			// meaningless when there cannot be children
+		}
+
+		@Override
+		public void fillStackTraces(List<StackTraceElement[]> stacks) {
+			attachedTo.fillStackTraces(stacks);
+		}
+
+		@Override
+		public boolean isPrerequisite(Future future) {
+			return false;
+		}
+
+		@Override
+		public Future addListener(FutureListener followup) {
+			throw new IllegalArgumentException("Cannot attach listeners to a listener callback");
+		}
+
+		@Override
+		public void childrenCannotCancel() {
+			// meaningless when there cannot be children
+		}
 	}
 }

@@ -1,12 +1,12 @@
 package com.tbohne.async.impl;
 
 import com.tbohne.async.FutureResult;
-import com.tbohne.async.Listeners.BiFutureConsumer;
-import com.tbohne.async.Listeners.BiFutureTransformer;
-import com.tbohne.async.Listeners.FutureEffect;
-import com.tbohne.async.Listeners.FutureProducer;
-import com.tbohne.async.Listeners.FutureValueConsumer;
-import com.tbohne.async.Listeners.FutureValueTransformer;
+import com.tbohne.async.TaskCallbacks.BiConsumerTask;
+import com.tbohne.async.TaskCallbacks.BiTransformerTask;
+import com.tbohne.async.TaskCallbacks.ConsumerTask;
+import com.tbohne.async.TaskCallbacks.ProducerTask;
+import com.tbohne.async.TaskCallbacks.SideEffectTask;
+import com.tbohne.async.TaskCallbacks.TransformerTask;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class FutureProducers {
-	public static final FutureProducer<Void> NO_OP_VOID_CALLBACK = new FutureProducer<Void>() {
+	public static final ProducerTask<Void> NO_OP_VOID_CALLBACK = new ProducerTask<Void>() {
 		@Override
 		public Void onSuccess() {
 			return null;
@@ -28,10 +28,10 @@ public class FutureProducers {
 
 	private FutureProducers() {}
 
-	public static class FutureEffectAsFutureProducer implements FutureProducer<Void> {
-		private final FutureEffect listener;
+	public static class FutureEffectAsFutureProducer implements ProducerTask<Void> {
+		private final SideEffectTask listener;
 
-		public FutureEffectAsFutureProducer(FutureEffect listener) {
+		public FutureEffectAsFutureProducer(SideEffectTask listener) {
 			this.listener = listener;
 		}
 
@@ -48,12 +48,11 @@ public class FutureProducers {
 		}
 	}
 
-	public static class ValueConsumerAsFutureProducer<T> implements FutureProducer<Void> {
+	public static class ValueConsumerAsFutureProducer<T> implements ProducerTask<Void> {
 		private final FutureResult<T> result;
-		private final FutureValueConsumer<T> listener;
+		private final ConsumerTask<T> listener;
 
-		public ValueConsumerAsFutureProducer(FutureResult<T> result,
-				FutureValueConsumer<T> listener) {
+		public ValueConsumerAsFutureProducer(FutureResult<T> result, ConsumerTask<T> listener) {
 			this.result = result;
 			this.listener = listener;
 		}
@@ -71,7 +70,7 @@ public class FutureProducers {
 		}
 	}
 
-	public static class ConsumerAsFutureProducer<T> implements FutureProducer<Void> {
+	public static class ConsumerAsFutureProducer<T> implements ProducerTask<Void> {
 		private final FutureResult<T> result;
 		private final Consumer<FutureResult<T>> listener;
 
@@ -94,12 +93,12 @@ public class FutureProducers {
 		}
 	}
 
-	public static class ValueTransformerAsFutureProducer<T, R> implements FutureProducer<R> {
+	public static class ValueTransformerAsFutureProducer<T, R> implements ProducerTask<R> {
 		private final FutureResult<T> result;
-		private final FutureValueTransformer<T, R> listener;
+		private final TransformerTask<T, R> listener;
 
 		public ValueTransformerAsFutureProducer(FutureResult<T> result,
-				FutureValueTransformer<T, R> listener) {
+				TransformerTask<T, R> listener) {
 			this.result = result;
 			this.listener = listener;
 		}
@@ -115,7 +114,7 @@ public class FutureProducers {
 		}
 	}
 
-	public static class FunctionAsFutureProducer<T, R> implements FutureProducer<R> {
+	public static class FunctionAsFutureProducer<T, R> implements ProducerTask<R> {
 		private final FutureResult<T> result;
 		private final Function<FutureResult<T>, R> listener;
 
@@ -136,14 +135,14 @@ public class FutureProducers {
 		}
 	}
 
-	public static class BiFutureConsumerAsFutureProducer<T, U> implements FutureProducer<Void> {
+	public static class BiFutureConsumerAsFutureProducer<T, U> implements ProducerTask<Void> {
 		private final FutureResult<T> first;
 		private final FutureResult<U> second;
-		private final BiFutureConsumer<T, U> listener;
+		private final BiConsumerTask<T, U> listener;
 
 		public BiFutureConsumerAsFutureProducer(FutureResult<T> first,
 				FutureResult<U> second,
-				BiFutureConsumer<T, U> listener) {
+				BiConsumerTask<T, U> listener) {
 			this.first = first;
 			this.second = second;
 			this.listener = listener;
@@ -162,7 +161,7 @@ public class FutureProducers {
 		}
 	}
 
-	public static class BiConsumerAsFutureProducer<T, U> implements FutureProducer<Void> {
+	public static class BiConsumerAsFutureProducer<T, U> implements ProducerTask<Void> {
 		private final FutureResult<T> first;
 		private final FutureResult<U> second;
 		private final BiConsumer<FutureResult<T>, FutureResult<U>> listener;
@@ -188,14 +187,14 @@ public class FutureProducers {
 		}
 	}
 
-	public static class BiFutureTransformerAsFutureProducer<T, U, R> implements FutureProducer<R> {
+	public static class BiFutureTransformerAsFutureProducer<T, U, R> implements ProducerTask<R> {
 		private final FutureResult<T> first;
 		private final FutureResult<U> second;
-		private final BiFutureTransformer<T, U, R> listener;
+		private final BiTransformerTask<T, U, R> listener;
 
 		public BiFutureTransformerAsFutureProducer(FutureResult<T> first,
 				FutureResult<U> second,
-				BiFutureTransformer<T, U, R> listener) {
+				BiTransformerTask<T, U, R> listener) {
 			this.first = first;
 			this.second = second;
 			this.listener = listener;
@@ -212,7 +211,7 @@ public class FutureProducers {
 		}
 	}
 
-	public static class BiFunctionAsFutureProducer<T, U, R> implements FutureProducer<R> {
+	public static class BiFunctionAsFutureProducer<T, U, R> implements ProducerTask<R> {
 		private final FutureResult<T> first;
 		private final FutureResult<U> second;
 		private final BiFunction<FutureResult<T>, FutureResult<U>, R> listener;

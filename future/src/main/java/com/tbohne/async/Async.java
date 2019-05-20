@@ -1,11 +1,11 @@
 package com.tbohne.async;
 
-import com.tbohne.async.Listeners.FutureListener;
-import com.tbohne.async.Listeners.SimpleFutureProducer;
-import com.tbohne.async.impl.SettableValueFutureStep;
-import com.tbohne.async.impl.SettableVoidFutureStep;
-import com.tbohne.async.impl.ValueFutureStep;
-import com.tbohne.async.impl.VoidFutureStep;
+import com.tbohne.async.Future.FutureListener;
+import com.tbohne.async.TaskCallbacks.SimpleProducerTask;
+import com.tbohne.async.impl.QueueableValueFuture;
+import com.tbohne.async.impl.QueueableVoidFuture;
+import com.tbohne.async.impl.SettableValueFuture;
+import com.tbohne.async.impl.SettableVoidFuture;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
@@ -15,36 +15,38 @@ import java.util.function.Supplier;
  */
 public class Async {
 	public static VoidFuture start(Executor executor, Runnable runnable) {
-		VoidFutureStep step = new VoidFutureStep(executor, new SimpleFutureProducer<Void>() {
-			@Override
-			public Void onSuccess() {
-				runnable.run();
-				return null;
-			}
-		});
+		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+				new SimpleProducerTask<Void>() {
+					@Override
+					public Void onSuccess() {
+						runnable.run();
+						return null;
+					}
+				});
 		step.onSuccess(null);
 		return step;
 	}
 
 	public static <R> ValueFuture<R> start(Executor executor, Supplier<R> runnable) {
-		ValueFutureStep<R> step = new ValueFutureStep<>(executor, new SimpleFutureProducer<R>() {
-			@Override
-			public R onSuccess() {
-				return runnable.get();
-			}
-		});
+		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+				new SimpleProducerTask<R>() {
+					@Override
+					public R onSuccess() {
+						return runnable.get();
+					}
+				});
 		step.onSuccess(null);
 		return step;
 	}
 
 	public static <R> ValueFuture<R> immediateFuture(R value) {
-		SettableValueFutureStep<R> future = new SettableValueFutureStep<>();
+		SettableValueFuture<R> future = new SettableValueFuture<>();
 		future.setResult(value);
 		return future;
 	}
 
 	public static VoidFuture immediateFuture() {
-		SettableVoidFutureStep future = new SettableVoidFutureStep();
+		SettableVoidFuture future = new SettableVoidFuture();
 		future.setResult();
 		return future;
 	}
@@ -52,19 +54,19 @@ public class Async {
 	@Deprecated
 	public static <R> ValueFuture<R> failedValueFuture(Class<R> valueType,
 			RuntimeException exception) {
-		SettableValueFutureStep<R> future = new SettableValueFutureStep<>();
+		SettableValueFuture<R> future = new SettableValueFuture<>();
 		future.setFailed(exception);
 		return future;
 	}
 
 	public static <R> ValueFuture<R> failedValueFuture(RuntimeException exception) {
-		SettableValueFutureStep<R> future = new SettableValueFutureStep<>();
+		SettableValueFuture<R> future = new SettableValueFuture<>();
 		future.setFailed(exception);
 		return future;
 	}
 
 	public static VoidFuture failedVoidFuture(RuntimeException exception) {
-		SettableVoidFutureStep future = new SettableVoidFutureStep();
+		SettableVoidFuture future = new SettableVoidFuture();
 		future.setFailed(exception);
 		return future;
 	}

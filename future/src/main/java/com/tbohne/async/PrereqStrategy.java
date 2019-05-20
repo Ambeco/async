@@ -1,6 +1,4 @@
-package com.tbohne.async.impl;
-
-import com.tbohne.async.Future;
+package com.tbohne.async;
 
 import java.util.Set;
 
@@ -12,7 +10,7 @@ public enum PrereqStrategy {
 	 * Waits for all prerequisites to complete with either a success or exception.
 	 */
 	ALL_PREREQS_COMPLETE {
-		boolean areReady(Set<Future> prerequisites,
+		public boolean areReady(Set<Future> prerequisites,
 				Future completedFuture,
 				boolean futureSucceeded) {
 			prerequisites.remove(completedFuture);
@@ -23,7 +21,7 @@ public enum PrereqStrategy {
 	 * Waits for all prerequisites to succeed, or any to throw an exception.
 	 */
 	ALL_PREREQS_SUCCEED {
-		boolean areReady(Set<Future> prerequisites,
+		public boolean areReady(Set<Future> prerequisites,
 				Future completedFuture,
 				boolean futureSucceeded) {
 			if (futureSucceeded) {
@@ -39,7 +37,7 @@ public enum PrereqStrategy {
 	 * Waits for any prerequisites to complete with either a success or exception.
 	 */
 	ANY_PREREQS_COMPLETE {
-		boolean areReady(Set<Future> prerequisites,
+		public boolean areReady(Set<Future> prerequisites,
 				Future completedFuture,
 				boolean futureSucceeded) {
 			prerequisites.clear();
@@ -50,7 +48,7 @@ public enum PrereqStrategy {
 	 * Waits for any prerequisites to succeed, or all to have exceptions.
 	 */
 	ANY_PREREQS_SUCCEED {
-		boolean areReady(Set<Future> prerequisites,
+		public boolean areReady(Set<Future> prerequisites,
 				Future completedFuture,
 				boolean futureSucceeded) {
 			if (futureSucceeded) {
@@ -65,16 +63,15 @@ public enum PrereqStrategy {
 
 	/**
 	 * Checks if the prerequisites have been satisfied.
-	 *
+	 * <p>
 	 * This removes completed futures from the list, and if the conditions are met, clears the list
 	 * entirely. This helps keep down memory usage.
 	 *
-	 * @param prerequisites Mutable list of prerequisites. This may remove the completedFuture.
+	 * @param prerequisites   Mutable list of prerequisites. This may remove the completedFuture.
 	 * @param completedFuture Prerequisite that has just completed
 	 * @param futureSucceeded true if completedFuture succeeded, or false otherwise.
 	 * @return true if the prerequisites have been satisified, or false otherwise.
 	 */
-	abstract boolean areReady(Set<Future> prerequisites,
+	public abstract boolean areReady(Set<Future> prerequisites,
 			Future completedFuture,
-			boolean futureSucceeded);
-}
+			boolean futureSucceeded);}

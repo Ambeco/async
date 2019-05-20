@@ -2,8 +2,9 @@ package com.tbohne.async.impl;
 
 import com.tbohne.async.Executor;
 import com.tbohne.async.Future;
-import com.tbohne.async.Listeners.FutureListener;
-import com.tbohne.async.Listeners.FutureProducer;
+import com.tbohne.async.Future.FutureListener;
+import com.tbohne.async.PrereqStrategy;
+import com.tbohne.async.TaskCallbacks.ProducerTask;
 
 import java.util.HashSet;
 import java.util.List;
@@ -13,16 +14,17 @@ import java.util.concurrent.CancellationException;
 /**
  * Future implementation that can wait for prerequisites to be satisfied before queing itself
  */
-abstract public class FutureStep<R> extends RunnableFutureBase<R> implements FutureListener {
+abstract public class QueueableFutureTask<R> extends RunnableFutureTask<R>
+		implements FutureListener {
 
 	private Set<Future> prerequisites;
 	private PrereqStrategy prereqStrategy;
 	private Executor executor;
 	private boolean submitted;
 	private RuntimeException inputThrowable;
-	private FutureProducer<R> runnable;
+	private ProducerTask<R> runnable;
 
-	protected FutureStep(Executor executor, FutureProducer<R> runnable) {
+	protected QueueableFutureTask(Executor executor, ProducerTask<R> runnable) {
 		this.executor = executor;
 		this.runnable = runnable;
 	}
@@ -139,7 +141,7 @@ abstract public class FutureStep<R> extends RunnableFutureBase<R> implements Fut
 			return true;
 		}
 		for (Future future : prerequisites) {
-			future.callbackWasCancelled(this, exception);
+			future.cancelListener(this, exception);
 		}
 		return true;
 	}
@@ -165,12 +167,12 @@ abstract public class FutureStep<R> extends RunnableFutureBase<R> implements Fut
 	}
 
 	@Override
-	public void addListener(FutureListener listener) {
+	public Future addListener(FutureListener listener) {
 		if (listener instanceof Future && !isPrerequisite((Future) listener)) {
 			throw new IllegalStateException(
 					"this must already be a prerequisite before calling 'then'");
 		}
-		super.addListener(listener);
+		return super.addListener(listener);
 	}
 
 }

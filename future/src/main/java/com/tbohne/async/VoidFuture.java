@@ -1,9 +1,10 @@
 package com.tbohne.async;
 
-import com.tbohne.async.Listeners.FutureProducer;
+import com.tbohne.async.TaskCallbacks.ProducerTask;
+import com.tbohne.async.TaskCallbacks.SideEffectTask;
 
 public interface VoidFuture extends Future {
-	VoidFuture then(Executor executor, Listeners.FutureEffect followup);
+	VoidFuture then(Executor executor, SideEffectTask followup);
 
-	<T> ValueFuture<T> then(Executor executor, FutureProducer<T> followup);
+	<T> ValueFuture<T> then(Executor executor, ProducerTask<T> followup);
 }

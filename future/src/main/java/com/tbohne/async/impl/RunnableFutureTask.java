@@ -11,8 +11,7 @@ import static com.tbohne.async.impl.FutureProducers.NO_OP_VOID_CALLBACK;
 /**
  * Helper class that represents a RunnableFuture. Not particularly useful in itself, except for organization.
  */
-public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
-		implements RunnableFuture {
+public abstract class RunnableFutureTask<R> extends SettableFuture<R> implements RunnableFuture {
 
 	private boolean started;
 	private Thread thread;
@@ -78,7 +77,8 @@ public abstract class RunnableFutureBase<R> extends SettableFutureStep<R>
 
 	@Override
 	public void childrenCannotCancel() {
-		VoidFutureStep step = new VoidFutureStep(getDirectExecutor(), NO_OP_VOID_CALLBACK);
+		QueueableVoidFuture step = new QueueableVoidFuture(getDirectExecutor(),
+				NO_OP_VOID_CALLBACK);
 		step.setPrerequisites(this);
 	}
 }
