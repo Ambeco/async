@@ -1,12 +1,7 @@
 package com.tbohne.async;
 
-
-import com.tbohne.async.impl.SettableValueFuture;
-import com.tbohne.async.impl.SettableVoidFuture;
-
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.function.Supplier;
 
 /**
  * Queues work at the moment its queued for the thread that queued it, but work is executed serially.
@@ -19,7 +14,7 @@ import java.util.function.Supplier;
  * <p>
  * SerializedDirectExecutor cannot be shut down
  */
-public class SerializedDirectExecutor implements Executor {
+public class SerializedDirectExecutor extends ExecutorBase {
 	private static SerializedDirectExecutor instance = new SerializedDirectExecutor();
 	private ThreadLocal<Queue<Runnable>> queues;
 
@@ -75,45 +70,11 @@ public class SerializedDirectExecutor implements Executor {
 		}
 	}
 
-	private void processRunnable(Runnable runnable) {
+	protected void queueRunnable(Runnable runnable) {
 		if (!shouldRunNow(runnable)) {
 			return;
 		}
 		processRunnables();
-	}
-
-	@Override
-	public void submit(RunnableFuture runnable) {
-		processRunnable(runnable);
-	}
-
-	@Override
-	public VoidFuture submit(Runnable runnable) {
-		SettableVoidFuture future = new SettableVoidFuture();
-		Runnable realRunnable = () -> {
-			try {
-				runnable.run();
-				future.setResult();
-			} catch (RuntimeException e) {
-				future.setFailed(e);
-			}
-		};
-		processRunnable(realRunnable);
-		return future;
-	}
-
-	@Override
-	public <T> ValueFuture<T> submit(Supplier<T> runnable) {
-		SettableValueFuture<T> future = new SettableValueFuture<>();
-		Runnable realRunnable = () -> {
-			try {
-				future.setResult(runnable.get());
-			} catch (RuntimeException e) {
-				future.setFailed(e);
-			}
-		};
-		processRunnable(realRunnable);
-		return future;
 	}
 
 	@Override

@@ -113,9 +113,13 @@ Guava produced [ListenableFuture](https://github.com/google/guava/wiki/Listenabl
 - **DirectExecutor** implements Executor
   - Executes all work immediately, in the calling thread. 
   - Executor cannot be shut down, because that created lunacy.
+  - See [com.google.common.util/concurrent.MoreExecutors#directExecutor](https://google.github.io/guava/releases/19.0/api/docs/com/google/common/util/concurrent/MoreExecutors.html#directExecutor())
 - **SerializedDirectExecutor** implements Executor
   - Executes all work, in the calling thread, but one at a time. This prevents recursion in methods assumed to be serialized.
   - Executor cannot be shut down, because that created lunacy.
+- **ThreadPoolExecutor** implements Executor
+  - Executes runnables in a pool of threads.
+  - See [java.util.concurrent.ThreadPoolExecutor](https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ThreadPoolExecutor.html)
   
 ## NOTES
 - I try to be super careful to minimize the number of methods called in synchronized block. I think there's only one non-java.lang method call in a block right now, and it's a getter that is 'final'.
@@ -124,4 +128,5 @@ Guava produced [ListenableFuture](https://github.com/google/guava/wiki/Listenabl
   
 ## TODO
 - When combining features, pass in PrereqStrategy.
-- Make a ThreadPool.
+- Decide on tons of overloads vs tons of parameters when combining.  
+  Maybe tons of overloads in Combine methods, but overloads in futures for fluency?

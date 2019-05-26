@@ -496,6 +496,7 @@ public class Combine {
 		return step;
 	}
 
+	@SafeVarargs
 	public static <R> ValueFuture<List<R>> afterAllComplete(ValueFuture<R>... futures) {
 		QueueableValueFuture<List<R>> step = new QueueableValueFuture<>(getDirectExecutor(),
 				new ProducerTask<List<R>>() {
@@ -556,6 +557,7 @@ public class Combine {
 		return step;
 	}
 
+	@SafeVarargs
 	public static <R> ValueFuture<List<R>> afterAllSucceed(ValueFuture<R>... futures) {
 		QueueableValueFuture<List<R>> step = new QueueableValueFuture<>(getDirectExecutor(),
 				new ProducerTask<List<R>>() {
@@ -616,6 +618,7 @@ public class Combine {
 		return step;
 	}
 
+	@SafeVarargs
 	public static <R> ValueFuture<List<R>> afterAnySucceed(ValueFuture<R>... futures) {
 		QueueableValueFuture<List<R>> step = new QueueableValueFuture<>(getDirectExecutor(),
 				new ProducerTask<List<R>>() {

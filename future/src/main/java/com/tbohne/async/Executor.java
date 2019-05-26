@@ -1,13 +1,18 @@
 package com.tbohne.async;
 
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
 
 public interface Executor {
-	void submit(RunnableFuture runnable);
+	interface RejectedExecutionHandler {
+		void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) throws RejectedExecutionException;
+	}
 
-	VoidFuture submit(Runnable runnable);
+	void submit(RunnableFuture runnable) throws RejectedExecutionException;
 
-	<T> ValueFuture<T> submit(Supplier<T> runnable);
+	VoidFuture submit(Runnable runnable) throws RejectedExecutionException;
+
+	<T> ValueFuture<T> submit(Supplier<T> runnable) throws RejectedExecutionException;
 
 	boolean isShuttingDown();
 
