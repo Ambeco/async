@@ -10,12 +10,16 @@ import com.tbohne.async.impl.SettableVoidFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
+import static com.tbohne.async.impl.QueueableFutureTask.NO_PREREQS;
+
 /**
  * Helper methods for starting and stopping async work
  */
 public class Async {
 	public static VoidFuture start(Executor executor, Runnable runnable) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		QueueableVoidFuture step = new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				NO_PREREQS,
+				executor,
 				new SimpleProducerTask<Void>() {
 					@Override
 					public Void onSuccess() {
@@ -28,7 +32,10 @@ public class Async {
 	}
 
 	public static <R> ValueFuture<R> start(Executor executor, Supplier<R> runnable) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		QueueableValueFuture<R> step
+				= new QueueableValueFuture<>(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				NO_PREREQS,
+				executor,
 				new SimpleProducerTask<R>() {
 					@Override
 					public R onSuccess() {

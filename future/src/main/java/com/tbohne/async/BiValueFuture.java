@@ -16,10 +16,10 @@ public interface BiValueFuture<T, U> extends Future {
 
 	ValueFuture<U> getSecond();
 
-	<R> ValueFuture<R> then(Executor executor,
+	<R> ValueFuture<R> thenDo(Executor executor,
 			BiFunction<FutureResult<T>, FutureResult<U>, R> followup);
 
-	<R> ValueFuture<R> then(Executor executor, BiTransformerTask<T, U, R> followup);
+	<R> ValueFuture<R> thenDo(Executor executor, BiTransformerTask<T, U, R> followup);
 
-	VoidFuture then(Executor executor, BiConsumerTask<T, U> followup);
+	VoidFuture thenDo(Executor executor, BiConsumerTask<T, U> followup);
 }

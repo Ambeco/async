@@ -14,12 +14,12 @@ public class SettableVoidFuture extends SettableFuture<Void> implements VoidFutu
 	}
 
 	@Override
-	public VoidFuture then(Executor executor, SideEffectTask followup) {
-		return Combine.afterComplete(this, executor, followup);
+	public VoidFuture thenDo(Executor executor, SideEffectTask followup) {
+		return Combine.thenDo(this, executor, followup);
 	}
 
 	@Override
-	public <T> ValueFuture<T> then(Executor executor, ProducerTask<T> followup) {
-		return Combine.afterComplete(this, executor, followup);
+	public <T> ValueFuture<T> thenDo(Executor executor, ProducerTask<T> followup) {
+		return Combine.thenDo(this, executor, followup);
 	}
 }

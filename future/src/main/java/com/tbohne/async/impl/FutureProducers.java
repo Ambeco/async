@@ -6,8 +6,13 @@ import com.tbohne.async.TaskCallbacks.BiTransformerTask;
 import com.tbohne.async.TaskCallbacks.ConsumerTask;
 import com.tbohne.async.TaskCallbacks.ProducerTask;
 import com.tbohne.async.TaskCallbacks.SideEffectTask;
+import com.tbohne.async.TaskCallbacks.SimpleProducerTask;
 import com.tbohne.async.TaskCallbacks.TransformerTask;
+import com.tbohne.async.ValueFuture;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -232,6 +237,23 @@ public class FutureProducers {
 		@Override
 		public R onFailure(RuntimeException t) {
 			return listener.apply(first, second);
+		}
+	}
+
+	public static class ToListTask<R> extends SimpleProducerTask<List<R>> {
+		Collection<ValueFuture<R>> futures;
+
+		public ToListTask(Collection<ValueFuture<R>> futures) {
+			this.futures = futures;
+		}
+
+		@Override
+		public List<R> onSuccess() {
+			List<R> results = new ArrayList<>(futures.size());
+			for (ValueFuture<R> future : futures) {
+				results.add(future.getNow());
+			}
+			return results;
 		}
 	}
 }

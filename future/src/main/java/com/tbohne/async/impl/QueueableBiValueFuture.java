@@ -4,6 +4,7 @@ import com.tbohne.async.BiValueFuture;
 import com.tbohne.async.Combine;
 import com.tbohne.async.Executor;
 import com.tbohne.async.FutureResult;
+import com.tbohne.async.PrereqStrategy;
 import com.tbohne.async.TaskCallbacks.BiConsumerTask;
 import com.tbohne.async.TaskCallbacks.BiTransformerTask;
 import com.tbohne.async.ValueFuture;
@@ -20,7 +21,10 @@ public class QueueableBiValueFuture<T, U> extends QueueableFutureTask<Void>
 	private final ValueFuture<U> second;
 
 	public QueueableBiValueFuture(ValueFuture<T> first, ValueFuture<U> second) {
-		super(getDirectExecutor(), NO_OP_VOID_CALLBACK);
+		super(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				toSet(first, second),
+				getDirectExecutor(),
+				NO_OP_VOID_CALLBACK);
 		this.first = first;
 		this.second = second;
 	}
@@ -36,18 +40,18 @@ public class QueueableBiValueFuture<T, U> extends QueueableFutureTask<Void>
 	}
 
 	@Override
-	public <R> ValueFuture<R> then(Executor executor,
+	public <R> ValueFuture<R> thenDo(Executor executor,
 			BiFunction<FutureResult<T>, FutureResult<U>, R> followup) {
-		return Combine.afterComplete(this, executor, followup);
+		return Combine.thenDo(this, executor, followup);
 	}
 
 	@Override
-	public <R> ValueFuture<R> then(Executor executor, BiTransformerTask<T, U, R> followup) {
-		return Combine.afterComplete(this, executor, followup);
+	public <R> ValueFuture<R> thenDo(Executor executor, BiTransformerTask<T, U, R> followup) {
+		return Combine.thenDo(this, executor, followup);
 	}
 
 	@Override
-	public VoidFuture then(Executor executor, BiConsumerTask<T, U> followup) {
-		return Combine.afterComplete(this, executor, followup);
+	public VoidFuture thenDo(Executor executor, BiConsumerTask<T, U> followup) {
+		return Combine.thenDo(this, executor, followup);
 	}
 }

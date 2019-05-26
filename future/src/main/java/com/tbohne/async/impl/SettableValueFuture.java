@@ -14,22 +14,22 @@ import java.util.function.Function;
 public class SettableValueFuture<R> extends SettableFuture<R> implements ValueFuture<R> {
 
 	@Override
-	public VoidFuture then(Executor executor, ConsumerTask<R> followup) {
-		return Combine.afterComplete(this, executor, followup);
+	public VoidFuture thenDo(Executor executor, ConsumerTask<R> followup) {
+		return Combine.thenDo(this, executor, followup);
 	}
 
 	@Override
-	public VoidFuture then(Executor executor, Consumer<FutureResult<R>> followup) {
-		return Combine.afterComplete(this, executor, followup);
+	public VoidFuture thenDo(Executor executor, Consumer<FutureResult<R>> followup) {
+		return Combine.thenDo(this, executor, followup);
 	}
 
 	@Override
-	public <R2> ValueFuture<R2> then(Executor executor, TransformerTask<R, R2> followup) {
-		return Combine.afterComplete(this, executor, followup);
+	public <R2> ValueFuture<R2> thenDo(Executor executor, TransformerTask<R, R2> followup) {
+		return Combine.thenDo(this, executor, followup);
 	}
 
 	@Override
-	public <R2> ValueFuture<R2> then(Executor executor, Function<FutureResult<R>, R2> followup) {
-		return Combine.afterComplete(this, executor, followup);
+	public <R2> ValueFuture<R2> thenDo(Executor executor, Function<FutureResult<R>, R2> followup) {
+		return Combine.thenDo(this, executor, followup);
 	}
 }

@@ -25,6 +25,9 @@ public class ThreadPoolExecutor extends ExecutorBase {
 	private final List<Thread> threads = new CopyOnWriteArrayList<>();
 	private AtomicLong threadDeathTimerNanos = new AtomicLong();
 	private AtomicReference<SettableVoidFuture> stopping = new AtomicReference<>();
+	private Runnable coreThreadRunnable = new ThreadRunnable(true);
+	private Runnable flexThreadRunnable = new ThreadRunnable(false);
+	private Runnable POISON = () -> {};
 
 	public ThreadPoolExecutor(int corePoolSize,
 			int maximumPoolSize,
@@ -38,68 +41,16 @@ public class ThreadPoolExecutor extends ExecutorBase {
 		this.maximumPoolSize = maximumPoolSize;
 		this.realQueue = realQueue;
 		this.threadFactory = threadFactory;
-		this.rejectedHandler = rejectedHandler != null ?
-				rejectedHandler : (runnable, threadPoolExecutor) -> {
+		this.rejectedHandler = rejectedHandler != null
+				? rejectedHandler
+				: (runnable, threadPoolExecutor) -> {
 					throw new RejectedExecutionException("rejected");
-			};
+				};
 		if (keepAliveTimeMillis < MIN_KEEP_ALIVE_MILLIS) {
 			keepAliveTimeMillis = MIN_KEEP_ALIVE_MILLIS;
 		}
 		this.keepAliveNanos = keepAliveTimeMillis * 1000000;
 	}
-
-	class ThreadRunnable implements Runnable {
-		private final boolean core;
-
-		ThreadRunnable(boolean core) {
-			this.core = core;
-		}
-
-		Runnable poll() {
-			if (core) {
-				return realQueue.poll();
-			} else {
-				try {
-					return realQueue.poll(keepAliveNanos, TimeUnit.NANOSECONDS);
-				} catch (InterruptedException e) {
-					return null;
-				}
-			}
-		}
-
-		@Override
-		public void run() {
-			try {
-				for(;;) {
-					Runnable runnable = poll();
-					if (stopping.get() != null) {
-						return;
-					}
-					if (runnable != null) {
-						runnable.run();
-						boolean ignored = Thread.interrupted(); //clear interrupt bit
-					} else {
-						synchronized (threadLock) {
-							if (threadDeathTimerNanos.get() + keepAliveNanos < System.nanoTime()) {
-								threadDeathTimerNanos.set(System.nanoTime());
-								return;
-							} // else a runnable was added or a different thread died. Poll again.
-						}
-					}
-				}
-			} finally {
-				synchronized (threadLock) {
-					threads.remove(Thread.currentThread());
-				}
-			}
-		}
-	}
-
-	private Runnable coreThreadRunnable = new ThreadRunnable(true);
-	private Runnable flexThreadRunnable = new ThreadRunnable(false);
-
-
-	private Runnable POISON = () -> {};
 
 	protected void queueRunnable(Runnable runnable) throws RejectedExecutionException {
 		if (stopping.get() != null) {
@@ -119,7 +70,9 @@ public class ThreadPoolExecutor extends ExecutorBase {
 			boolean addCore = threads.size() < corePoolSize;
 			boolean addFlex = realQueue.size() > quickQueueSize && threads.size() < maximumPoolSize;
 			if (addCore || addFlex) {
-				threads.add(threadFactory.newThread(addCore ? coreThreadRunnable : flexThreadRunnable));
+				threads.add(threadFactory.newThread(addCore
+						? coreThreadRunnable
+						: flexThreadRunnable));
 			}
 		}
 	}
@@ -146,5 +99,52 @@ public class ThreadPoolExecutor extends ExecutorBase {
 	@Override
 	public void shutdownNow() throws InterruptedException {
 		Async.blockThreadUntilComplete(shutdown());
+	}
+
+	class ThreadRunnable implements Runnable {
+		private final boolean core;
+
+		ThreadRunnable(boolean core) {
+			this.core = core;
+		}
+
+		Runnable poll() {
+			if (core) {
+				return realQueue.poll();
+			} else {
+				try {
+					return realQueue.poll(keepAliveNanos, TimeUnit.NANOSECONDS);
+				} catch (InterruptedException e) {
+					return null;
+				}
+			}
+		}
+
+		@Override
+		public void run() {
+			try {
+				for (; ; ) {
+					Runnable runnable = poll();
+					if (stopping.get() != null) {
+						return;
+					}
+					if (runnable != null) {
+						runnable.run();
+						boolean ignored = Thread.interrupted(); //clear interrupt bit
+					} else {
+						synchronized (threadLock) {
+							if (threadDeathTimerNanos.get() + keepAliveNanos < System.nanoTime()) {
+								threadDeathTimerNanos.set(System.nanoTime());
+								return;
+							} // else a runnable was added or a different thread died. Poll again.
+						}
+					}
+				}
+			} finally {
+				synchronized (threadLock) {
+					threads.remove(Thread.currentThread());
+				}
+			}
+		}
 	}
 }

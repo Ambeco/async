@@ -6,6 +6,7 @@ import com.tbohne.async.Future.FutureListener;
 import com.tbohne.async.PrereqStrategy;
 import com.tbohne.async.TaskCallbacks.ProducerTask;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ import java.util.concurrent.CancellationException;
  */
 abstract public class QueueableFutureTask<R> extends RunnableFutureTask<R>
 		implements FutureListener {
+	public static final Set<Future> NO_PREREQS = Collections.emptySet();
 
 	private Set<Future> prerequisites;
 	private PrereqStrategy prereqStrategy;
@@ -24,48 +26,44 @@ abstract public class QueueableFutureTask<R> extends RunnableFutureTask<R>
 	private RuntimeException inputThrowable;
 	private ProducerTask<R> runnable;
 
-	protected QueueableFutureTask(Executor executor, ProducerTask<R> runnable) {
+
+	protected QueueableFutureTask(PrereqStrategy prereqStrategy,
+			Set<Future> prerequisites,
+			Executor executor,
+			ProducerTask<R> runnable) {
 		this.executor = executor;
 		this.runnable = runnable;
+		this.prerequisites = prerequisites;
+		this.prereqStrategy = prereqStrategy;
+		for (Future prerequisite : prerequisites) {
+			prerequisite.addListener(this);
+		}
+		if (prereqStrategy == null) {
+			throw new NullPointerException("prereqStrategy cannot be null");
+		}
+	}
+
+	public static Set<Future> toSet(Future only) {
+		HashSet<Future> prereqs = new HashSet<>(1);
+		prereqs.add(only);
+		return prereqs;
+	}
+
+	public static Set<Future> toSet(Future first, Future second) {
+		HashSet<Future> prereqs = new HashSet<>(2);
+		prereqs.add(first);
+		prereqs.add(second);
+		return prereqs;
+	}
+
+	public static Set<Future> toSet(Future[] futures) {
+		HashSet<Future> prerequisites = new HashSet<>(futures.length);
+		Collections.addAll(prerequisites, futures);
+		return prerequisites;
 	}
 
 	protected final boolean isSubmitted() {
 		return submitted;
-	}
-
-	public void setPrerequisites(Set<Future> prerequisites, PrereqStrategy prereqStrategy) {
-		synchronized (lock) {
-			if (submitted) {
-				throw new IllegalStateException("setPrerequisites called after execution queued");
-			}
-			if (this.prereqStrategy != null) {
-				throw new IllegalStateException("setPrerequisites called twice");
-			}
-			if (prerequisites == null) {
-				throw new NullPointerException("prerequisites cannot be null");
-			}
-			if (prereqStrategy == null) {
-				throw new NullPointerException("prereqStrategy cannot be null");
-			}
-			this.prerequisites = prerequisites;
-			this.prereqStrategy = prereqStrategy;
-		}
-		for (Future prerequisite : prerequisites) {
-			prerequisite.addListener(this);
-		}
-	}
-
-	public void setPrerequisites(Future only) {
-		HashSet<Future> prereqs = new HashSet<>(1);
-		prereqs.add(only);
-		setPrerequisites(prereqs, PrereqStrategy.ALL_PREREQS_COMPLETE);
-	}
-
-	public void setPrerequisites(Future first, Future second, PrereqStrategy prereqStrategy) {
-		HashSet<Future> prereqs = new HashSet<>(2);
-		prereqs.add(first);
-		prereqs.add(second);
-		setPrerequisites(prereqs, prereqStrategy);
 	}
 
 	@Override
@@ -170,7 +168,7 @@ abstract public class QueueableFutureTask<R> extends RunnableFutureTask<R>
 	public Future addListener(FutureListener listener) {
 		if (listener instanceof Future && !isPrerequisite((Future) listener)) {
 			throw new IllegalStateException(
-					"this must already be a prerequisite before calling 'then'");
+					"this must already be a prerequisite before calling 'thenDo'");
 		}
 		return super.addListener(listener);
 	}

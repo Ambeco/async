@@ -10,7 +10,7 @@ import java.util.concurrent.CancellationException;
 /**
  * Base implementation for all my futures.
  * <p>
- * When completed one way or another, then notifies listeners.
+ * When completed one way or another, thenDo notifies listeners.
  */
 abstract class SettableFuture<R> implements Future {
 

@@ -4,10 +4,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
 
 public interface Executor {
-	interface RejectedExecutionHandler {
-		void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) throws RejectedExecutionException;
-	}
-
 	void submit(RunnableFuture runnable) throws RejectedExecutionException;
 
 	VoidFuture submit(Runnable runnable) throws RejectedExecutionException;
@@ -19,4 +15,9 @@ public interface Executor {
 	VoidFuture shutdown();
 
 	void shutdownNow() throws InterruptedException;
+
+	interface RejectedExecutionHandler {
+		void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor)
+				throws RejectedExecutionException;
+	}
 }

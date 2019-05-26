@@ -14,14 +14,15 @@ import com.tbohne.async.impl.FutureProducers.BiFutureTransformerAsFutureProducer
 import com.tbohne.async.impl.FutureProducers.ConsumerAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.FunctionAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.FutureEffectAsFutureProducer;
+import com.tbohne.async.impl.FutureProducers.ToListTask;
 import com.tbohne.async.impl.FutureProducers.ValueConsumerAsFutureProducer;
 import com.tbohne.async.impl.FutureProducers.ValueTransformerAsFutureProducer;
+import com.tbohne.async.impl.QueueableFutureTask;
 import com.tbohne.async.impl.QueueableValueFuture;
 import com.tbohne.async.impl.QueueableVoidFuture;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -31,6 +32,7 @@ import java.util.function.Function;
 
 import static com.tbohne.async.DirectExecutor.getDirectExecutor;
 import static com.tbohne.async.impl.FutureProducers.NO_OP_VOID_CALLBACK;
+import static com.tbohne.async.impl.QueueableFutureTask.toSet;
 
 /**
  * Methods for adding work after other futures complete.
@@ -47,149 +49,150 @@ import static com.tbohne.async.impl.FutureProducers.NO_OP_VOID_CALLBACK;
  */
 public class Combine {
 	public static <T> VoidFuture ignore(ValueFuture<T> future) {
-		QueueableVoidFuture step = new QueueableVoidFuture(getDirectExecutor(),
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				getDirectExecutor(),
 				NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(future);
-		return step;
 	}
 
 	public static <T> VoidFuture ignore(ValueFuture<T> future,
 			Executor executor,
 			ProducerTask<Void> followup) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor, followup);
-		step.setPrerequisites(future);
-		return step;
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
+				followup);
 	}
 
 	public static <T> VoidFuture ignore(ValueFuture<T> future,
 			Executor executor,
 			SideEffectTask followup) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new FutureEffectAsFutureProducer(followup));
-		step.setPrerequisites(future);
-		return step;
 	}
 
 	public static <T, U> VoidFuture ignore(BiValueFuture<T, U> future) {
-		QueueableVoidFuture step = new QueueableVoidFuture(getDirectExecutor(),
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				getDirectExecutor(),
 				NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(future);
-		return step;
 	}
 
 	public static <T, U> VoidFuture ignore(BiValueFuture<T, U> future,
 			Executor executor,
 			ProducerTask<Void> followup) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor, followup);
-		step.setPrerequisites(future);
-		return step;
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
+				followup);
 	}
 
 	public static <T, U> VoidFuture ignore(BiValueFuture<T, U> future,
 			Executor executor,
 			SideEffectTask followup) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new FutureEffectAsFutureProducer(followup));
-		step.setPrerequisites(future);
-		return step;
 	}
 
 
-	public static Future afterComplete(VoidFuture future, FutureListener listener) {
+	public static Future thenDo(VoidFuture future, FutureListener listener) {
 		return future.addListener(listener);
 	}
 
-	public static VoidFuture afterComplete(VoidFuture future,
-			Executor executor,
-			SideEffectTask listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+	public static VoidFuture thenDo(VoidFuture future, Executor executor, SideEffectTask listener) {
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new FutureEffectAsFutureProducer(listener));
-		step.setPrerequisites(future);
-		return step;
 	}
 
-	public static <R> ValueFuture<R> afterComplete(VoidFuture future,
+	public static <R> ValueFuture<R> thenDo(VoidFuture future,
 			Executor executor,
 			ProducerTask<R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor, listener);
-		step.setPrerequisites(future);
-		return step;
+		return new QueueableValueFuture<>(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
+				listener);
 	}
 
-	public static <T> VoidFuture afterComplete(ValueFuture<T> future,
+	public static <T> VoidFuture thenDo(ValueFuture<T> future,
 			Executor executor,
 			ConsumerTask<T> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new ValueConsumerAsFutureProducer<>(future, listener));
-		step.setPrerequisites(future);
-		return step;
 	}
 
-	public static <T> VoidFuture afterComplete(ValueFuture<T> future,
+	public static <T> VoidFuture thenDo(ValueFuture<T> future,
 			Executor executor,
 			Consumer<FutureResult<T>> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new ConsumerAsFutureProducer<>(future, listener));
-		step.setPrerequisites(future);
-		return step;
 	}
 
-	public static <T, R> ValueFuture<R> afterComplete(ValueFuture<T> future,
+	public static <T, R> ValueFuture<R> thenDo(ValueFuture<T> future,
 			Executor executor,
 			TransformerTask<T, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new ValueTransformerAsFutureProducer<>(future, listener));
-		step.setPrerequisites(future);
-		return step;
 	}
 
-	public static <T, R> ValueFuture<R> afterComplete(ValueFuture<T> future,
+	public static <T, R> ValueFuture<R> thenDo(ValueFuture<T> future,
 			Executor executor,
 			Function<FutureResult<T>, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new FunctionAsFutureProducer<>(future, listener));
-		step.setPrerequisites(future);
-		return step;
 	}
 
-	public static <T, U> VoidFuture afterComplete(BiValueFuture<T, U> future,
+	public static <T, U> VoidFuture thenDo(BiValueFuture<T, U> future,
 			Executor executor,
 			BiConsumerTask<T, U> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new BiFutureConsumerAsFutureProducer<>(future.getFirst(),
 						future.getSecond(),
 						listener));
-		step.setPrerequisites(future);
-		return step;
 	}
 
-	public static <T, U> VoidFuture afterComplete(BiValueFuture<T, U> future,
+	public static <T, U> VoidFuture thenDo(BiValueFuture<T, U> future,
 			Executor executor,
 			BiConsumer<FutureResult<T>, FutureResult<U>> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new BiConsumerAsFutureProducer<>(future.getFirst(), future.getSecond(), listener));
-		step.setPrerequisites(future);
-		return step;
 	}
 
-	public static <T, U, R> ValueFuture<R> afterComplete(BiValueFuture<T, U> future,
+	public static <T, U, R> ValueFuture<R> thenDo(BiValueFuture<T, U> future,
 			Executor executor,
 			BiTransformerTask<T, U, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new BiFutureTransformerAsFutureProducer<>(future.getFirst(),
 						future.getSecond(),
 						listener));
-		step.setPrerequisites(future);
-		return step;
 	}
 
-	public static <T, U, R> ValueFuture<R> afterComplete(BiValueFuture<T, U> future,
+	public static <T, U, R> ValueFuture<R> thenDo(BiValueFuture<T, U> future,
 			Executor executor,
 			BiFunction<FutureResult<T>, FutureResult<U>, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(future),
+				executor,
 				new BiFunctionAsFutureProducer<>(future.getFirst(), future.getSecond(), listener));
-		step.setPrerequisites(future);
-		return step;
 	}
 
 
@@ -198,10 +201,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			SideEffectTask listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new FutureEffectAsFutureProducer(listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <R> ValueFuture<R> afterComplete(VoidFuture first,
@@ -209,9 +212,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			ProducerTask<R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor, listener);
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
+		return new QueueableValueFuture<>(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
+				listener);
 	}
 
 	public static <T> VoidFuture afterBoth(ValueFuture<T> first,
@@ -219,10 +223,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			ConsumerTask<T> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new ValueConsumerAsFutureProducer<>(first, listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T> VoidFuture afterBoth(ValueFuture<T> first,
@@ -230,10 +234,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			Consumer<FutureResult<T>> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new ConsumerAsFutureProducer<>(first, listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, R> ValueFuture<R> afterBoth(ValueFuture<T> first,
@@ -241,10 +245,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			TransformerTask<T, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new ValueTransformerAsFutureProducer<>(first, listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, R> ValueFuture<R> afterBoth(ValueFuture<T> first,
@@ -252,10 +256,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			Function<FutureResult<T>, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new FunctionAsFutureProducer<>(first, listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, U> VoidFuture afterBoth(ValueFuture<T> first,
@@ -263,10 +267,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			BiConsumerTask<T, U> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new BiFutureConsumerAsFutureProducer<>(first, second, listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, U> VoidFuture afterBoth(ValueFuture<T> first,
@@ -274,10 +278,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			BiConsumer<FutureResult<T>, FutureResult<U>> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new BiConsumerAsFutureProducer<>(first, second, listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, U, R> ValueFuture<R> afterBoth(ValueFuture<T> first,
@@ -285,10 +289,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			BiTransformerTask<T, U, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new BiFutureTransformerAsFutureProducer<>(first, second, listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, U, R> ValueFuture<R> afterBoth(ValueFuture<T> first,
@@ -296,10 +300,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			BiFunction<FutureResult<T>, FutureResult<U>, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new BiFunctionAsFutureProducer<>(first, second, listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, U> VoidFuture afterBoth(BiValueFuture<T, U> first,
@@ -307,12 +311,12 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			BiConsumerTask<T, U> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new BiFutureConsumerAsFutureProducer<>(first.getFirst(),
 						first.getSecond(),
 						listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, U> VoidFuture afterBoth(BiValueFuture<T, U> first,
@@ -320,10 +324,10 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			BiConsumer<FutureResult<T>, FutureResult<U>> listener) {
-		QueueableVoidFuture step = new QueueableVoidFuture(executor,
+		return new QueueableVoidFuture(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new BiConsumerAsFutureProducer<>(first.getFirst(), first.getSecond(), listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, U, R> ValueFuture<R> afterBoth(BiValueFuture<T, U> first,
@@ -331,12 +335,12 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			BiTransformerTask<T, U, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new BiFutureTransformerAsFutureProducer<>(first.getFirst(),
 						first.getSecond(),
 						listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
 
 	public static <T, U, R> ValueFuture<R> afterBoth(BiValueFuture<T, U> first,
@@ -344,72 +348,38 @@ public class Combine {
 			PrereqStrategy prereqStrategy,
 			Executor executor,
 			BiFunction<FutureResult<T>, FutureResult<U>, R> listener) {
-		QueueableValueFuture<R> step = new QueueableValueFuture<>(executor,
+		return new QueueableValueFuture<>(prereqStrategy,
+				QueueableFutureTask.toSet(first, second),
+				executor,
 				new BiFunctionAsFutureProducer<>(first.getFirst(), first.getSecond(), listener));
-		step.setPrerequisites(first, second, prereqStrategy);
-		return step;
 	}
-
 
 
 	public static VoidFuture afterAllVoid(PrereqStrategy prereqStrategy, VoidFuture... futures) {
-		QueueableVoidFuture step = new QueueableVoidFuture(getDirectExecutor(),
+		return new QueueableVoidFuture(prereqStrategy, toSet(futures), getDirectExecutor(),
 				NO_OP_VOID_CALLBACK);
-		HashSet<Future> prerequisites = new HashSet<>(futures.length);
-		Collections.addAll(prerequisites, futures);
-		step.setPrerequisites(prerequisites, prereqStrategy);
-		return step;
 	}
 
-	public static VoidFuture afterAllVoid(PrereqStrategy prereqStrategy, Collection<VoidFuture> futures) {
-		QueueableVoidFuture step = new QueueableVoidFuture(getDirectExecutor(),
+	public static VoidFuture afterAllVoid(PrereqStrategy prereqStrategy,
+			Collection<VoidFuture> futures) {
+		return new QueueableVoidFuture(prereqStrategy, new HashSet<>(futures), getDirectExecutor(),
 				NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(new HashSet<>(futures), prereqStrategy);
-		return step;
 	}
 
 	@SafeVarargs
-	public static <R> ValueFuture<List<R>> afterAll(PrereqStrategy prereqStrategy, ValueFuture<R>... futures) {
-		QueueableValueFuture<List<R>> step = new QueueableValueFuture<>(getDirectExecutor(),
-				new ProducerTask<List<R>>() {
-					@Override
-					public List<R> onSuccess() {
-						List<R> results = new ArrayList<>(futures.length);
-						for (ValueFuture<R> future : futures) {
-							results.add(future.getNow());
-						}
-						return results;
-					}
-
-					@Override
-					public List<R> onFailure(RuntimeException t) {
-						throw t;
-					}
-				});
-		HashSet<Future> prerequisites = new HashSet<>(futures.length);
-		Collections.addAll(prerequisites, futures);
-		step.setPrerequisites(prerequisites, prereqStrategy);
-		return step;
+	public static <R> ValueFuture<List<R>> afterAll(PrereqStrategy prereqStrategy,
+			ValueFuture<R>... futures) {
+		return new QueueableValueFuture<>(prereqStrategy,
+				toSet(futures),
+				getDirectExecutor(),
+				new ToListTask<>(Arrays.asList(futures)));
 	}
 
-	public static <R> ValueFuture<List<R>> afterAll(PrereqStrategy prereqStrategy, Collection<ValueFuture<R>> futures) {
-		QueueableValueFuture<List<R>> step = new QueueableValueFuture<>(getDirectExecutor(),
-				new ProducerTask<List<R>>() {
-					@Override
-					public List<R> onSuccess() {
-						List<R> results = new ArrayList<>(futures.size());
-						for (ValueFuture<R> future : futures) {
-							results.add(future.getNow());
-						}
-						return results;
-					}
-
-					@Override
-					public List<R> onFailure(RuntimeException t) {
-						throw t;
-					}
-				});
-		step.setPrerequisites(new HashSet<>(futures), prereqStrategy);
-		return step;
+	public static <R> ValueFuture<List<R>> afterAll(PrereqStrategy prereqStrategy,
+			Collection<ValueFuture<R>> futures) {
+		return new QueueableValueFuture<>(prereqStrategy,
+				new HashSet<>(futures),
+				getDirectExecutor(),
+				new ToListTask<>(futures));
 	}
 }

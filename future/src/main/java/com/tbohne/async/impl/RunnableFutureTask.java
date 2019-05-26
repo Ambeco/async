@@ -1,5 +1,6 @@
 package com.tbohne.async.impl;
 
+import com.tbohne.async.PrereqStrategy;
 import com.tbohne.async.RunnableFuture;
 
 import java.util.List;
@@ -77,8 +78,9 @@ public abstract class RunnableFutureTask<R> extends SettableFuture<R> implements
 
 	@Override
 	public void childrenCannotCancel() {
-		QueueableVoidFuture step = new QueueableVoidFuture(getDirectExecutor(),
+		QueueableVoidFuture newChild = new QueueableVoidFuture(PrereqStrategy.ALL_PREREQS_SUCCEED,
+				QueueableFutureTask.toSet(this),
+				getDirectExecutor(),
 				NO_OP_VOID_CALLBACK);
-		step.setPrerequisites(this);
 	}
 }
