@@ -1,16 +1,16 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
-import com.tbohne.asynclocked.Future.FutureListener;
-import com.tbohne.asynclocked.TaskCallbacks.SimpleProducerTask;
-import com.tbohne.asynclocked.impl.QueueableValueFuture;
-import com.tbohne.asynclocked.impl.QueueableVoidFuture;
-import com.tbohne.asynclocked.impl.SettableValueFuture;
-import com.tbohne.asynclocked.impl.SettableVoidFuture;
+import com.tbohne.asyncatomic.Future.FutureListener;
+import com.tbohne.asyncatomic.TaskCallbacks.SimpleProducerTask;
+import com.tbohne.asyncatomic.impl.QueueableValueFuture;
+import com.tbohne.asyncatomic.impl.QueueableVoidFuture;
+import com.tbohne.asyncatomic.impl.SettableValueFuture;
+import com.tbohne.asyncatomic.impl.SettableVoidFuture;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
-import static com.tbohne.asynclocked.impl.QueueableFutureTask.NO_PREREQS;
+import static com.tbohne.asyncatomic.impl.QueueableFutureTask.NO_PREREQS;
 
 /**
  * Helper methods for starting and stopping async work

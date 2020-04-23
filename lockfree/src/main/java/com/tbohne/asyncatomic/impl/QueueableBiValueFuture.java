@@ -1,19 +1,19 @@
-package com.tbohne.asynclocked.impl;
+package com.tbohne.asyncatomic.impl;
 
-import com.tbohne.asynclocked.BiValueFuture;
-import com.tbohne.asynclocked.Combine;
-import com.tbohne.asynclocked.Executor;
-import com.tbohne.asynclocked.FutureResult;
-import com.tbohne.asynclocked.PrereqStrategy;
-import com.tbohne.asynclocked.TaskCallbacks.BiConsumerTask;
-import com.tbohne.asynclocked.TaskCallbacks.BiTransformerTask;
-import com.tbohne.asynclocked.ValueFuture;
-import com.tbohne.asynclocked.VoidFuture;
+import com.tbohne.asyncatomic.BiValueFuture;
+import com.tbohne.asyncatomic.Combine;
+import com.tbohne.asyncatomic.Executor;
+import com.tbohne.asyncatomic.FutureResult;
+import com.tbohne.asyncatomic.PrereqStrategy;
+import com.tbohne.asyncatomic.TaskCallbacks.BiConsumerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.BiTransformerTask;
+import com.tbohne.asyncatomic.ValueFuture;
+import com.tbohne.asyncatomic.VoidFuture;
 
 import java.util.function.BiFunction;
 
-import static com.tbohne.asynclocked.DirectExecutor.getDirectExecutor;
-import static com.tbohne.asynclocked.impl.FutureProducers.NO_OP_VOID_CALLBACK;
+import static com.tbohne.asyncatomic.DirectExecutor.getDirectExecutor;
+import static com.tbohne.asyncatomic.impl.FutureProducers.NO_OP_VOID_CALLBACK;
 
 public class QueueableBiValueFuture<T, U> extends QueueableFutureTask<Void>
 		implements BiValueFuture<T, U> {

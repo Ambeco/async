@@ -1,4 +1,4 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;

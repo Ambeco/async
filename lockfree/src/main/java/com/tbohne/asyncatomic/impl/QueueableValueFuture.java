@@ -1,15 +1,15 @@
-package com.tbohne.asynclocked.impl;
+package com.tbohne.asyncatomic.impl;
 
-import com.tbohne.asynclocked.Combine;
-import com.tbohne.asynclocked.Executor;
-import com.tbohne.asynclocked.Future;
-import com.tbohne.asynclocked.FutureResult;
-import com.tbohne.asynclocked.PrereqStrategy;
-import com.tbohne.asynclocked.TaskCallbacks.ConsumerTask;
-import com.tbohne.asynclocked.TaskCallbacks.ProducerTask;
-import com.tbohne.asynclocked.TaskCallbacks.TransformerTask;
-import com.tbohne.asynclocked.ValueFuture;
-import com.tbohne.asynclocked.VoidFuture;
+import com.tbohne.asyncatomic.Combine;
+import com.tbohne.asyncatomic.Executor;
+import com.tbohne.asyncatomic.Future;
+import com.tbohne.asyncatomic.FutureResult;
+import com.tbohne.asyncatomic.PrereqStrategy;
+import com.tbohne.asyncatomic.TaskCallbacks.ConsumerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.ProducerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.TransformerTask;
+import com.tbohne.asyncatomic.ValueFuture;
+import com.tbohne.asyncatomic.VoidFuture;
 
 import java.util.Set;
 import java.util.function.Consumer;

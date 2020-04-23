@@ -1,7 +1,7 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
-import com.tbohne.asynclocked.impl.SettableValueFuture;
-import com.tbohne.asynclocked.impl.SettableVoidFuture;
+import com.tbohne.asyncatomic.impl.SettableValueFuture;
+import com.tbohne.asyncatomic.impl.SettableVoidFuture;
 
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;

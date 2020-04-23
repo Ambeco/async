@@ -1,25 +1,25 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
-import com.tbohne.asynclocked.Future.FutureListener;
-import com.tbohne.asynclocked.TaskCallbacks.BiConsumerTask;
-import com.tbohne.asynclocked.TaskCallbacks.BiTransformerTask;
-import com.tbohne.asynclocked.TaskCallbacks.ConsumerTask;
-import com.tbohne.asynclocked.TaskCallbacks.ProducerTask;
-import com.tbohne.asynclocked.TaskCallbacks.SideEffectTask;
-import com.tbohne.asynclocked.TaskCallbacks.TransformerTask;
-import com.tbohne.asynclocked.impl.FutureProducers.BiConsumerAsFutureProducer;
-import com.tbohne.asynclocked.impl.FutureProducers.BiFunctionAsFutureProducer;
-import com.tbohne.asynclocked.impl.FutureProducers.BiFutureConsumerAsFutureProducer;
-import com.tbohne.asynclocked.impl.FutureProducers.BiFutureTransformerAsFutureProducer;
-import com.tbohne.asynclocked.impl.FutureProducers.ConsumerAsFutureProducer;
-import com.tbohne.asynclocked.impl.FutureProducers.FunctionAsFutureProducer;
-import com.tbohne.asynclocked.impl.FutureProducers.FutureEffectAsFutureProducer;
-import com.tbohne.asynclocked.impl.FutureProducers.ToListTask;
-import com.tbohne.asynclocked.impl.FutureProducers.ValueConsumerAsFutureProducer;
-import com.tbohne.asynclocked.impl.FutureProducers.ValueTransformerAsFutureProducer;
-import com.tbohne.asynclocked.impl.QueueableFutureTask;
-import com.tbohne.asynclocked.impl.QueueableValueFuture;
-import com.tbohne.asynclocked.impl.QueueableVoidFuture;
+import com.tbohne.asyncatomic.Future.FutureListener;
+import com.tbohne.asyncatomic.TaskCallbacks.BiConsumerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.BiTransformerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.ConsumerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.ProducerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.SideEffectTask;
+import com.tbohne.asyncatomic.TaskCallbacks.TransformerTask;
+import com.tbohne.asyncatomic.impl.FutureProducers.BiConsumerAsFutureProducer;
+import com.tbohne.asyncatomic.impl.FutureProducers.BiFunctionAsFutureProducer;
+import com.tbohne.asyncatomic.impl.FutureProducers.BiFutureConsumerAsFutureProducer;
+import com.tbohne.asyncatomic.impl.FutureProducers.BiFutureTransformerAsFutureProducer;
+import com.tbohne.asyncatomic.impl.FutureProducers.ConsumerAsFutureProducer;
+import com.tbohne.asyncatomic.impl.FutureProducers.FunctionAsFutureProducer;
+import com.tbohne.asyncatomic.impl.FutureProducers.FutureEffectAsFutureProducer;
+import com.tbohne.asyncatomic.impl.FutureProducers.ToListTask;
+import com.tbohne.asyncatomic.impl.FutureProducers.ValueConsumerAsFutureProducer;
+import com.tbohne.asyncatomic.impl.FutureProducers.ValueTransformerAsFutureProducer;
+import com.tbohne.asyncatomic.impl.QueueableFutureTask;
+import com.tbohne.asyncatomic.impl.QueueableValueFuture;
+import com.tbohne.asyncatomic.impl.QueueableVoidFuture;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,9 +30,9 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.tbohne.asynclocked.DirectExecutor.getDirectExecutor;
-import static com.tbohne.asynclocked.impl.FutureProducers.NO_OP_VOID_CALLBACK;
-import static com.tbohne.asynclocked.impl.QueueableFutureTask.toSet;
+import static com.tbohne.asyncatomic.DirectExecutor.getDirectExecutor;
+import static com.tbohne.asyncatomic.impl.FutureProducers.NO_OP_VOID_CALLBACK;
+import static com.tbohne.asyncatomic.impl.QueueableFutureTask.toSet;
 
 /**
  * Methods for adding work after other futures complete.

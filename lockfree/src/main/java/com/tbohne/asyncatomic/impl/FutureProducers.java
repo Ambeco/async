@@ -1,14 +1,14 @@
-package com.tbohne.asynclocked.impl;
+package com.tbohne.asyncatomic.impl;
 
-import com.tbohne.asynclocked.FutureResult;
-import com.tbohne.asynclocked.TaskCallbacks.BiConsumerTask;
-import com.tbohne.asynclocked.TaskCallbacks.BiTransformerTask;
-import com.tbohne.asynclocked.TaskCallbacks.ConsumerTask;
-import com.tbohne.asynclocked.TaskCallbacks.ProducerTask;
-import com.tbohne.asynclocked.TaskCallbacks.SideEffectTask;
-import com.tbohne.asynclocked.TaskCallbacks.SimpleProducerTask;
-import com.tbohne.asynclocked.TaskCallbacks.TransformerTask;
-import com.tbohne.asynclocked.ValueFuture;
+import com.tbohne.asyncatomic.FutureResult;
+import com.tbohne.asyncatomic.TaskCallbacks.BiConsumerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.BiTransformerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.ConsumerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.ProducerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.SideEffectTask;
+import com.tbohne.asyncatomic.TaskCallbacks.SimpleProducerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.TransformerTask;
+import com.tbohne.asyncatomic.ValueFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;

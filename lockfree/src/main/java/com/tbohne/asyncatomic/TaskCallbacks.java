@@ -1,4 +1,4 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
 /**
  * Various listener types that can be attached to futures.

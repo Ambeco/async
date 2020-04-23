@@ -1,6 +1,6 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
-import com.tbohne.asynclocked.impl.SettableVoidFuture;
+import com.tbohne.asyncatomic.impl.SettableVoidFuture;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;

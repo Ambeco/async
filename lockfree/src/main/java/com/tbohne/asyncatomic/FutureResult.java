@@ -1,4 +1,4 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
 /**
  * The result of an async operation referred to by a future.

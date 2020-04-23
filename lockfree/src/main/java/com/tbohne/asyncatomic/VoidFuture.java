@@ -1,7 +1,7 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
-import com.tbohne.asynclocked.TaskCallbacks.ProducerTask;
-import com.tbohne.asynclocked.TaskCallbacks.SideEffectTask;
+import com.tbohne.asyncatomic.TaskCallbacks.ProducerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.SideEffectTask;
 
 public interface VoidFuture extends Future {
 	VoidFuture thenDo(Executor executor, SideEffectTask followup);

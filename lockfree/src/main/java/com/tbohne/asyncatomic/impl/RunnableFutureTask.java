@@ -1,13 +1,13 @@
-package com.tbohne.asynclocked.impl;
+package com.tbohne.asyncatomic.impl;
 
-import com.tbohne.asynclocked.PrereqStrategy;
-import com.tbohne.asynclocked.RunnableFuture;
+import com.tbohne.asyncatomic.PrereqStrategy;
+import com.tbohne.asyncatomic.RunnableFuture;
 
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
-import static com.tbohne.asynclocked.DirectExecutor.getDirectExecutor;
-import static com.tbohne.asynclocked.impl.FutureProducers.NO_OP_VOID_CALLBACK;
+import static com.tbohne.asyncatomic.DirectExecutor.getDirectExecutor;
+import static com.tbohne.asyncatomic.impl.FutureProducers.NO_OP_VOID_CALLBACK;
 
 /**
  * Helper class that represents a RunnableFuture. Not particularly useful in itself, except for organization.

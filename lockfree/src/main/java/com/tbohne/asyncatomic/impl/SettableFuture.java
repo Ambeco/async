@@ -1,6 +1,6 @@
-package com.tbohne.asynclocked.impl;
+package com.tbohne.asyncatomic.impl;
 
-import com.tbohne.asynclocked.Future;
+import com.tbohne.asyncatomic.Future;
 
 import java.util.HashSet;
 import java.util.List;

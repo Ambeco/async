@@ -1,7 +1,7 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
-import com.tbohne.asynclocked.TaskCallbacks.BiConsumerTask;
-import com.tbohne.asynclocked.TaskCallbacks.BiTransformerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.BiConsumerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.BiTransformerTask;
 
 import java.util.function.BiFunction;
 

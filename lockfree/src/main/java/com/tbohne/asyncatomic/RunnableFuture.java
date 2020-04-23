@@ -1,4 +1,4 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
 /**
  * A Future that has a .run() method that completes the future

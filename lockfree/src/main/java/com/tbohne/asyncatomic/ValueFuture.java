@@ -1,7 +1,7 @@
-package com.tbohne.asynclocked;
+package com.tbohne.asyncatomic;
 
-import com.tbohne.asynclocked.TaskCallbacks.ConsumerTask;
-import com.tbohne.asynclocked.TaskCallbacks.TransformerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.ConsumerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.TransformerTask;
 
 import java.util.function.Consumer;
 import java.util.function.Function;

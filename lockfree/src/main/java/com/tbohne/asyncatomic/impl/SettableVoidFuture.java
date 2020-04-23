@@ -1,11 +1,11 @@
-package com.tbohne.asynclocked.impl;
+package com.tbohne.asyncatomic.impl;
 
-import com.tbohne.asynclocked.Combine;
-import com.tbohne.asynclocked.Executor;
-import com.tbohne.asynclocked.TaskCallbacks.ProducerTask;
-import com.tbohne.asynclocked.TaskCallbacks.SideEffectTask;
-import com.tbohne.asynclocked.ValueFuture;
-import com.tbohne.asynclocked.VoidFuture;
+import com.tbohne.asyncatomic.Combine;
+import com.tbohne.asyncatomic.Executor;
+import com.tbohne.asyncatomic.TaskCallbacks.ProducerTask;
+import com.tbohne.asyncatomic.TaskCallbacks.SideEffectTask;
+import com.tbohne.asyncatomic.ValueFuture;
+import com.tbohne.asyncatomic.VoidFuture;
 
 public class SettableVoidFuture extends SettableFuture<Void> implements VoidFuture {
 

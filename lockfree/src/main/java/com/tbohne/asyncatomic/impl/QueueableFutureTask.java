@@ -1,10 +1,10 @@
-package com.tbohne.asynclocked.impl;
+package com.tbohne.asyncatomic.impl;
 
-import com.tbohne.asynclocked.Executor;
-import com.tbohne.asynclocked.Future;
-import com.tbohne.asynclocked.Future.FutureListener;
-import com.tbohne.asynclocked.PrereqStrategy;
-import com.tbohne.asynclocked.TaskCallbacks.ProducerTask;
+import com.tbohne.asyncatomic.Executor;
+import com.tbohne.asyncatomic.Future;
+import com.tbohne.asyncatomic.Future.FutureListener;
+import com.tbohne.asyncatomic.PrereqStrategy;
+import com.tbohne.asyncatomic.TaskCallbacks.ProducerTask;
 
 import java.util.Collections;
 import java.util.HashSet;
