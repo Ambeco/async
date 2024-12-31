@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 
 import java.io.IOException;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 
 public class ImmediateFutureTest {
@@ -196,6 +197,74 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
+		collector.checkThat(fut.getException(), is(expect));
+	}
+
+	@Test public void forCancellation_state_isFailed() {
+		CancellationException e = new CancellationException("test");
+		Future<String> fut = Futures.immediateFailedFuture(e);
+
+		collector.checkThat(fut.isSuccessful(), equalTo(false));
+		collector.checkThat(fut.isDone(), equalTo(true));
+		collector.checkThat(fut.isCancelled(), equalTo(true));
+		collector.checkThat(fut.getException(), is(e));
+		fut.end();
+	}
+
+	@Test public void forCancellation_get_throws() {
+		CancellationException expect = new CancellationException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		CancellationException found = assertThrows(CancellationException.class, fut::getDone);
+		collector.checkThat(found, is(expect));
+		found = assertThrows(CancellationException.class, fut::get);
+		collector.checkThat(found, is(expect));
+		found = assertThrows(CancellationException.class, () -> fut.get(1, TimeUnit.DAYS));
+		collector.checkThat(found, is(expect));
+	}
+
+	@Test public void forCancellation_toString_correct() {
+		CancellationException expect = new CancellationException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		collector.checkThat(
+				fut.toString(),
+				matchesPattern("ImmediateFuture@\\d{1,20}\\[cancelled=java.util.concurrent.CancellationException: test]"));
+	}
+
+	@Test public void forCancellation_addPendingString_correct() {
+		CancellationException expect = new CancellationException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		StringBuilder sb = new StringBuilder();
+		fut.addPendingString(sb, 4);
+		collector.checkThat(
+				sb.toString(),
+				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture.run\\("
+						+ "Unknown\\sSource\\) //ImmediateFuture@\\d{1,20}\\[cancelled=java.util.concurrent.CancellationException: test]$"));
+	}
+
+	@Test public void forCancellation_cancel_isNoOp() {
+		CancellationException expect = new CancellationException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		fut.cancel(Future.MAY_INTERRUPT);
+
+		collector.checkThat(fut.isDone(), equalTo(true));
+		collector.checkThat(fut.isCancelled(), equalTo(true));
+		collector.checkThat(fut.isSuccessful(), equalTo(false));
+		collector.checkThat(fut.getException(), is(expect));
+	}
+
+	@Test public void forCancellation_setException_isNoOp() {
+		CancellationException expect = new CancellationException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		fut.setException(new IOException("FAILURE"));
+
+		collector.checkThat(fut.isDone(), equalTo(true));
+		collector.checkThat(fut.isSuccessful(), equalTo(false));
+		collector.checkThat(fut.isCancelled(), equalTo(true));
 		collector.checkThat(fut.getException(), is(expect));
 	}
 }
