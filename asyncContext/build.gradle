@@ -32,7 +32,9 @@ dependencies {
     implementation 'com.google.guava:guava:32.1.1-jre'
     implementation "org.checkerframework:checker-qual:3.33.0"
     implementation 'com.google.flogger:flogger:0.8'
+    implementation 'com.google.flogger:flogger-system-backend:0.8'
     testImplementation(libs.junit)
+    testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
@@ -40,5 +42,11 @@ dependencies {
         module("com.google.guava:listenablefuture") {
             replacedBy("com.google.guava:guava", "listenablefuture is part of guava")
         }
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
