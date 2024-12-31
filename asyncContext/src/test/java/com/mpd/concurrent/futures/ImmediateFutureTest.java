@@ -5,42 +5,54 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.Assert.assertThrows;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
+import com.mpd.test.ErrorCollector;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ErrorCollector;
 
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.TimeUnit;
 
 public class ImmediateFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
 
 	@Test public void forString_state_isSuccessful() {
-		collector.checkThat(Futures.immediateFuture("test").isSuccessful(), equalTo(true));
-		collector.checkThat(Futures.immediateFuture("test").isDone(), equalTo(true));
-		collector.checkThat(Futures.immediateFuture("test").isCancelled(), equalTo(false));
-		collector.checkThat(Futures.immediateFuture("test").getException(), nullValue());
-		Futures.immediateFuture("test").end();
+		Future<String> fut = Futures.immediateFuture("test");
+		fut.end();
+
+		collector.checkThat(fut.isSuccessful(), equalTo(true));
+		collector.checkThat(fut.isDone(), equalTo(true));
+		collector.checkThat(fut.isCancelled(), equalTo(false));
+		collector.checkThat(fut.getException(), nullValue());
+		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
 	@Test public void forString_get_isSuccessful() {
-		collector.checkThat(Futures.immediateFuture("test").getDone(), equalTo("test"));
-		collector.checkThat(Futures.immediateFuture("test").get(), equalTo("test"));
-		collector.checkThat(Futures.immediateFuture("test").get(1, TimeUnit.DAYS), equalTo("test"));
+		Future<String> fut = Futures.immediateFuture("test");
+		fut.end();
+
+		collector.checkThat(fut.getDone(), equalTo("test"));
+		collector.checkThat(fut.get(), equalTo("test"));
+		collector.checkThat(fut.get(1, DAYS), equalTo("test"));
 	}
 
 	@Test public void forString_toString_correct() {
-		collector.checkThat(Futures.immediateFuture("test").toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[success=test]"));
+		Future<String> fut = Futures.immediateFuture("test");
+		fut.end();
+
+		collector.checkThat(fut.toString(), matchesPattern("ImmediateFuture@\\d{1,20}\\[success=test]"));
 	}
 
 	@Test public void forString_addPendingString_correct() {
+		Future<String> fut = Futures.immediateFuture("test");
+		fut.end();
+
 		StringBuilder sb = new StringBuilder();
-		Futures.immediateFuture("test").addPendingString(sb, 4);
+		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
 				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture.run\\("
 						+ "Unknown\\sSource\\) //ImmediateFuture@\\d{1,20}\\[success=test]$"));
@@ -48,47 +60,47 @@ public class ImmediateFutureTest {
 
 	@Test public void forString_cancel_isNoOp() {
 		Future<String> fut = Futures.immediateFuture("test");
+		fut.end();
 
 		fut.cancel(Future.MAY_INTERRUPT);
 
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
-		collector.checkThat(Futures.immediateFuture("test").getException(), nullValue());
+		collector.checkThat(fut.getException(), nullValue());
 	}
 
 	@Test public void forString_setException_isNoOp() {
 		Future<String> fut = Futures.immediateFuture("test");
+		fut.end();
 
 		fut.setException(new ArithmeticException("FAILURE"));
 
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(Futures.immediateFuture("test").getException(), nullValue());
+		collector.checkThat(fut.getException(), nullValue());
 	}
 
 	@Test public void forUnchecked_state_isFailed() {
 		ArithmeticException e = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(e);
+		fut.end();
 
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
 		collector.checkThat(fut.getException(), is(e));
-		fut.end();
+		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
 	@Test public void forUnchecked_get_throws() {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 
-		ArithmeticException found = assertThrows(ArithmeticException.class, fut::getDone);
-		collector.checkThat(found, is(expect));
-		found = assertThrows(ArithmeticException.class, fut::get);
-		collector.checkThat(found, is(expect));
-		found = assertThrows(ArithmeticException.class, () -> fut.get(1, TimeUnit.DAYS));
-		collector.checkThat(found, is(expect));
+		collector.checkThrows(ArithmeticException.class, fut::getDone, is(expect));
+		collector.checkThrows(ArithmeticException.class, fut::get, is(expect));
+		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, DAYS), is(expect));
 	}
 
 	@Test public void forUnchecked_toString_correct() {
@@ -137,12 +149,13 @@ public class ImmediateFutureTest {
 	@Test public void forChecked_state_isFailed() {
 		IOException e = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(e);
+		fut.end();
 
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
 		collector.checkThat(fut.getException(), is(e));
-		fut.end();
+		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
 	@Test public void forChecked_get_throws() {
@@ -153,7 +166,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(found.getCause(), is(expect));
 		found = assertThrows(AsyncCheckedException.class, fut::get);
 		collector.checkThat(found.getCause(), is(expect));
-		found = assertThrows(AsyncCheckedException.class, () -> fut.get(1, TimeUnit.DAYS));
+		found = assertThrows(AsyncCheckedException.class, () -> fut.get(1, DAYS));
 		collector.checkThat(found.getCause(), is(expect));
 	}
 
@@ -203,12 +216,13 @@ public class ImmediateFutureTest {
 	@Test public void forCancellation_state_isFailed() {
 		CancellationException e = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(e);
+		fut.end();
 
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(true));
 		collector.checkThat(fut.getException(), is(e));
-		fut.end();
+		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
 	@Test public void forCancellation_get_throws() {
@@ -219,7 +233,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(found, is(expect));
 		found = assertThrows(CancellationException.class, fut::get);
 		collector.checkThat(found, is(expect));
-		found = assertThrows(CancellationException.class, () -> fut.get(1, TimeUnit.DAYS));
+		found = assertThrows(CancellationException.class, () -> fut.get(1, DAYS));
 		collector.checkThat(found, is(expect));
 	}
 
