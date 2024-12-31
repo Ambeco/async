@@ -16,8 +16,8 @@ import java.util.Collection;
 import java.util.concurrent.CancellationException;
 
 public abstract class AbstractFutureSuccessCombiner<I, O> extends AbstractListenerFuture<O> {
-	private @Nullable ImmutableList<Future<? extends I>> parents;
 	private final BitSet completed;
+	private @Nullable ImmutableList<Future<? extends I>> parents;
 
 	protected AbstractFutureSuccessCombiner(Future<? extends I>[] futures)
 	{

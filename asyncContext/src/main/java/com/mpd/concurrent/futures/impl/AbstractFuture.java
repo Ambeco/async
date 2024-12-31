@@ -250,12 +250,8 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		}
 	}
 
-	@Override
-	public Future<O> withTimeout(
-			long timeout,
-			TimeUnit unit,
-			@Nullable Throwable exceptionOnTimeout,
-			boolean interruptOnTimeout)
+	@Override public Future<O> withTimeout(
+			long timeout, TimeUnit unit, @Nullable Throwable exceptionOnTimeout, boolean interruptOnTimeout)
 	{
 		return new FutureTimeout<>(this, timeout, unit, exceptionOnTimeout, interruptOnTimeout);
 	}

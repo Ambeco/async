@@ -274,7 +274,9 @@ public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
 	}
 
 	@Override public <O> SubmittableFuture<O> execute(SubmittableFuture<O> runnable) {
-		if (isShutdown) {throw new RejectedExecutionException("executor is stopping or stopped");}
+		if (isShutdown) {
+			throw new RejectedExecutionException("executor is stopping or stopped");
+		}
 		synchronized (threads) {
 			++runnableCount;
 			queue.add(runnable);
