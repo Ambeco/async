@@ -144,8 +144,9 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 
 	@Override public <O> SubmittableFuture<O> execute(SubmittableFuture<O> future) {
 		if (!handler.post(future)) {
-			// TODO: fail the future?
-			throw new RejectedExecutionException();
+			RejectedExecutionException e = new RejectedExecutionException();
+			future.setException(e);
+			throw e;
 		}
 		return future;
 	}
