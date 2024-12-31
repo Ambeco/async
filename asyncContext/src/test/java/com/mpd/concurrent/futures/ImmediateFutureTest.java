@@ -4,12 +4,15 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.Assert.assertThrows;
 
-import com.mpd.test.ErrorCollector;
+import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class ImmediateFutureTest {
@@ -79,11 +82,11 @@ public class ImmediateFutureTest {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 
-		ArithmeticException found = collector.checkThrowsAndGet(ArithmeticException.class, fut::getDone);
+		ArithmeticException found = assertThrows(ArithmeticException.class, fut::getDone);
 		collector.checkThat(found, is(expect));
-		found = collector.checkThrowsAndGet(ArithmeticException.class, fut::get);
+		found = assertThrows(ArithmeticException.class, fut::get);
 		collector.checkThat(found, is(expect));
-		found = collector.checkThrowsAndGet(ArithmeticException.class, () -> fut.get(1, TimeUnit.DAYS));
+		found = assertThrows(ArithmeticException.class, () -> fut.get(1, TimeUnit.DAYS));
 		collector.checkThat(found, is(expect));
 	}
 
@@ -123,6 +126,72 @@ public class ImmediateFutureTest {
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 
 		fut.setException(new ArithmeticException("FAILURE"));
+
+		collector.checkThat(fut.isDone(), equalTo(true));
+		collector.checkThat(fut.isSuccessful(), equalTo(false));
+		collector.checkThat(fut.isCancelled(), equalTo(false));
+		collector.checkThat(fut.getException(), is(expect));
+	}
+
+	@Test public void forChecked_state_isFailed() {
+		IOException e = new IOException("test");
+		Future<String> fut = Futures.immediateFailedFuture(e);
+
+		collector.checkThat(fut.isSuccessful(), equalTo(false));
+		collector.checkThat(fut.isDone(), equalTo(true));
+		collector.checkThat(fut.isCancelled(), equalTo(false));
+		collector.checkThat(fut.getException(), is(e));
+		fut.end();
+	}
+
+	@Test public void forChecked_get_throws() {
+		IOException expect = new IOException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		AsyncCheckedException found = assertThrows(AsyncCheckedException.class, fut::getDone);
+		collector.checkThat(found.getCause(), is(expect));
+		found = assertThrows(AsyncCheckedException.class, fut::get);
+		collector.checkThat(found.getCause(), is(expect));
+		found = assertThrows(AsyncCheckedException.class, () -> fut.get(1, TimeUnit.DAYS));
+		collector.checkThat(found.getCause(), is(expect));
+	}
+
+	@Test public void forChecked_toString_correct() {
+		IOException expect = new IOException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		collector.checkThat(fut.toString(),
+				matchesPattern("ImmediateFuture@\\d{1,20}\\[failure=java.io.IOException: test]"));
+	}
+
+	@Test public void forChecked_addPendingString_correct() {
+		IOException expect = new IOException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		StringBuilder sb = new StringBuilder();
+		fut.addPendingString(sb, 4);
+		collector.checkThat(sb.toString(),
+				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture.run\\("
+						+ "Unknown\\sSource\\) //ImmediateFuture@\\d{1,20}\\[failure=java.io.IOException: test]$"));
+	}
+
+	@Test public void forChecked_cancel_isNoOp() {
+		IOException expect = new IOException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		fut.cancel(Future.MAY_INTERRUPT);
+
+		collector.checkThat(fut.isDone(), equalTo(true));
+		collector.checkThat(fut.isCancelled(), equalTo(false));
+		collector.checkThat(fut.isSuccessful(), equalTo(false));
+		collector.checkThat(fut.getException(), is(expect));
+	}
+
+	@Test public void forChecked_setException_isNoOp() {
+		IOException expect = new IOException("test");
+		Future<String> fut = Futures.immediateFailedFuture(expect);
+
+		fut.setException(new IOException("FAILURE"));
 
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
