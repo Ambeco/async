@@ -37,7 +37,7 @@ public class ImmediateFutureTest {
 		Futures.immediateFuture("test").addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
 				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture.run\\("
-						+ "Unknown\\sSource\\) //ImmediateFuture@\\d{8,10}\\[success=test]$"));
+						+ "Unknown\\sSource\\) //ImmediateFuture@\\d{10}\\[success=test]$"));
 	}
 
 	@Test public void forString_cancel_isNoOp() {
