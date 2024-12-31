@@ -35,12 +35,12 @@ public class FutureAsyncFunction<I, O> extends SingleParentTransformListenerFutu
 		this.function = null;
 	}
 
-	@Override protected @Nullable String toStringSource() {
+	@Override protected @Nullable Object toStringSource() {
 		AsyncFunction<? super I, ? extends O> function = this.function;
 		if (function == null) {
 			return super.toStringSource();
 		} else {
-			return this.function.toString();
+			return this.function;
 		}
 	}
 }

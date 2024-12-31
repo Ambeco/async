@@ -87,12 +87,12 @@ public class FutureRunnable<O> extends SubmittableListenerFuture<O> implements R
 		this.result = null;
 	}
 
-	@Override protected @Nullable String toStringSource() {
+	@Override protected @Nullable Object toStringSource() {
 		Runnable function = this.function;
 		if (function == null) {
 			return super.toStringSource();
 		} else {
-			return this.function.toString();
+			return this.function;
 		}
 	}
 }

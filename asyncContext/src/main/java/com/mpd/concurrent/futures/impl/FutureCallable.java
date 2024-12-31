@@ -57,12 +57,12 @@ public class FutureCallable<O> extends SubmittableListenerFuture<O> implements R
 		this.function = null;
 	}
 
-	@Override protected @Nullable String toStringSource() {
+	@Override protected @Nullable Object toStringSource() {
 		Callable<? extends O> function = this.function;
 		if (function == null) {
 			return super.toStringSource();
 		} else {
-			return this.function.toString();
+			return this.function;
 		}
 	}
 }

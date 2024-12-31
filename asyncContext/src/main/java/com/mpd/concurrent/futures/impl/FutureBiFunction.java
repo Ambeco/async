@@ -30,12 +30,12 @@ abstract class FutureBiFunction<I1, I2, O> extends TwoParentAbstractListenerFutu
 		setResult(function.apply(arg1, arg2));
 	}
 
-	@Override protected @Nullable String toStringSource() {
+	@Override protected @Nullable Object toStringSource() {
 		BiFunction<I1, I2, O> function = this.function;
 		if (function == null) {
 			return super.toStringSource();
 		} else {
-			return this.function.toString();
+			return this.function;
 		}
 	}
 }

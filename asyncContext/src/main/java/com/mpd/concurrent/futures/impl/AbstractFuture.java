@@ -262,12 +262,16 @@ public abstract class AbstractFuture<O> implements Future<O> {
 
 	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 		sb.append("\n  at ");
-		String source = toStringSource();
+		Object source = toStringSource();
 		if (source != null) {
-			sb.append(source).append(".apply(Unknown Source)");
+			sb.append(source.getClass().getCanonicalName())
+					.append(".apply(")
+					.append(source.getClass().getSimpleName())
+					.append(":0)");
 		} else {
 			sb.append(getClass().getCanonicalName()).append(".run(Unknown Source)");
 		}
+		sb.append(" //");
 		toString(sb);
 	}
 
@@ -283,7 +287,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 			setAsync = this.setAsync;
 		}
 		sb.append(getClass().getSimpleName());
-		String source = toStringSource();
+		Object source = toStringSource();
 		if (source != null) {
 			sb.append('<').append(source).append('>');
 		} else {
@@ -335,7 +339,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		return Long.compare(delayUnit.toNanos(delay), delayed.getDelay(TimeUnit.NANOSECONDS));
 	}
 
-	protected @Nullable String toStringSource() {
+	protected @Nullable Object toStringSource() {
 		return null;
 	}
 
@@ -361,7 +365,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 			sb.append("setAsync=").append(setAsync.getClass().getSimpleName());
 			boolean hasSource = false;
 			if (setAsync instanceof AbstractFuture) {
-				String source = ((AbstractFuture<?>) setAsync).toStringSource();
+				Object source = ((AbstractFuture<?>) setAsync).toStringSource();
 				if (source != null) {
 					sb.append('<').append(source).append('>');
 					hasSource = true;
