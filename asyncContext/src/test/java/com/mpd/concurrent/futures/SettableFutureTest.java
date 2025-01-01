@@ -17,11 +17,11 @@ public class SettableFutureTest {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.end();
 
-		collector.checkThrows(FutureNotCompleteException.class, fut::getDone);
+		collector.checkThrows(FutureNotCompleteException.class, fut::resultNow);
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(false));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThrows(FutureNotCompleteException.class, fut::getException);
+		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(TimeUnit.MILLISECONDS));
 	}
 }

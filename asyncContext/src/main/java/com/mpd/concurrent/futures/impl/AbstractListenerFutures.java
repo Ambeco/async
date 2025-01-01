@@ -135,7 +135,7 @@ public final class AbstractListenerFutures {
 		}
 
 		@Override protected final void execute() {
-			execute(checkNotNull(parent).getDone());
+			execute(checkNotNull(parent).resultNow());
 		}
 	}
 
@@ -203,7 +203,7 @@ public final class AbstractListenerFutures {
 		}
 
 		@Override protected final void execute() {
-			execute(throwableClass.cast(checkNotNull(parent).getException()));
+			execute(throwableClass.cast(checkNotNull(parent).exceptionNow()));
 		}
 	}
 
@@ -305,7 +305,7 @@ public final class AbstractListenerFutures {
 		}
 
 		@Override protected final void execute() {
-			execute(checkNotNull(parent1).getDone(), checkNotNull(parent2).getDone());
+			execute(checkNotNull(parent1).resultNow(), checkNotNull(parent2).resultNow());
 		}
 	}
 

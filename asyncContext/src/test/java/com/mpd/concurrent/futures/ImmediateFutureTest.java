@@ -27,7 +27,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.getException(), nullValue());
+		collector.checkThat(fut.exceptionNow(), nullValue());
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
@@ -35,7 +35,7 @@ public class ImmediateFutureTest {
 		Future<String> fut = Futures.immediateFuture("test");
 		fut.end();
 
-		collector.checkThat(fut.getDone(), equalTo("test"));
+		collector.checkThat(fut.resultNow(), equalTo("test"));
 		collector.checkThat(fut.get(), equalTo("test"));
 		collector.checkThat(fut.get(1, DAYS), equalTo("test"));
 	}
@@ -67,7 +67,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
-		collector.checkThat(fut.getException(), nullValue());
+		collector.checkThat(fut.exceptionNow(), nullValue());
 	}
 
 	@Test public void forString_setException_isNoOp() {
@@ -79,7 +79,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.getException(), nullValue());
+		collector.checkThat(fut.exceptionNow(), nullValue());
 	}
 
 	@Test public void forUnchecked_state_isFailed() {
@@ -90,7 +90,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.getException(), is(e));
+		collector.checkThat(fut.exceptionNow(), is(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
@@ -98,7 +98,7 @@ public class ImmediateFutureTest {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 
-		collector.checkThrows(ArithmeticException.class, fut::getDone, is(expect));
+		collector.checkThrows(ArithmeticException.class, fut::resultNow, is(expect));
 		collector.checkThrows(ArithmeticException.class, fut::get, is(expect));
 		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, DAYS), is(expect));
 	}
@@ -131,7 +131,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.getException(), is(expect));
+		collector.checkThat(fut.exceptionNow(), is(expect));
 	}
 
 	@Test public void forUnchecked_setException_isNoOp() {
@@ -143,7 +143,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.getException(), is(expect));
+		collector.checkThat(fut.exceptionNow(), is(expect));
 	}
 
 	@Test public void forChecked_state_isFailed() {
@@ -154,7 +154,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.getException(), is(e));
+		collector.checkThat(fut.exceptionNow(), is(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
@@ -162,7 +162,7 @@ public class ImmediateFutureTest {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 
-		AsyncCheckedException found = assertThrows(AsyncCheckedException.class, fut::getDone);
+		AsyncCheckedException found = assertThrows(AsyncCheckedException.class, fut::resultNow);
 		collector.checkThat(found.getCause(), is(expect));
 		found = assertThrows(AsyncCheckedException.class, fut::get);
 		collector.checkThat(found.getCause(), is(expect));
@@ -198,7 +198,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.getException(), is(expect));
+		collector.checkThat(fut.exceptionNow(), is(expect));
 	}
 
 	@Test public void forChecked_setException_isNoOp() {
@@ -210,7 +210,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.getException(), is(expect));
+		collector.checkThat(fut.exceptionNow(), is(expect));
 	}
 
 	@Test public void forCancellation_state_isFailed() {
@@ -221,7 +221,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(true));
-		collector.checkThat(fut.getException(), is(e));
+		collector.checkThat(fut.exceptionNow(), is(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
@@ -229,7 +229,7 @@ public class ImmediateFutureTest {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 
-		CancellationException found = assertThrows(CancellationException.class, fut::getDone);
+		CancellationException found = assertThrows(CancellationException.class, fut::resultNow);
 		collector.checkThat(found, is(expect));
 		found = assertThrows(CancellationException.class, fut::get);
 		collector.checkThat(found, is(expect));
@@ -267,7 +267,7 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.getException(), is(expect));
+		collector.checkThat(fut.exceptionNow(), is(expect));
 	}
 
 	@Test public void forCancellation_setException_isNoOp() {
@@ -279,6 +279,6 @@ public class ImmediateFutureTest {
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isCancelled(), equalTo(true));
-		collector.checkThat(fut.getException(), is(expect));
+		collector.checkThat(fut.exceptionNow(), is(expect));
 	}
 }

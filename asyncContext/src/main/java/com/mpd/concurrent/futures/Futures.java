@@ -32,7 +32,7 @@ public final class Futures {
 
 	// This only exists for backwards compatibility with Guava
 	public static <V> V getDone(Future<V> future) {
-		return future.getDone();
+		return future.resultNow();
 	}
 
 	public static <O> Future<O> immediateCancelledFuture() {
@@ -87,7 +87,7 @@ public final class Futures {
 		// Group up all exceptions
 		Throwable resultException = null;
 		for (Future<?> future : futures) {
-			Throwable nextException = future.isDone() ? future.getException() : new FutureNotCompleteException();
+			Throwable nextException = future.isDone() ? future.exceptionNow() : new FutureNotCompleteException();
 			if (nextException != null) {
 				if (resultException == null) {
 					resultException = nextException;
@@ -100,8 +100,8 @@ public final class Futures {
 	}
 
 	public static @Nullable Throwable getFutureExceptions(Future<?> future1, Future<?> future2) {
-		Throwable e1 = future1.isDone() ? future1.getException() : new FutureNotCompleteException();
-		Throwable e2 = future2.isDone() ? future2.getException() : new FutureNotCompleteException();
+		Throwable e1 = future1.isDone() ? future1.exceptionNow() : new FutureNotCompleteException();
+		Throwable e2 = future2.isDone() ? future2.exceptionNow() : new FutureNotCompleteException();
 		if (e1 == null) {
 			return e2;
 		} else if (e2 == null) {
@@ -138,7 +138,7 @@ public final class Futures {
 		@Override protected void execute() throws Exception {
 			ImmutableList.Builder<O> list = new ImmutableList.Builder<>();
 			for (Future<? extends O> future : getParents()) {
-				list.add(future.getDone());
+				list.add(future.resultNow());
 			}
 			setResult(list.build());
 		}

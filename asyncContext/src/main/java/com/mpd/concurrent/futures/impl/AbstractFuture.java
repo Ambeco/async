@@ -212,7 +212,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		}
 	}
 
-	@Override public synchronized O getDone() {
+	@Override public synchronized O resultNow() {
 		return getDoneLocked();
 	}
 
@@ -225,7 +225,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		return setComplete(FAILED_RESULT, exception, mayInterruptIfRunning);
 	}
 
-	@Override public synchronized @Nullable Throwable getException() {
+	@Override public synchronized @Nullable Throwable exceptionNow() {
 		return getExceptionLocked();
 	}
 

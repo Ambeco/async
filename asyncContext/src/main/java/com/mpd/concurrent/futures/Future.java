@@ -31,7 +31,7 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	}
 
 	default boolean isCancelled() {
-		return isDone() && getException() instanceof CancellationException;
+		return isDone() && exceptionNow() instanceof CancellationException;
 	}
 
 	boolean isDone();
@@ -48,10 +48,10 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	}
 
 	default boolean isSuccessful() {
-		return isDone() && getException() == null;
+		return isDone() && exceptionNow() == null;
 	}
 
-	O getDone(); //or throws FutureNotCompleteException, or the completed RuntimeException, or AsyncCheckedException
+	O resultNow(); //or throws FutureNotCompleteException, or the completed RuntimeException, or AsyncCheckedException
 
 	@SuppressWarnings("UnusedReturnValue") boolean setException(Throwable exception);
 
@@ -60,7 +60,7 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 		return setException(exception, mayInterruptIfRunning);
 	}
 
-	@MonotonicNonNull Throwable getException(); //or throws FutureNotCompleteException
+	@MonotonicNonNull Throwable exceptionNow(); //or throws FutureNotCompleteException
 
 	void setListener(FutureListener<? super O> task);
 
