@@ -46,7 +46,7 @@ public final class AbstractListenerFutures {
 				Future<?> parent, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
 		{
 			if (parent != this.parent) {
-				onCompletingLocked(FAILED_RESULT, new WrongParentFutureException(exception), NO_INTERRUPT);
+				setComplete(FAILED_RESULT, new WrongParentFutureException(exception), NO_INTERRUPT);
 				return false;
 			} else {
 				return true;
@@ -181,13 +181,13 @@ public final class AbstractListenerFutures {
 				Future<?> parent, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
 		{
 			if (parent != getParent()) {
-				onCompletingLocked(FAILED_RESULT, new WrongParentFutureException(exception), NO_INTERRUPT);
+				setComplete(FAILED_RESULT, new WrongParentFutureException(exception), NO_INTERRUPT);
 				return false;
 			} else if (exceptionClass.isInstance(exception)) {
 				return true;
 			} else {
 				//noinspection unchecked
-				onCompletingLocked((O) result, exception, mayInterruptIfRunning);
+				setComplete((O) result, exception, mayInterruptIfRunning);
 				return false;
 			}
 		}
