@@ -13,6 +13,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.function.Function;
 
 public class FutureCatchingFunction<E extends Throwable, O> extends SingleParentCatchingAbstractListenerFuture<E, O> {
+	// TODO function to use stub instead of Nullable?
 	private final Class<? extends Function> functionClass;
 	private volatile @Nullable Function<? super E, ? extends O> function;
 

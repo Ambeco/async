@@ -13,6 +13,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 public class FutureCallable<O> extends AbstractSubmittableFuture<O> implements RunnableFuture<O> {
+	// TODO function to use stub instead of Nullable?
 	private final Class<? extends Callable> functionClass;
 	private volatile @Nullable Callable<? extends O> function;
 

@@ -37,6 +37,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 					Thread.class,
 					"thread");
 
+	// TODO context + thread to use stubs instead of Nullable?
 	private volatile @Nullable AsyncContext context;
 	private volatile @Nullable Thread thread; // TODO: atomicThread
 

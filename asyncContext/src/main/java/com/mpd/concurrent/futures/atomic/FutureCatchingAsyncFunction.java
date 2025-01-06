@@ -14,6 +14,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public class FutureCatchingAsyncFunction<E extends Throwable, O>
 		extends SingleParentCatchingAbstractListenerFuture<E, O>
 {
+	// TODO function to use stub instead of Nullable?
 	private final Class<? extends AsyncFunction> functionClass;
 	private volatile @Nullable AsyncFunction<? super E, ? extends O> function;
 

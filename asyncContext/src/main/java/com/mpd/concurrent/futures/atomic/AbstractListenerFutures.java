@@ -18,6 +18,7 @@ public final class AbstractListenerFutures {
 	private AbstractListenerFutures() {}
 
 	public abstract static class SingleParentImmediateListenerFuture<I, O> extends AbstractListenerFuture<O> {
+		// TODO parent to use stub instead of Nullable?
 		private volatile @Nullable Future<? extends I> parent;
 
 		protected SingleParentImmediateListenerFuture(@NonNull Future<? extends I> parent) {
@@ -69,6 +70,7 @@ public final class AbstractListenerFutures {
 	}
 
 	public abstract static class SingleParentTransformListenerFuture<I, O> extends AbstractListenerFuture<O> {
+		// TODO parent to use stub instead of Nullable?
 		private volatile @Nullable Future<? extends I> parent;
 
 		protected SingleParentTransformListenerFuture(@NonNull Future<? extends I> parent, Executor executor) {
@@ -125,6 +127,7 @@ public final class AbstractListenerFutures {
 	public abstract static class SingleParentCatchingAbstractListenerFuture<E extends Throwable, O>
 			extends AbstractListenerFuture<O>
 	{
+		// TODO parent to use stub instead of Nullable?
 		private final Class<E> exceptionClass;
 		private volatile @Nullable Future<? extends O> parent;
 
@@ -196,6 +199,8 @@ public final class AbstractListenerFutures {
 				AtomicIntegerFieldUpdater.newUpdater((Class<TwoParentAbstractListenerFuture<?, ?, ?>>) (Class<?>) AbstractFuture.class,
 						"atomicComplete");
 		private final int completeBitfield = 0; // TODO: completeBitfield
+
+		// TODO parent to use stub instead of Nullable?
 		private volatile @Nullable Future<? extends I1> parent1;
 		private volatile @Nullable Future<? extends I2> parent2;
 

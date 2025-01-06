@@ -12,8 +12,9 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.concurrent.TimeUnit;
 
 public class FutureRunnable<O> extends AbstractSubmittableFuture<O> implements RunnableFuture<O> {
+	// TODO function to use stub instead of Nullable?
 	private final Class<? extends Runnable> functionClass;
-	private final @Nullable O result;
+	private volatile @Nullable O futureResult;
 	private volatile @Nullable Runnable function;
 
 	public FutureRunnable(@Nullable AsyncContext context, @NonNull Runnable function) {
@@ -23,7 +24,7 @@ public class FutureRunnable<O> extends AbstractSubmittableFuture<O> implements R
 	public FutureRunnable(@Nullable AsyncContext context, @NonNull Runnable function, @Nullable O result) {
 		super(context);
 		this.function = function;
-		this.result = result;
+		this.futureResult = result;
 		functionClass = function.getClass();
 	}
 
@@ -38,7 +39,7 @@ public class FutureRunnable<O> extends AbstractSubmittableFuture<O> implements R
 	{
 		super(context, delay, delayUnit);
 		this.function = function;
-		this.result = result;
+		this.futureResult = result;
 		functionClass = function.getClass();
 	}
 
@@ -48,7 +49,7 @@ public class FutureRunnable<O> extends AbstractSubmittableFuture<O> implements R
 			throw new RunCalledTwiceException();
 		}
 		function.run();
-		setResult(result);
+		setResult(futureResult);
 	}
 
 	@CallSuper @Override protected void afterDone(
@@ -59,6 +60,7 @@ public class FutureRunnable<O> extends AbstractSubmittableFuture<O> implements R
 	{
 		super.afterDone(result, exception, mayInterruptIfRunning, listener);
 		this.function = null;
+		this.futureResult = null;
 	}
 
 	protected Class<?> sourceClass() {

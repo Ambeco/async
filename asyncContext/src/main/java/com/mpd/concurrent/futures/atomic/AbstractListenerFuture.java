@@ -31,6 +31,7 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 					Executor.class,
 					"executor");
 
+	// TODO executor to use stub instead of Nullable?
 	private volatile @Nullable Executor executor; // TODO: atomicExecutor
 
 	protected AbstractListenerFuture(

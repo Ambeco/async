@@ -15,6 +15,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.function.Function;
 
 public class FutureFunction<I, O> extends SingleParentTransformListenerFuture<I, O> {
+	// TODO function to use stub instead of Nullable?
 	private final Class<? extends Function> functionClass;
 	private volatile @Nullable Function<? super I, ? extends O> function;
 

@@ -20,6 +20,7 @@ import java.util.concurrent.CancellationException;
 
 public abstract class AbstractFutureCompleteCombiner<I, O> extends AbstractListenerFuture<O> {
 	private final BitSet completed;
+	// TODO parent to use stub instead of Nullable?
 	private volatile @Nullable ImmutableList<Future<? extends I>> parents;
 
 	protected AbstractFutureCompleteCombiner(

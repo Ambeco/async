@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class FutureTimeout<O> extends AbstractListenerFuture<O> {
+	// TODO parent and exceptionOnTimeout to use stub instead of Nullable?
 	private final boolean interruptOnTimeout;
 	private volatile @Nullable Future<? extends O> parent;
 	private volatile @Nullable Throwable exceptionOnTimeout;

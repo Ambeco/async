@@ -12,6 +12,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 public abstract class FutureAsyncBiFunction<I1, I2, O> extends TwoParentAbstractListenerFuture<I1, I2, O> {
+	// TODO function to use stub instead of Nullable?
 	private final Class<? extends AsyncBiFunction> functionClass;
 	private volatile @Nullable AsyncBiFunction<I1, I2, O> function;
 

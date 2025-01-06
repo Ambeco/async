@@ -13,6 +13,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.function.BiFunction;
 
 abstract class FutureBiFunction<I1, I2, O> extends TwoParentAbstractListenerFuture<I1, I2, O> {
+	// TODO function to use stub instead of Nullable?
 	private final Class<? extends BiFunction> functionClass;
 	private volatile @Nullable BiFunction<I1, I2, O> function;
 

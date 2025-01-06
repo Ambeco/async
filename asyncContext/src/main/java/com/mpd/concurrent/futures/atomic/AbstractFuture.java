@@ -45,6 +45,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 
 	@SuppressWarnings("ConstantConditions") protected final @Nullable O FAILED_RESULT = null; //pseudo-static
 
+	// TODO listener + setAsync to use stubs instead of Nullable?
 	private final long scheduledNanos;
 	private volatile @Nullable FutureListener<? super O> listener = null; // TODO: atomicListener
 	private volatile @Nullable Future<? extends O> setAsync = null; // TODO: atomicSetAsync

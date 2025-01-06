@@ -12,6 +12,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.concurrent.TimeUnit;
 
 public class FutureAsyncCallable<O> extends AbstractSubmittableFuture<O> {
+	// TODO function to use stub instead of Nullable?
 	private final Class<? extends AsyncCallable> functionClass;
 	private volatile @Nullable AsyncCallable<? extends O> function;
 
