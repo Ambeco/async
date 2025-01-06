@@ -1,4 +1,4 @@
-package com.mpd.concurrent.futures.impl;
+package com.mpd.concurrent.futures.locked;
 
 import androidx.annotation.CallSuper;
 

@@ -3,7 +3,7 @@ package com.mpd.concurrent.executors;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 
-import com.mpd.concurrent.executors.impl.AndAlsoJavaExecutor;
+import com.mpd.concurrent.executors.locked.AndAlsoJavaExecutor;
 import com.mpd.concurrent.futures.SubmittableFuture;
 
 import org.checkerframework.checker.nullness.qual.Nullable;

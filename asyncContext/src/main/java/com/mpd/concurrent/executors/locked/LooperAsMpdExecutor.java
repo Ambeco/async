@@ -1,4 +1,4 @@
-package com.mpd.concurrent.executors.impl;
+package com.mpd.concurrent.executors.locked;
 
 import static com.mpd.concurrent.executors.Executor.threadInExecutorEnum;
 

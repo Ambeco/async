@@ -1,6 +1,6 @@
 package com.mpd.concurrent.executors;
 
-import static com.mpd.concurrent.executors.AsyncContext.getCurrentExecutionContext;
+import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionContext;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -8,16 +8,17 @@ import androidx.annotation.NonNull;
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.mpd.concurrent.AsyncCallable;
-import com.mpd.concurrent.executors.impl.MpdAsJavaExecutor;
+import com.mpd.concurrent.asyncContext.AsyncContext;
+import com.mpd.concurrent.executors.locked.MpdAsJavaExecutor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.SchedulableFuture;
 import com.mpd.concurrent.futures.SubmittableFuture;
-import com.mpd.concurrent.futures.impl.AbstractListenerFuture;
-import com.mpd.concurrent.futures.impl.FutureAsyncCallable;
-import com.mpd.concurrent.futures.impl.FutureCallable;
-import com.mpd.concurrent.futures.impl.FutureRunnable;
+import com.mpd.concurrent.futures.atomic.AbstractListenerFuture;
+import com.mpd.concurrent.futures.atomic.FutureAsyncCallable;
+import com.mpd.concurrent.futures.atomic.FutureCallable;
+import com.mpd.concurrent.futures.atomic.FutureRunnable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -59,13 +60,13 @@ public interface Executor extends AutoCloseable {
 	}
 
 	default <O> Future<O> submit(Runnable task, O result) {
-		return execute(new FutureRunnable<O>(null, null, task, result, this));
+		return execute(new FutureRunnable<O>(null, task, result));
 	}
 
 	default <O> Future<O> submit(Runnable task, O result, RunnablePriority priority) {
 		AsyncContext context = getCurrentExecutionContext().clone();
 		context.put(RunnablePriority.class, priority);
-		return execute(new FutureRunnable<O>(context, null, task, result, this));
+		return execute(new FutureRunnable<O>(context, task, result));
 	}
 
 	default <O> Future<O> submit(Callable<O> task) {
@@ -109,7 +110,7 @@ public interface Executor extends AutoCloseable {
 	default <O> SchedulableFuture<O> schedule(SchedulableFuture<O> task) {
 		long delayMs = task.getDelay(TimeUnit.MILLISECONDS);
 		Preconditions.checkArgument(delayMs > 0);
-		FutureRunnable<Void> delayed = new FutureRunnable<>(null, null, () -> {}, delayMs, TimeUnit.MILLISECONDS, this);
+		FutureRunnable<Void> delayed = new FutureRunnable<>(null, () -> {}, null, delayMs, TimeUnit.MILLISECONDS);
 		if (task instanceof AbstractListenerFuture) {
 			delayed.setListener((AbstractListenerFuture<O>) task);
 		} else {
@@ -129,33 +130,33 @@ public interface Executor extends AutoCloseable {
 	}
 
 	default Future<?> schedule(Runnable task, long delay, TimeUnit unit) {
-		return schedule(new FutureRunnable<>(null, null, task, delay, unit, this));
+		return schedule(new FutureRunnable<>(null, task, null, delay, unit));
 	}
 
 	default Future<?> schedule(Runnable task, long delay, TimeUnit unit, RunnablePriority priority) {
 		AsyncContext context = getCurrentExecutionContext().clone();
 		context.put(RunnablePriority.class, priority);
-		return schedule(new FutureRunnable<>(context, null, task, delay, unit, this));
+		return schedule(new FutureRunnable<>(context, task, null, delay, unit));
 	}
 
 	default <O> Future<O> schedule(Callable<O> task, long delay, TimeUnit unit) {
-		return schedule(new FutureCallable<>(null, null, task, delay, unit, this));
+		return schedule(new FutureCallable<>(null, task, delay, unit));
 	}
 
 	default <O> Future<O> schedule(Callable<O> task, long delay, TimeUnit unit, RunnablePriority priority) {
 		AsyncContext context = getCurrentExecutionContext().clone();
 		context.put(RunnablePriority.class, priority);
-		return schedule(new FutureCallable<>(context, null, task, delay, unit, this));
+		return schedule(new FutureCallable<>(context, task, delay, unit));
 	}
 
 	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, long delay, TimeUnit unit) {
-		return schedule(new FutureAsyncCallable<>(null, null, task, delay, unit, this));
+		return schedule(new FutureAsyncCallable<>(null, task, delay, unit));
 	}
 
 	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, long delay, TimeUnit unit, RunnablePriority priority) {
 		AsyncContext context = getCurrentExecutionContext().clone();
 		context.put(RunnablePriority.class, priority);
-		return schedule(new FutureAsyncCallable<>(context, null, task, delay, unit, this));
+		return schedule(new FutureAsyncCallable<>(context, task, delay, unit));
 	}
 
 	@ThreadInExecutorEnum int ownsThread(Thread thread);

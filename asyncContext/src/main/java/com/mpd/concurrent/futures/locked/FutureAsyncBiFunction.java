@@ -1,21 +1,20 @@
-package com.mpd.concurrent.futures.impl;
+package com.mpd.concurrent.futures.locked;
 
+import com.mpd.concurrent.AsyncBiFunction;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
-import com.mpd.concurrent.futures.impl.AbstractListenerFutures.TwoParentAbstractListenerFuture;
+import com.mpd.concurrent.futures.locked.AbstractListenerFutures.TwoParentAbstractListenerFuture;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.function.BiFunction;
+public abstract class FutureAsyncBiFunction<I1, I2, O> extends TwoParentAbstractListenerFuture<I1, I2, O> {
+	private final @Nullable AsyncBiFunction<I1, I2, O> function;
 
-abstract class FutureBiFunction<I1, I2, O> extends TwoParentAbstractListenerFuture<I1, I2, O> {
-	private final @Nullable BiFunction<I1, I2, O> function;
-
-	FutureBiFunction(
+	FutureAsyncBiFunction(
 			Future<? extends I1> parent1,
 			Future<? extends I2> parent2,
-			@NonNull BiFunction<I1, I2, O> function,
+			@NonNull AsyncBiFunction<I1, I2, O> function,
 			@NonNull Executor executor)
 	{
 		super(parent1, parent2, executor);
@@ -23,7 +22,7 @@ abstract class FutureBiFunction<I1, I2, O> extends TwoParentAbstractListenerFutu
 	}
 
 	@Override protected void execute(I1 arg1, I2 arg2) {
-		BiFunction<I1, I2, O> function = this.function;
+		AsyncBiFunction<I1, I2, O> function = this.function;
 		if (function == null) {
 			throw new RunCalledTwiceException();
 		}
@@ -31,7 +30,7 @@ abstract class FutureBiFunction<I1, I2, O> extends TwoParentAbstractListenerFutu
 	}
 
 	@Override protected @Nullable Object toStringSource() {
-		BiFunction<I1, I2, O> function = this.function;
+		AsyncBiFunction<I1, I2, O> function = this.function;
 		if (function == null) {
 			return super.toStringSource();
 		} else {

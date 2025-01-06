@@ -1,4 +1,4 @@
-package com.mpd.concurrent.futures.impl;
+package com.mpd.concurrent.futures.locked;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
@@ -216,6 +216,11 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		return getDoneLocked();
 	}
 
+	@SuppressWarnings("UnusedReturnValue") @Override
+	public boolean cancel(CancellationException exception, boolean mayInterruptIfRunning) {
+		return setException(exception, mayInterruptIfRunning);
+	}
+
 	@SuppressWarnings("UnusedReturnValue") public boolean setException(Throwable exception) {
 		return setComplete(FAILED_RESULT, exception, NO_INTERRUPT);
 	}
@@ -256,6 +261,10 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		return new FutureTimeout<>(this, timeout, unit, exceptionOnTimeout, interruptOnTimeout);
 	}
 
+	@Override public long getScheduledTimeNanos() {
+		throw new UnsupportedOperationException();
+	}
+
 	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 		sb.append("\n  at ");
 		Object source = toStringSource();
@@ -268,30 +277,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 			sb.append(getClass().getCanonicalName()).append(".run(Unknown Source)");
 		}
 		sb.append(" //");
-		toString(sb);
-	}
-
-	@Override public void toString(StringBuilder sb) {
-		Future<? extends O> setAsync;
-		boolean isDone;
-		Throwable exception;
-		O result;
-		synchronized (this) {
-			isDone = this.isDone;
-			exception = this.exception;
-			result = this.result;
-			setAsync = this.setAsync;
-		}
-		sb.append(getClass().getSimpleName());
-		Object source = toStringSource();
-		if (source != null) {
-			sb.append('<').append(source).append('>');
-		} else {
-			sb.append('@').append(System.identityHashCode(this));
-		}
-		sb.append('[');
-		toStringAppendState(isDone, result, exception, setAsync, sb);
-		sb.append(']');
+		toString(sb, TO_STRING_NO_STATE);
 	}
 
 	protected O getDoneLocked() {
@@ -329,6 +315,31 @@ public abstract class AbstractFuture<O> implements Future<O> {
 			throw new UnsupportedOperationException("not a scheduled future");
 		}
 		return delayUnit.convert(delay, timeUnit);
+	}
+
+	@Override public void toString(StringBuilder sb, boolean includeState) {
+		Future<? extends O> setAsync;
+		boolean isDone;
+		Throwable exception;
+		O result;
+		synchronized (this) {
+			isDone = this.isDone;
+			exception = this.exception;
+			result = this.result;
+			setAsync = this.setAsync;
+		}
+		sb.append(getClass().getSimpleName());
+		Object source = toStringSource();
+		if (source != null) {
+			sb.append('<').append(source).append('>');
+		} else {
+			sb.append('@').append(System.identityHashCode(this));
+		}
+		if (includeState) {
+			sb.append('[');
+			toStringAppendState(isDone, result, exception, setAsync, sb);
+			sb.append(']');
+		}
 	}
 
 	@Override public synchronized int compareTo(Delayed delayed) {
@@ -375,7 +386,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 
 	@NonNull @Override public String toString() {
 		StringBuilder sb = new StringBuilder();
-		toString(sb);
+		toString(sb, TO_STRING_WITH_STATE);
 		return sb.toString();
 	}
 }

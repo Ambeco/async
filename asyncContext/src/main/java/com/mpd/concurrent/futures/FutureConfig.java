@@ -6,8 +6,8 @@ import android.os.Looper;
 
 import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.executors.Executor;
-import com.mpd.concurrent.executors.impl.JavaAsMpdExecutor;
-import com.mpd.concurrent.executors.impl.LooperAsMpdExecutor;
+import com.mpd.concurrent.executors.locked.JavaAsMpdExecutor;
+import com.mpd.concurrent.executors.locked.LooperAsMpdExecutor;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.CancellationException;

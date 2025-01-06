@@ -5,11 +5,12 @@ import androidx.annotation.NonNull;
 import com.mpd.concurrent.AsyncFunction;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.FutureListener.RunnableListener;
-import com.mpd.concurrent.futures.impl.EndListener;
-import com.mpd.concurrent.futures.impl.FutureAsyncFunction;
-import com.mpd.concurrent.futures.impl.FutureCatchingAsyncFunction;
-import com.mpd.concurrent.futures.impl.FutureCatchingFunction;
-import com.mpd.concurrent.futures.impl.FutureFunction;
+import com.mpd.concurrent.futures.atomic.EndListener;
+import com.mpd.concurrent.futures.atomic.FutureAsyncFunction;
+import com.mpd.concurrent.futures.atomic.FutureCatchingAsyncFunction;
+import com.mpd.concurrent.futures.atomic.FutureCatchingFunction;
+import com.mpd.concurrent.futures.atomic.FutureFunction;
+import com.mpd.concurrent.futures.atomic.FutureTimeout;
 
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -25,52 +26,60 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 
 	boolean MAY_INTERRUPT = true;
 	boolean NO_INTERRUPT = false;
+	boolean TO_STRING_WITH_STATE = true;
+	boolean TO_STRING_NO_STATE = false;
+
+	boolean isDone();
+
+	default boolean isSuccessful() {
+		return isDone() && exceptionNow() == null;
+	}
+
+	@SuppressWarnings("UnusedReturnValue") default boolean setException(Throwable exception) {
+		return setException(exception, NO_INTERRUPT);
+	}
+
+	boolean setException(Throwable exception, boolean mayInterruptIfRunning);
+
+	O resultNow(); //or throws FutureNotCompleteException, or the completed RuntimeException, or AsyncCheckedException
 
 	@SuppressWarnings("UnusedReturnValue") default boolean cancel(boolean mayInterruptIfRunning) {
-		return setException(new CancellationException(), mayInterruptIfRunning);
+		return cancel(new CancellationException(), mayInterruptIfRunning);
 	}
 
 	default boolean isCancelled() {
 		return isDone() && exceptionNow() instanceof CancellationException;
 	}
 
-	boolean isDone();
+	@MonotonicNonNull Throwable exceptionNow(); //or throws FutureNotCompleteException
 
+	/**
+	 * @noinspection DeprecatedIsStillUsed
+	 */
 	@Deprecated default O get() {
-		return get(Integer.MAX_VALUE, TimeUnit.DAYS);
+		//noinspection deprecation
+		return get(Integer.MAX_VALUE, TimeUnit.NANOSECONDS);
 	}
 
+	/**
+	 * @noinspection DeprecatedIsStillUsed
+	 */
 	@Deprecated O get(long timeout, TimeUnit unit);
 
-	@SuppressWarnings("UnusedReturnValue")
-	default boolean cancel(CancellationException exception, boolean mayInterruptIfRunning) {
-		return setException(exception, mayInterruptIfRunning);
-	}
-
-	default boolean isSuccessful() {
-		return isDone() && exceptionNow() == null;
-	}
-
-	O resultNow(); //or throws FutureNotCompleteException, or the completed RuntimeException, or AsyncCheckedException
-
-	@SuppressWarnings("UnusedReturnValue") boolean setException(Throwable exception);
-
-	@SuppressWarnings("UnusedReturnValue")
-	default boolean setException(Throwable exception, boolean mayInterruptIfRunning) {
-		return setException(exception, mayInterruptIfRunning);
-	}
-
-	@MonotonicNonNull Throwable exceptionNow(); //or throws FutureNotCompleteException
+	@SuppressWarnings("UnusedReturnValue") boolean cancel(CancellationException exception, boolean mayInterruptIfRunning);
 
 	void setListener(FutureListener<? super O> task);
 
 	default void setListener(Runnable task, Executor executor) {
 		if (task instanceof FutureListener) {
+			//noinspection unchecked
 			setListener((FutureListener<O>) task);
 		} else {
 			setListener(new RunnableListener<>(task, executor));
 		}
 	}
+
+	long getScheduledTimeNanos();
 
 	default <U, FU extends U> Future<U> transform(Function<? super O, FU> function) {
 		return transform(function, futureConfig.getDefaultExecutor());
@@ -102,12 +111,11 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 		return new FutureCatchingAsyncFunction<>(exceptionClass, this, function, executor);
 	}
 
-	default void end() {
-		setListener(EndListener.INSTANCE);
+	default Future<O> withTimeout(
+			long timeout, TimeUnit unit, @Nullable Throwable exceptionOnTimeout, boolean interruptOnTimeout)
+	{
+		return new FutureTimeout<>(this, timeout, unit, exceptionOnTimeout, interruptOnTimeout);
 	}
-
-	Future<O> withTimeout(
-			long timeout, TimeUnit unit, @Nullable Throwable exceptionOnTimeout, boolean interruptOnTimeout);
 
 	default Future<O> withTimeout(long timeout, TimeUnit unit) {
 		return withTimeout(timeout, unit, null, NO_INTERRUPT);
@@ -117,11 +125,15 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 		return withTimeout(timeout, unit, exceptionOnTimeout, NO_INTERRUPT);
 	}
 
+	default void end() {
+		setListener(EndListener.INSTANCE);
+	}
+
 	void addPendingString(StringBuilder sb, int maxDepth);
 
-	void toString(StringBuilder sb);
+	void toString(StringBuilder sb, boolean includeState);
 
-	@NonNull @Override String toString();
+	@Override @NonNull String toString();
 
 	class FutureNotCompleteException extends IllegalStateException {
 		public FutureNotCompleteException() {}

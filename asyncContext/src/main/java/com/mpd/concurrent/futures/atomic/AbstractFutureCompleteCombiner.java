@@ -6,7 +6,9 @@ import androidx.annotation.CallSuper;
 
 import com.google.common.collect.ImmutableList;
 import com.mpd.concurrent.executors.Executor;
+import com.mpd.concurrent.executors.MoreExecutors;
 import com.mpd.concurrent.futures.Future;
+import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.Futures;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -18,30 +20,20 @@ import java.util.concurrent.CancellationException;
 
 public abstract class AbstractFutureCompleteCombiner<I, O> extends AbstractListenerFuture<O> {
 	private final BitSet completed;
-	private @Nullable ImmutableList<Future<? extends I>> parents;
-
-	protected AbstractFutureCompleteCombiner(Future<? extends I>[] futures)
-	{
-		this(futures, null);
-	}
+	private volatile @Nullable ImmutableList<Future<? extends I>> parents;
 
 	protected AbstractFutureCompleteCombiner(
-			Collection<? extends Future<? extends I>> futures)
-	{
-		this(futures, null);
-	}
-
-	protected AbstractFutureCompleteCombiner(
-			Future<? extends I>[] futures, @Nullable Executor executor)
+			Future<? extends I>[] futures, Executor executor)
 	{
 		this(ImmutableList.copyOf(futures), executor);
 	}
 
 	protected AbstractFutureCompleteCombiner(
-			@NonNull Collection<? extends Future<? extends I>> futures, @Nullable Executor executor)
+			@NonNull Collection<? extends Future<? extends I>> futures, Executor executor)
 	{
-		super(null, executor, ListenerFutureState.STATE_LISTENING);
+		super(null, executor);
 		if (futures instanceof ImmutableList) {
+			//noinspection rawtypes
 			this.parents = (ImmutableList) futures;
 		} else {
 			this.parents = ImmutableList.copyOf(futures);
@@ -49,50 +41,15 @@ public abstract class AbstractFutureCompleteCombiner<I, O> extends AbstractListe
 		completed = new BitSet(futures.size());
 	}
 
-	protected ImmutableList<Future<? extends I>> getParentsLocked() {
+	protected ImmutableList<Future<? extends I>> getParents() {
 		return checkNotNull(parents);
-	}
-
-	protected synchronized ImmutableList<Future<? extends I>> getParents() {
-		return checkNotNull(parents);
-	}
-
-	@CallSuper @Override protected void onCompletedLocked(@Nullable Throwable e) {
-		super.onCompletedLocked(e);
-		parents = null;
-	}
-
-	@CallSuper @Override protected void onCancelled(CancellationException exception, boolean mayInterruptIfRunning) {
-		ImmutableList<Future<? extends I>> parents = this.parents;
-		super.onCancelled(exception, mayInterruptIfRunning);
-		if (parents != null) {
-			for (Future<?> parent : parents) {
-				parent.cancel(exception, mayInterruptIfRunning);
-			}
-		}
-	}
-
-	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
-		sb.append("\n  at ");
-		toString(sb);
-		super.addPendingString(sb, maxDepth - 1);
-	}
-
-	@CallSuper protected void toStringAppendState(
-			boolean isDone,
-			@Nullable O result,
-			@Nullable Throwable exception,
-			@Nullable Future<? extends O> setAsync,
-			StringBuilder sb)
-	{
-		super.toStringAppendState(isDone, result, exception, setAsync, sb);
-		sb.append("completed=").append(completed.cardinality()).append("/").append(completed.size());
 	}
 
 	@Override protected boolean shouldQueueExecutionAfterParentComplete(
 			Future<?> parent, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
 	{
-		int idx = checkNotNull(parents).indexOf(parent);
+		ImmutableList<Future<? extends I>> parents = checkNotNull(this.parents);
+		int idx = parents.indexOf(parent);
 		if (idx == -1) {
 			throw new WrongParentFutureException();
 		}
@@ -113,27 +70,55 @@ public abstract class AbstractFutureCompleteCombiner<I, O> extends AbstractListe
 		}
 	}
 
-	public static class VoidFutureCompleteCombiner<I> extends AbstractFutureCompleteCombiner<I, Void> {
+	@CallSuper @Override protected void afterDone(
+			@Nullable O result,
+			@Nullable Throwable exception,
+			boolean mayInterruptIfRunning,
+			FutureListener<? super O> listener)
+	{
+		super.afterDone(result, exception, mayInterruptIfRunning, listener);
+		parents = null;
+	}
 
+	@CallSuper protected void toStringAppendState(
+			@Nullable O result, @Nullable Throwable exception, @Nullable Future<? extends O> setAsync, StringBuilder sb)
+	{
+		super.toStringAppendState(result, exception, setAsync, sb);
+		sb.append("completed=").append(completed.cardinality()).append("/").append(completed.size());
+	}
+
+	@CallSuper @Override protected void onCancelled(CancellationException exception, boolean mayInterruptIfRunning) {
+		ImmutableList<Future<? extends I>> parents = this.parents;
+		super.onCancelled(exception, mayInterruptIfRunning);
+		if (parents != null) {
+			for (Future<?> parent : parents) {
+				parent.cancel(exception, mayInterruptIfRunning);
+			}
+		}
+	}
+
+	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
+		ImmutableList<Future<? extends I>> parents = this.parents;
+		super.addPendingString(sb, maxDepth);
+		if (parents != null) {
+			for (Future<?> parent : parents) {
+				if (!parent.isDone()) {
+					parent.addPendingString(sb, maxDepth - 1);
+				}
+			}
+		}
+	}
+
+	public static class VoidFutureCompleteCombiner<I> extends AbstractFutureCompleteCombiner<I, Void> {
 		public VoidFutureCompleteCombiner(Future<? extends I>[] futures)
 		{
-			super(futures, null);
-		}
-
-		public VoidFutureCompleteCombiner(Collection<? extends Future<? extends I>> futures)
-		{
-			super(futures, null);
-		}
-
-		public VoidFutureCompleteCombiner(Future<? extends I>[] futures, @Nullable Executor executor)
-		{
-			super(ImmutableList.copyOf(futures), executor);
+			super(ImmutableList.copyOf(futures), MoreExecutors.directExecutor());
 		}
 
 		public VoidFutureCompleteCombiner(
-				@NonNull Collection<? extends Future<? extends I>> futures, @Nullable Executor executor)
+				@NonNull Collection<? extends Future<? extends I>> futures)
 		{
-			super(futures, executor);
+			super(futures, MoreExecutors.directExecutor());
 		}
 
 		@Override protected void execute() throws Exception {

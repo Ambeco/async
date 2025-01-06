@@ -2,7 +2,7 @@ package com.mpd.concurrent.futures;
 
 import androidx.annotation.CallSuper;
 
-import com.mpd.concurrent.futures.impl.AbstractFuture;
+import com.mpd.concurrent.futures.atomic.AbstractFuture;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -11,8 +11,8 @@ public class SettableFuture<O> extends AbstractFuture<O> {
 		return super.setResult(result);
 	}
 
-	@Override public void setResult(Future<? extends O> result) {
-		super.setResult(result);
+	@Override public boolean setResult(Future<? extends O> result) {
+		return super.setResult(result);
 	}
 
 	@Override public boolean setException(Throwable exception) {
@@ -20,14 +20,10 @@ public class SettableFuture<O> extends AbstractFuture<O> {
 	}
 
 	@CallSuper protected void toStringAppendState(
-			boolean isDone,
-			@Nullable O result,
-			@Nullable Throwable exception,
-			@Nullable Future<? extends O> setAsync,
-			StringBuilder sb)
+			@Nullable O result, @Nullable Throwable exception, @Nullable Future<? extends O> setAsync, StringBuilder sb)
 	{
-		super.toStringAppendState(isDone, result, exception, setAsync, sb);
-		if (!isDone && setAsync == null) {
+		super.toStringAppendState(result, exception, setAsync, sb);
+		if (exception == null && setAsync == null) {
 			sb.append(" state=unset");
 		}
 	}

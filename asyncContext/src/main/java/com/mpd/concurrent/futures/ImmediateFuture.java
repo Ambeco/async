@@ -1,6 +1,6 @@
 package com.mpd.concurrent.futures;
 
-import com.mpd.concurrent.futures.impl.AbstractFuture;
+import com.mpd.concurrent.futures.atomic.AbstractFuture;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 

@@ -1,4 +1,4 @@
-package com.mpd.concurrent.futures.impl;
+package com.mpd.concurrent.futures.locked;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -71,7 +71,7 @@ public abstract class AbstractFutureSuccessCombiner<I, O> extends AbstractListen
 
 	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 		sb.append("\n  at ");
-		toString(sb);
+		toString(sb, TO_STRING_WITH_STATE);
 		super.addPendingString(sb, maxDepth - 1);
 	}
 

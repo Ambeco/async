@@ -5,13 +5,15 @@ import androidx.annotation.CallSuper;
 import com.mpd.concurrent.AsyncFunction;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
-import com.mpd.concurrent.futures.impl.AbstractListenerFutures.SingleParentTransformListenerFuture;
+import com.mpd.concurrent.futures.FutureListener;
+import com.mpd.concurrent.futures.atomic.AbstractListenerFutures.SingleParentTransformListenerFuture;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class FutureAsyncFunction<I, O> extends SingleParentTransformListenerFuture<I, O> {
-	private @Nullable AsyncFunction<? super I, ? extends O> function;
+	private final Class<? extends AsyncFunction> functionClass;
+	private volatile @Nullable AsyncFunction<? super I, ? extends O> function;
 
 	public FutureAsyncFunction(
 			@NonNull Future<? extends I> parent,
@@ -20,27 +22,32 @@ public class FutureAsyncFunction<I, O> extends SingleParentTransformListenerFutu
 	{
 		super(parent, executor);
 		this.function = function;
+		functionClass = function.getClass();
 	}
 
-	@Override protected void execute(I arg) {
+	@Override protected void execute() {
 		AsyncFunction<? super I, ? extends O> function = this.function;
 		if (function == null) {
 			throw new RunCalledTwiceException();
 		}
-		setResult(function.apply(arg));
+		setResult(function.apply(getParent().resultNow()));
 	}
 
-	@CallSuper @Override protected void onCompletedLocked(@Nullable Throwable e) {
-		super.onCompletedLocked(e);
+	@CallSuper @Override protected void afterDone(
+			@Nullable O result,
+			@Nullable Throwable exception,
+			boolean mayInterruptIfRunning,
+			FutureListener<? super O> listener)
+	{
+		super.afterDone(result, exception, mayInterruptIfRunning, listener);
 		this.function = null;
 	}
 
-	@Override protected @Nullable Object toStringSource() {
-		AsyncFunction<? super I, ? extends O> function = this.function;
-		if (function == null) {
-			return super.toStringSource();
-		} else {
-			return this.function;
-		}
+	protected Class<?> sourceClass() {
+		return functionClass;
+	}
+
+	protected @Nullable String sourceMethodName() {
+		return "apply";
 	}
 }

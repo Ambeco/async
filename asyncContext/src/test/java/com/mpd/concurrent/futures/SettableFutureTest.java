@@ -73,7 +73,7 @@ public class SettableFutureTest {
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), hasCause(sameInstance(e)));
+		collector.checkThat(fut.exceptionNow(), sameInstance(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(TimeUnit.MILLISECONDS));
 		collector.checkThrows(AsyncCheckedException.class, fut::get, hasCause(sameInstance(e)));
 		collector.checkThrows(AsyncCheckedException.class, () -> fut.get(1, DAYS), hasCause(sameInstance(e)));
@@ -89,7 +89,7 @@ public class SettableFutureTest {
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isCancelled(), equalTo(true));
-		collector.checkThat(fut.exceptionNow(), hasCause(sameInstance(e)));
+		collector.checkThat(fut.exceptionNow(), sameInstance(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(TimeUnit.MILLISECONDS));
 		collector.checkThrows(CancellationException.class, fut::get);
 		collector.checkThrows(CancellationException.class, () -> fut.get(1, DAYS));

@@ -6,9 +6,9 @@ import com.google.common.collect.ImmutableList;
 import com.mpd.concurrent.AsyncCallable;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
-import com.mpd.concurrent.futures.impl.AbstractFutureCompleteCombiner.VoidFutureCompleteCombiner;
-import com.mpd.concurrent.futures.impl.AbstractFutureSuccessCombiner;
-import com.mpd.concurrent.futures.impl.AbstractFutureSuccessCombiner.VoidFutureSuccessCombiner;
+import com.mpd.concurrent.futures.atomic.AbstractFutureCompleteCombiner.VoidFutureCompleteCombiner;
+import com.mpd.concurrent.futures.atomic.AbstractFutureSuccessCombiner;
+import com.mpd.concurrent.futures.atomic.AbstractFutureSuccessCombiner.VoidFutureSuccessCombiner;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;

@@ -44,7 +44,7 @@ public class ImmediateFutureTest {
 		Future<String> fut = Futures.immediateFuture("test");
 		fut.end();
 
-		collector.checkThat(fut.toString(), matchesPattern("ImmediateFuture@\\d{1,20}\\[success=test]"));
+		collector.checkThat(fut.toString(), matchesPattern("ImmediateFuture@\\d{1,20}\\[ success=test]"));
 	}
 
 	@Test public void forString_addPendingString_correct() {
@@ -54,8 +54,8 @@ public class ImmediateFutureTest {
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
-				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture.run\\("
-						+ "Unknown\\sSource\\) //ImmediateFuture@\\d{1,20}\\[success=test]$"));
+				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
+						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ success=test]$"));
 	}
 
 	@Test public void forString_cancel_isNoOp() {
@@ -108,7 +108,7 @@ public class ImmediateFutureTest {
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 
 		collector.checkThat(fut.toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[failure=java.lang.ArithmeticException: test]"));
+				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]"));
 	}
 
 	@Test public void forUnchecked_addPendingString_correct() {
@@ -118,8 +118,8 @@ public class ImmediateFutureTest {
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
-				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture.run\\("
-						+ "Unknown\\sSource\\) //ImmediateFuture@\\d{1,20}\\[failure=java.lang.ArithmeticException: test]$"));
+				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
+						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]$"));
 	}
 
 	@Test public void forUnchecked_cancel_isNoOp() {
@@ -175,7 +175,7 @@ public class ImmediateFutureTest {
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 
 		collector.checkThat(fut.toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[failure=java.io.IOException: test]"));
+				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: test]"));
 	}
 
 	@Test public void forChecked_addPendingString_correct() {
@@ -185,8 +185,8 @@ public class ImmediateFutureTest {
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
-				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture.run\\("
-						+ "Unknown\\sSource\\) //ImmediateFuture@\\d{1,20}\\[failure=java.io.IOException: test]$"));
+				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
+						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: test]$"));
 	}
 
 	@Test public void forChecked_cancel_isNoOp() {
@@ -243,7 +243,7 @@ public class ImmediateFutureTest {
 
 		collector.checkThat(
 				fut.toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[cancelled=java.util.concurrent.CancellationException: test]"));
+				matchesPattern("ImmediateFuture@\\d{1,20}\\[ cancelled=java.util.concurrent.CancellationException: test]"));
 	}
 
 	@Test public void forCancellation_addPendingString_correct() {
@@ -254,8 +254,9 @@ public class ImmediateFutureTest {
 		fut.addPendingString(sb, 4);
 		collector.checkThat(
 				sb.toString(),
-				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture.run\\("
-						+ "Unknown\\sSource\\) //ImmediateFuture@\\d{1,20}\\[cancelled=java.util.concurrent.CancellationException: test]$"));
+				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
+						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ cancelled=java.util.concurrent"
+						+ ".CancellationException: test]$"));
 	}
 
 	@Test public void forCancellation_cancel_isNoOp() {

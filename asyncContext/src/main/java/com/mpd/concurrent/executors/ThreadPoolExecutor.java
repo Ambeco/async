@@ -8,10 +8,10 @@ import android.os.SystemClock;
 import androidx.annotation.NonNull;
 
 import com.google.common.collect.ImmutableList;
-import com.mpd.concurrent.executors.impl.AndAlsoJavaExecutor;
+import com.mpd.concurrent.executors.locked.AndAlsoJavaExecutor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
-import com.mpd.concurrent.futures.impl.FutureRunnable;
+import com.mpd.concurrent.futures.atomic.FutureRunnable;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 

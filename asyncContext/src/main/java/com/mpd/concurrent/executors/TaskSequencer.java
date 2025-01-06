@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
-import com.mpd.concurrent.futures.impl.AbstractListenerFutures.SingleParentImmediateListenerFuture;
+import com.mpd.concurrent.futures.atomic.AbstractListenerFutures.SingleParentImmediateListenerFuture;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -47,8 +47,8 @@ public class TaskSequencer {
 
 	public <O> SubmittableFuture<O> submit(SubmittableFuture<O> task) {
 		SubmittableFuture<O> wrapped = new SingleParentImmediateListenerFuture<O, O>(task) {
-			@Override protected void execute(Future<? extends O> parent) {
-				afterExecute(parent);
+			@Override protected void execute() {
+				afterExecute(getParent());
 			}
 		};
 		boolean shouldSubmit;

@@ -1,12 +1,12 @@
-package com.mpd.concurrent.futures.impl;
+package com.mpd.concurrent.futures.locked;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.mpd.concurrent.executors.AsyncContext.getCurrentExecutionContext;
+import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionContext;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.IntDef;
 
-import com.mpd.concurrent.executors.AsyncContext;
+import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.executors.Executor.RunnablePriority;
 import com.mpd.concurrent.futures.Future;

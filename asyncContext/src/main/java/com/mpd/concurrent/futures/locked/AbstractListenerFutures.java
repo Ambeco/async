@@ -1,11 +1,11 @@
-package com.mpd.concurrent.futures.impl;
+package com.mpd.concurrent.futures.locked;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.mpd.concurrent.executors.MoreExecutors.directExecutor;
 
 import androidx.annotation.CallSuper;
 
-import com.mpd.concurrent.executors.AsyncContext;
+import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 
@@ -303,7 +303,6 @@ public final class AbstractListenerFutures {
 				return false;
 			}
 		}
-
 		@Override protected final void execute() {
 			execute(checkNotNull(parent1).resultNow(), checkNotNull(parent2).resultNow());
 		}

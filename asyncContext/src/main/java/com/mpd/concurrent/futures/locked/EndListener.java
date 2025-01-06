@@ -1,4 +1,4 @@
-package com.mpd.concurrent.futures.impl;
+package com.mpd.concurrent.futures.locked;
 
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;

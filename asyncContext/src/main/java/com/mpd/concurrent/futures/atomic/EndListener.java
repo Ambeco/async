@@ -10,8 +10,6 @@ public class EndListener implements FutureListener<Object> {
 	}
 
 	@Override public void onFutureFailed(Future<?> future, Throwable exception, boolean mayInterruptIfRunning) {
-		if (exception != null) {
-			Future.futureConfig.onUnhandledException(exception);
-		}
+		Future.futureConfig.onUnhandledException(exception);
 	}
 }
