@@ -123,7 +123,6 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 				(exception instanceof RuntimeException)
 						? ((RuntimeException) exception)
 						: (new AsyncCheckedException(exception)));
-		atomicSetAsync.lazySet(this, null);
 	}
 
 	@CallSuper protected boolean setComplete(
@@ -131,6 +130,8 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	{
 		try {
 			Throwable oldException;
+			// This is the only real lock in the Futures. It ensures that #result, #interrupted, and #wrapped
+			// are stable after #execption is finalized. It also gives us a way to release Threads blocked by #get.
 			synchronized (this) {
 				oldException = atomicException.get(this);
 				// exception is the "source of truth" for future completeness
@@ -167,6 +168,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			boolean mayInterruptIfRunning,
 			FutureListener<? super O> listener)
 	{
+		atomicSetAsync.lazySet(this, null);
 		if (mayInterruptIfRunning) {
 			interruptTask(exception);
 		}
@@ -188,12 +190,8 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 
 	@CallSuper protected boolean setResult(Future<? extends O> asyncWork) {
 		try {
-			Throwable oldException;
-			boolean didSetAsync;
-			synchronized (this) {
-				oldException = atomicException.get(this);
-				didSetAsync = (oldException == null) && atomicSetAsync.compareAndSet(this, null, asyncWork);
-			}
+			Throwable oldException = atomicException.get(this);
+			boolean didSetAsync = (oldException == null) && atomicSetAsync.compareAndSet(this, null, asyncWork);
 			if (oldException == SUCCESS_EXCEPTION) {
 				setException(new SetResultCalledAfterSuccessException(asyncWork.isDone() ? asyncWork.exceptionNow() : null));
 			} else if (oldException == null && !didSetAsync) {
@@ -324,16 +322,13 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@CallSuper @Override public void setListener(FutureListener<? super O> listener) {
-		Throwable exception;
-		synchronized (this) {
-			if (!atomicListener.compareAndSet(this, null, listener)) {
-				if (atomicListener.get(this) != listener) {
-					throw new SetListenerCalledTwiceException();
-				}
-				return;
-			}
-			exception = atomicException.get(this);
+		if (!atomicListener.compareAndSet(this, null, listener)) {
+			if (atomicListener.get(this) != listener) {
+				throw new SetListenerCalledTwiceException();
+			} // else the same listener set twice. Weird, but safe.
+			return;
 		}
+		Throwable exception = atomicException.get(this);
 		if (exception != null) { // if this was already complete, then notify the listener immediately
 			if (exception == SUCCESS_EXCEPTION) {
 				//noinspection unchecked
