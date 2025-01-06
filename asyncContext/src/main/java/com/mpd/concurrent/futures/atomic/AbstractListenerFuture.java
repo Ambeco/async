@@ -56,17 +56,31 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 	{
 		try {
 			Throwable oldThrowable = getExceptionProtected();
-			Executor oldExecutor = this.executor;
+			Executor oldExecutor = atomicExecutor.get(this);
 			if (oldThrowable == SUCCESS_EXCEPTION) { // STATE_SUCCESS
-				setException(new SucceededBeforeParentException());
+				setException(new SucceededBeforeParentException("ListenerFuture \""
+						+ this
+						+ "\" already succeeded with \""
+						+ getResultProtected()
+						+ "\" before parent \""
+						+ future
+						+ "\" completed"));
 			} else if (oldThrowable != null) { // STATE_FAILED
 			} else if (oldExecutor == null) { // STATE_SCHEDULED, STATE_SUBMITTED, STATE_RUNNING, STATE_ASYNC
-				setException(new ParentSucceededTwiceException());
+				setException(new ParentSucceededTwiceException("ListenerFuture \""
+						+ this
+						+ "\" already submitted to executor before parent \""
+						+ future
+						+ "\" completed"));
 			} else { // STATE_LISTENING
 				if (!shouldQueueExecutionAfterParentComplete(future, result, exception, mayInterruptIfRunning)) {
 					// TODO keep the executor around for a while. Use something else to distinguish double submission
 				} else if (!atomicExecutor.compareAndSet(this, oldExecutor, null)) { // another thread changed the state
-					setException(new ParentSucceededTwiceException());
+					setException(new ParentSucceededTwiceException("ListenerFuture \""
+							+ this
+							+ "\" already submitted while processing completion of future "
+							+ future
+							+ "\", implying that the parent completed multiple times"));
 				} else { // successful transition to STATE_SUBMITTED
 					Throwable interrupt = getInterrupt();
 					if (interrupt != null) { // interrupted.
@@ -81,6 +95,16 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 		}
 	}
 
+	@Override public void onFutureSucceeded(Future<?> future, @Nullable Object result) {
+		//TODO: OMG FIX :(
+		onParentComplete(future, result, SUCCESS_EXCEPTION, NO_INTERRUPT);
+	}
+
+	@Override public void onFutureFailed(Future<?> future, @Nullable Throwable exception, boolean mayInterruptIfRunning) {
+		//TODO: OMG FIX :(
+		onParentComplete(future, FAILED_RESULT, exception, mayInterruptIfRunning);
+	}
+
 	@CallSuper @Override protected void afterDone(
 			@Nullable O result,
 			@Nullable Throwable exception,
@@ -91,18 +115,10 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 		atomicExecutor.lazySet(this, null);
 	}
 
-	@Override public void onFutureSucceeded(Future<?> future, @Nullable Object result) {
-		onParentComplete(future, result, SUCCESS_EXCEPTION, NO_INTERRUPT);
-	}
-
-	@Override public void onFutureFailed(Future<?> future, @Nullable Throwable exception, boolean mayInterruptIfRunning) {
-		onParentComplete(future, FAILED_RESULT, exception, mayInterruptIfRunning);
-	}
-
 	@CallSuper protected void toStringAppendState(
 			@Nullable O result, @Nullable Throwable exception, @Nullable Future<? extends O> setAsync, StringBuilder sb)
 	{
-		Executor executor = this.executor;
+		Executor executor = atomicExecutor.get(this);
 		super.toStringAppendState(result, exception, setAsync, sb);
 		if (executor != null) {
 			sb.append(" executor=").append(executor);

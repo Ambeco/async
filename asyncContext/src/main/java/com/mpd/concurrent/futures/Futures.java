@@ -87,7 +87,8 @@ public final class Futures {
 		// Group up all exceptions
 		Throwable resultException = null;
 		for (Future<?> future : futures) {
-			Throwable nextException = future.isDone() ? future.exceptionNow() : new FutureNotCompleteException();
+			Throwable nextException = future.isDone() ? future.exceptionNow() : new FutureNotCompleteException(
+					"getFutureExceptions called containing incomplete future " + future);
 			if (nextException != null) {
 				if (resultException == null) {
 					resultException = nextException;
@@ -100,8 +101,12 @@ public final class Futures {
 	}
 
 	public static @Nullable Throwable getFutureExceptions(Future<?> future1, Future<?> future2) {
-		Throwable e1 = future1.isDone() ? future1.exceptionNow() : new FutureNotCompleteException();
-		Throwable e2 = future2.isDone() ? future2.exceptionNow() : new FutureNotCompleteException();
+		Throwable e1 = future1.isDone() ? future1.exceptionNow() : new FutureNotCompleteException("getFutureExceptions "
+				+ "called with incomplete future "
+				+ future1);
+		Throwable e2 = future2.isDone() ? future2.exceptionNow() : new FutureNotCompleteException("getFutureExceptions "
+				+ "called with incomplete future "
+				+ future2);
 		if (e1 == null) {
 			return e2;
 		} else if (e2 == null) {

@@ -37,7 +37,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 					Thread.class,
 					"thread");
 
-	private @Nullable AsyncContext context;
+	private volatile @Nullable AsyncContext context;
 	private volatile @Nullable Thread thread; // TODO: atomicThread
 
 	protected AbstractSubmittableFuture(
@@ -56,7 +56,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 	@Override public RunnablePriority getRunnablePriority() {
 		AsyncContext context = this.context;
 		if (context == null) {
-			return RunnablePriority.PRIORITY_DEFAULT;
+			return RunnablePriority.PRIORITY_NA;
 		}
 		return context.getOrDefault(RunnablePriority.class, RunnablePriority.PRIORITY_DEFAULT);
 	}
@@ -85,18 +85,25 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 		Throwable oldException = getExceptionProtected();
 		if (oldException == null && getSetAsync() == null) { // NOT (STATE_SUCCESS || STATE_FAILED || STATE_ASYNC)
 			if (atomicThread.get(this) == currentThread) { // STATE_RUNNING
-				setException(new RunDidNotSetFutureCompletionException());
+				setException(new RunDidNotSetFutureCompletionException("SubmittableFuture \""
+						+ this
+						+ "\" execute() method "
+						+ "did not "
+						+ "call #setResult(O) or #setException(E) nor #setResult(Future)"));
 			} else { //STATE_LISTENING || STATE_SCHEDULED || STATE_SUBMITTED
-				setException(new FutureStateMachineWentBackwardsException());
+				setException(new FutureStateMachineWentBackwardsException("#endRunning called but future \""
+						+ this
+						+ "\" was not currently running. This should only have been called by #run"));
 			}
 		}
 		atomicThread.set(this, null);
 	}
 
 	@Override public final void run() {
+		AsyncContext selfContext = context;
 		AsyncContext oldContext = null;
 		try {
-			oldContext = AsyncContext.resumeExecutionContext(context);
+			oldContext = AsyncContext.resumeExecutionContext(selfContext);
 
 			if (startRunning()) { // if changed to STATE_RUNNING
 				execute();
@@ -105,7 +112,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 		} catch (Throwable e) {
 			setException(e);
 		} finally {
-			AsyncContext.pauseExecutionContext(context, oldContext);
+			AsyncContext.pauseExecutionContext(selfContext, oldContext);
 		}
 	}
 
@@ -124,8 +131,12 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 		Throwable oldException = getExceptionProtected();
 		if (oldException != null) { // STATE_SUCCESS || STATE_FAILED
 			return super.setResult(asyncWork);
-		} else if (thread == null) { // STATE_LISTENING || STATE_SCHEDULED || STATE_SUBMITTED || STATE_ASYNC
-			setException(new SetResultCalledBeforeRunException());
+		} else if (atomicThread.get(this) == null) { // STATE_LISTENING || STATE_SCHEDULED || STATE_SUBMITTED || STATE_ASYNC
+			setException(new SetResultCalledBeforeRunException("setResult("
+					+ asyncWork
+					+ " called on SubmittableFuture \""
+					+ this
+					+ "\" before it actually started execution"));
 			return false;
 		} else { // STATE_RUNNING
 			return super.setResult(asyncWork);
@@ -163,7 +174,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 	@CallSuper protected void toStringAppendState(
 			@Nullable O result, @Nullable Throwable exception, @Nullable Future<? extends O> setAsync, StringBuilder sb)
 	{
-		Thread thread = this.thread;
+		Thread thread = atomicThread.get(this);
 		super.toStringAppendState(result, exception, setAsync, sb);
 		if (thread != null) {
 			sb.append(" thread=").append(thread);
