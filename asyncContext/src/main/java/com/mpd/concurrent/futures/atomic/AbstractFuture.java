@@ -289,16 +289,57 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		return setComplete(FAILED_RESULT, exception, mayInterruptIfRunning);
 	}
 
-	@Override public void onFutureSucceeded(Future<?> future, Object result) {
-		//noinspection unchecked
-		setResult((O) result);
+	/**
+	 * @noinspection BooleanMethodIsAlwaysInverted
+	 */
+	@CallSuper protected boolean onParentComplete(
+			Future<?> future, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
+	{
+		Throwable oldThrowable = getExceptionProtected();
+		Future<?> setAsync = getSetAsync();
+		if (oldThrowable == SUCCESS_EXCEPTION) { // STATE_SUCCESS
+			setException(new AbstractListenerFuture.SucceededBeforeParentException("ListenerFuture \""
+					+ this
+					+ "\" already succeeded with \""
+					+ getResultProtected()
+					+ "\" before Future \""
+					+ future
+					+ "\" completed"));
+			return true;
+		} else if (oldThrowable != null) { // STATE_FAILED
+			return true;
+		} else if (future == setAsync) { //STATE_ASYNC
+			if (exception == SUCCESS_EXCEPTION) {
+				//noinspection unchecked
+				setResult((O) result);
+			} else {
+				setException(exception, mayInterruptIfRunning);
+			}
+			return true;
+		}
+		return false;
 	}
 
+	@CallSuper
+	@Override public void onFutureSucceeded(Future<?> future, Object result) {
+		try {
+			if (!onParentComplete(future, result, SUCCESS_EXCEPTION, NO_INTERRUPT)) {
+				setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
+			}
+		} catch (RuntimeException e) {
+			setException(e);
+		}
+	}
+
+	@CallSuper
 	@Override public void onFutureFailed(Future<?> future, Throwable exception, boolean mayInterruptIfRunning) {
-		if (exception instanceof CancellationException) {
-			cancel((CancellationException) exception, mayInterruptIfRunning);
-		} else {
-			setException(exception);
+		try {
+			if (!onParentComplete(future, null, exception, mayInterruptIfRunning)) {
+				setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
+			}
+		} catch (RuntimeException e) {
+			e.addSuppressed(exception);
+			setException(e);
 		}
 	}
 

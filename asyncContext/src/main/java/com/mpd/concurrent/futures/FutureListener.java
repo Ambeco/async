@@ -39,22 +39,6 @@ public interface FutureListener<I> {
 		}
 	}
 
-	class DidNotDispatchListenerFutureException extends IllegalStateException {
-		public DidNotDispatchListenerFutureException() {}
-
-		public DidNotDispatchListenerFutureException(String message) {
-			super(message);
-		}
-
-		public DidNotDispatchListenerFutureException(String message, Throwable cause) {
-			super(message, cause);
-		}
-
-		public DidNotDispatchListenerFutureException(Throwable cause) {
-			super(cause);
-		}
-	}
-
 	class RunnableListener<I> implements FutureListener<I> {
 		Runnable runnable;
 		Executor executor;

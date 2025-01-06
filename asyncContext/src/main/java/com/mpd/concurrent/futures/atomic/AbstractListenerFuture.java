@@ -51,58 +51,33 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 	abstract protected boolean shouldQueueExecutionAfterParentComplete(
 			Future<?> parent, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning);
 
-	protected void onParentComplete(
+	/**
+	 * @noinspection BooleanMethodIsAlwaysInverted
+	 */
+	protected boolean onParentComplete(
 			Future<?> future, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
 	{
-		try {
-			Throwable oldThrowable = getExceptionProtected();
-			Executor oldExecutor = atomicExecutor.get(this);
-			if (oldThrowable == SUCCESS_EXCEPTION) { // STATE_SUCCESS
-				setException(new SucceededBeforeParentException("ListenerFuture \""
-						+ this
-						+ "\" already succeeded with \""
-						+ getResultProtected()
-						+ "\" before parent \""
-						+ future
-						+ "\" completed"));
-			} else if (oldThrowable != null) { // STATE_FAILED
-			} else if (oldExecutor == null) { // STATE_SCHEDULED, STATE_SUBMITTED, STATE_RUNNING, STATE_ASYNC
-				setException(new ParentSucceededTwiceException("ListenerFuture \""
-						+ this
-						+ "\" already submitted to executor before parent \""
-						+ future
-						+ "\" completed"));
-			} else { // STATE_LISTENING
-				if (!shouldQueueExecutionAfterParentComplete(future, result, exception, mayInterruptIfRunning)) {
-					// TODO keep the executor around for a while. Use something else to distinguish double submission
-				} else if (!atomicExecutor.compareAndSet(this, oldExecutor, null)) { // another thread changed the state
-					setException(new ParentSucceededTwiceException("ListenerFuture \""
-							+ this
-							+ "\" already submitted while processing completion of future "
-							+ future
-							+ "\", implying that the parent completed multiple times"));
-				} else { // successful transition to STATE_SUBMITTED
-					Throwable interrupt = getInterrupt();
-					if (interrupt != null) { // interrupted.
-						setException(interrupt, MAY_INTERRUPT);
-					} else {
-						oldExecutor.submit(this);
-					}
-				}
-			}
-		} catch (RuntimeException e) {
-			setException(e);
+		if (super.onParentComplete(future, result, exception, mayInterruptIfRunning)) {
+			return true;
 		}
-	}
-
-	@Override public void onFutureSucceeded(Future<?> future, @Nullable Object result) {
-		//TODO: OMG FIX :(
-		onParentComplete(future, result, SUCCESS_EXCEPTION, NO_INTERRUPT);
-	}
-
-	@Override public void onFutureFailed(Future<?> future, @Nullable Throwable exception, boolean mayInterruptIfRunning) {
-		//TODO: OMG FIX :(
-		onParentComplete(future, FAILED_RESULT, exception, mayInterruptIfRunning);
+		Executor oldExecutor = atomicExecutor.get(this);
+		if (!shouldQueueExecutionAfterParentComplete(future, result, exception, mayInterruptIfRunning)) {
+			// TODO keep the executor around for a while. Use something else to distinguish double submission
+		} else if (!atomicExecutor.compareAndSet(this, oldExecutor, null)) { // another thread changed the state
+			setException(new ParentSucceededTwiceException("ListenerFuture \""
+					+ this
+					+ "\" already submitted while processing completion of future "
+					+ future
+					+ "\", implying that the parent completed multiple times"));
+		} else { // successful transition to STATE_SUBMITTED
+			Throwable interrupt = getInterrupt();
+			if (interrupt != null) { // interrupted.
+				setException(interrupt, MAY_INTERRUPT);
+			} else {
+				oldExecutor.submit(this);
+			}
+		}
+		return true; // assume shouldQueueExecutionAfterParentComplete handles all futures
 	}
 
 	@CallSuper @Override protected void afterDone(

@@ -143,26 +143,6 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 		}
 	}
 
-	@CallSuper @Override public void onFutureSucceeded(Future<?> parent, @Nullable Object result) {
-		Future<?> setAsync = getSetAsync();
-		if (parent == setAsync) {
-			//noinspection unchecked
-			setComplete((O) result, SUCCESS_EXCEPTION, NO_INTERRUPT);
-		} else {
-			setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
-		}
-	}
-
-	@CallSuper @Override
-	public void onFutureFailed(Future<?> parent, Throwable exception, boolean mayInterruptIfRunning) {
-		Future<?> setAsync = getSetAsync();
-		if (parent == setAsync) {
-			setComplete(FAILED_RESULT, exception, mayInterruptIfRunning);
-		} else {
-			setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
-		}
-	}
-
 	@CallSuper @Override protected void interruptTask(Throwable exception) {
 		Thread thread = atomicThread.get(this);
 		if (thread != null) {
