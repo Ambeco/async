@@ -85,6 +85,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 
 	protected AbstractFuture(@Nullable O result) {
 		this.exception = SUCCESS_EXCEPTION;
+		this.wrappedException = SUCCESS_EXCEPTION;
 		this.result = result;
 		scheduledNanos = -1;
 	}
