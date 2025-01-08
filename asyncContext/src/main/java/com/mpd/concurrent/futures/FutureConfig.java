@@ -8,6 +8,7 @@ import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.executors.locked.JavaAsMpdExecutor;
 import com.mpd.concurrent.executors.locked.LooperAsMpdExecutor;
+import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.CancellationException;
@@ -34,27 +35,32 @@ public interface FutureConfig {
 		private static UncaughtExceptionHandler getBestDelegate(Thread currentThread) {
 			UncaughtExceptionHandler currentThreadHandler = currentThread.getUncaughtExceptionHandler();
 			if (currentThreadHandler != null) {
+				log.atFine().log("Unhandled Exception handled by current thread handler %s", currentThreadHandler);
 				return currentThreadHandler;
 			}
 			UncaughtExceptionHandler defaultThreadHandler = Thread.getDefaultUncaughtExceptionHandler();
 			if (defaultThreadHandler != null) {
+				log.atFine().log("Unhandled Exception handled by current thread handler %s", defaultThreadHandler);
 				return defaultThreadHandler;
 			}
 			UncaughtExceptionHandler mainThreadHandler = Looper.getMainLooper().getThread().getUncaughtExceptionHandler();
 			if (mainThreadHandler != null) {
+				log.atFine().log("Unhandled Exception handled by current thread handler %s", mainThreadHandler);
 				return mainThreadHandler;
 			}
 			// Throw the exception in the main thread and let the OS handle the app crash.
 			// Theoretically the main thread might be blocked, preventing the crash, but in practice, the OS will ANR/crash
 			// the process in that case anyway, making that situation moot.
+			log.atFine().log("Unhandled Exception handled by crash-in-main-thread-fallback");
 			return (thread, throwable) -> {
 				log.atSevere().withCause(throwable).log("Unhandled Exception in thread %s", thread);
 				Handler mainHandler = new Handler(Looper.getMainLooper());
 				mainHandler.post(() -> {
+					log.atFine().log("Unhandled Exception handler crash-in-main-thread-fallback crashing now");
 					if (throwable instanceof RuntimeException) {
 						throw (RuntimeException) throwable;
 					} else {
-						throw new RuntimeException(throwable);
+						throw new AsyncCheckedException(throwable);
 					}
 				});
 			};
