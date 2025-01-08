@@ -1,10 +1,12 @@
 package com.mpd.concurrent.asyncContext;
 
-import android.util.Log;
+import com.google.common.flogger.FluentLogger;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 public interface AsyncContextConfig {
+	FluentLogger log = FluentLogger.forEnclosingClass();
+
 	AsyncContext onMissingTrace();
 
 	void onDuplicateTrace(AsyncContext oldContext);
@@ -18,7 +20,7 @@ public interface AsyncContextConfig {
 					"ExecutionContext was not propagated. Runnables created in one thread should store the current "
 							+ "ExecutionContext when they are created, set it before running, and restore the previous ExecutionContext "
 							+ "when they finish. The runnable that didn't propagate the ExecutionContext should be near the root of this callstack.");
-			Log.w("ExecutionContextConfig", "Missing trace", exception);
+			log.atWarning().withCause(exception).log("Missing trace");
 			return AsyncContext.setNewRootContext("(Missing Root Trace)");
 		}
 
@@ -28,7 +30,7 @@ public interface AsyncContextConfig {
 							+ "ExecutionContext when they are created, set it when they start running, and restore the previous "
 							+ "ExecutionContext when they finish. It seems like a prior runnable did not correctly end it's "
 							+ "ExecutionContext");
-			Log.w("ExecutionContextConfig", "Duplicate traces", exception);
+			log.atWarning().withCause(exception).log("Duplicate trace");
 		}
 
 		@Override public void popTraceMismatch(
@@ -38,7 +40,7 @@ public interface AsyncContextConfig {
 					"ExecutionContext was not freed. Runnables created in one thread should store the current "
 							+ "ExecutionContext when they are created, set it before running, and restore the previous ExecutionContext "
 							+ "when they finish.");
-			Log.w("ExecutionContextConfig", "Duplicate traces", exception);
+			log.atWarning().withCause(exception).log("Mismatched trace stack");
 		}
 	}
 
