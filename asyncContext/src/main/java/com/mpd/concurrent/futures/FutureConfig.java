@@ -3,27 +3,21 @@ package com.mpd.concurrent.futures;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-
 import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.executors.locked.JavaAsMpdExecutor;
 import com.mpd.concurrent.executors.locked.LooperAsMpdExecutor;
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
-
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.CancellationException;
 
 public interface FutureConfig {
 	// default executor for future transforms
-	default Executor getDefaultExecutor() {
-		return new JavaAsMpdExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Runtime.getRuntime().availableProcessors());
-	}
+	Executor getDefaultExecutor();
 
-	// Many executors won't implement scheduling directly, and will simply delegate to this executor for the
+	// Some executors won't implement scheduling directly, and will simply delegate to this executor for the
 	// delay, and after that completes, immediately run the task on themselves.
-	default Executor getDelegateScheduledExecutor() {
-		return new LooperAsMpdExecutor(Looper.getMainLooper());
-	}
+	Executor getDelegateScheduledExecutor();
 
 	// what to do when an unhandled exception occurs. Note that CancellationException should probably be ignored.
 	void onUnhandledException(Throwable exception);
@@ -31,6 +25,18 @@ public interface FutureConfig {
 
 	class DefaultFutureConfig implements FutureConfig {
 		static final FluentLogger log = FluentLogger.forEnclosingClass();
+		static final JavaAsMpdExecutor defaultExecutor = new JavaAsMpdExecutor(
+				AsyncTask.THREAD_POOL_EXECUTOR,
+				Runtime.getRuntime().availableProcessors());
+		static final LooperAsMpdExecutor defaultScheduledExecutor = new LooperAsMpdExecutor(Looper.getMainLooper());
+
+		@Override public Executor getDefaultExecutor() {
+			return defaultExecutor;
+		}
+
+		@Override public Executor getDelegateScheduledExecutor() {
+			return defaultScheduledExecutor;
+		}
 
 		private static UncaughtExceptionHandler getBestDelegate(Thread currentThread) {
 			UncaughtExceptionHandler currentThreadHandler = currentThread.getUncaughtExceptionHandler();
