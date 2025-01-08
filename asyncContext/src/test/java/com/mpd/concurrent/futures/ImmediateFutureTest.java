@@ -1,22 +1,23 @@
 package com.mpd.concurrent.futures;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThrows;
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.test.ErrorCollector;
-
-import org.junit.Rule;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
 
+@RunWith(RobolectricTestRunner.class)
 public class ImmediateFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
 
@@ -45,12 +46,6 @@ public class ImmediateFutureTest {
 		fut.end();
 
 		collector.checkThat(fut.toString(), matchesPattern("ImmediateFuture@\\d{1,20}\\[ success=test]"));
-	}
-
-	@Test public void forString_addPendingString_correct() {
-		Future<String> fut = Futures.immediateFuture("test");
-		fut.end();
-
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
@@ -111,13 +106,6 @@ public class ImmediateFutureTest {
 
 		collector.checkThat(fut.toString(),
 				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]"));
-	}
-
-	@Test public void forUnchecked_addPendingString_correct() {
-		ArithmeticException expect = new ArithmeticException("test");
-		Future<String> fut = Futures.immediateFailedFuture(expect);
-		fut.catching(ArithmeticException.class, ex -> null).end();
-
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
@@ -183,13 +171,6 @@ public class ImmediateFutureTest {
 
 		collector.checkThat(fut.toString(),
 				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: test]"));
-	}
-
-	@Test public void forChecked_addPendingString_correct() {
-		IOException expect = new IOException("test");
-		Future<String> fut = Futures.immediateFailedFuture(expect);
-		fut.catching(IOException.class, ex -> null).end();
-
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
@@ -256,13 +237,6 @@ public class ImmediateFutureTest {
 		collector.checkThat(
 				fut.toString(),
 				matchesPattern("ImmediateFuture@\\d{1,20}\\[ cancelled=java.util.concurrent.CancellationException: test]"));
-	}
-
-	@Test public void forCancellation_addPendingString_correct() {
-		CancellationException expect = new CancellationException("test");
-		Future<String> fut = Futures.immediateFailedFuture(expect);
-		fut.end();
-
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(
