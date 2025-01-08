@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
+	public static final LooperAsMpdExecutor UI_THREAD_EXECUTOR = new LooperAsMpdExecutor(Looper.getMainLooper());
+
 	private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
 	private final Handler handler;
