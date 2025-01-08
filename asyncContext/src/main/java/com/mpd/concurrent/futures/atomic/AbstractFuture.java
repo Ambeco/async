@@ -53,6 +53,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	private volatile @MonotonicNonNull O result = null;
 	private volatile @MonotonicNonNull RuntimeException wrappedException = null;
 	private volatile @MonotonicNonNull Throwable wasInterrupted = null;
+	private volatile boolean exceptionPropagated = false;
 
 	protected AbstractFuture() {
 		scheduledNanos = -1;
@@ -163,6 +164,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			onCancelled(((CancellationException) exception), mayInterruptIfRunning);
 		}
 		if (listener != null) {
+			exceptionPropagated = true;
 			if (exception == null) {
 				listener.onFutureSucceeded(this, result);
 			} else {
@@ -402,6 +404,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 		Throwable exception = atomicException.get(this);
 		if (exception != null) { // if this was already complete, then notify the listener immediately
+			exceptionPropagated = true;
 			if (exception == SUCCESS_EXCEPTION) {
 				listener.onFutureSucceeded(this, result);
 			} else {
@@ -502,6 +505,16 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		return sb.toString();
 	}
 
+	@Override protected void finalize() throws Throwable {
+		if (!exceptionPropagated) {
+			Future.futureConfig.onUnhandledException(new LeakedFutureException("future \""
+					+ this
+					+ "\" was leaked without having a listener set or #end() being called. This silently drops exceptions,"
+					+ " which makes bugs virtually impossible to detect, diagnose, or debug."));
+		}
+		super.finalize();
+	}
+
 	public static class SetResultCalledAfterSuccessException extends IllegalStateException {
 		public SetResultCalledAfterSuccessException() {}
 
@@ -530,6 +543,22 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 
 		public SetResultCalledTwiceException(String message, @Nullable Throwable throwable) {
+			super(message, throwable);
+		}
+	}
+
+	public static class LeakedFutureException extends IllegalStateException {
+		public LeakedFutureException() {}
+
+		public LeakedFutureException(String message) {
+			super(message);
+		}
+
+		public LeakedFutureException(Throwable throwable) {
+			super(throwable);
+		}
+
+		public LeakedFutureException(String message, @Nullable Throwable throwable) {
 			super(message, throwable);
 		}
 	}
