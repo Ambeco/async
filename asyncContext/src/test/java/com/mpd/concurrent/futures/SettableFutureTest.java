@@ -35,6 +35,7 @@ public class SettableFutureTest {
 	@Test public void setResult_isSuccessful() {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.end();
+
 		fut.setResult("test");
 
 		collector.checkThat(fut.resultNow(), equalTo("test"));
@@ -49,7 +50,8 @@ public class SettableFutureTest {
 
 	@Test public void setException_UncheckedException_isFailed() {
 		SettableFuture<String> fut = new SettableFuture<>();
-		fut.end();
+		fut.catching(ArithmeticException.class, e -> null).end();
+
 		ArithmeticException e = new ArithmeticException("test");
 		fut.setException(e);
 
@@ -65,7 +67,8 @@ public class SettableFutureTest {
 
 	@Test public void setException_checkedException_isFailed() {
 		SettableFuture<String> fut = new SettableFuture<>();
-		fut.end();
+		fut.catching(IOException.class, e -> null).end();
+
 		IOException e = new IOException("test");
 		fut.setException(e);
 
@@ -82,6 +85,7 @@ public class SettableFutureTest {
 	@Test public void setException_cancelledException_isFailed() {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.end();
+
 		CancellationException e = new CancellationException("test");
 		fut.setException(e);
 

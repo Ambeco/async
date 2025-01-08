@@ -85,7 +85,7 @@ public class ImmediateFutureTest {
 	@Test public void forUnchecked_state_isFailed() {
 		ArithmeticException e = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(e);
-		fut.end();
+		fut.catching(ArithmeticException.class, ex -> null).end();
 
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
@@ -97,6 +97,7 @@ public class ImmediateFutureTest {
 	@Test public void forUnchecked_get_throws() {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(ArithmeticException.class, ex -> null).end();
 
 		collector.checkThrows(ArithmeticException.class, fut::resultNow, sameInstance(expect));
 		collector.checkThrows(ArithmeticException.class, fut::get, sameInstance(expect));
@@ -106,6 +107,7 @@ public class ImmediateFutureTest {
 	@Test public void forUnchecked_toString_correct() {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(ArithmeticException.class, ex -> null).end();
 
 		collector.checkThat(fut.toString(),
 				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]"));
@@ -114,6 +116,7 @@ public class ImmediateFutureTest {
 	@Test public void forUnchecked_addPendingString_correct() {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(ArithmeticException.class, ex -> null).end();
 
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
@@ -125,6 +128,7 @@ public class ImmediateFutureTest {
 	@Test public void forUnchecked_cancel_isNoOp() {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(ArithmeticException.class, ex -> null).end();
 
 		fut.cancel(Future.MAY_INTERRUPT);
 
@@ -137,6 +141,7 @@ public class ImmediateFutureTest {
 	@Test public void forUnchecked_setException_isNoOp() {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(ArithmeticException.class, ex -> null).end();
 
 		fut.setException(new ArithmeticException("FAILURE"));
 
@@ -149,7 +154,7 @@ public class ImmediateFutureTest {
 	@Test public void forChecked_state_isFailed() {
 		IOException e = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(e);
-		fut.end();
+		fut.catching(IOException.class, ex -> null).end();
 
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.isDone(), equalTo(true));
@@ -161,6 +166,7 @@ public class ImmediateFutureTest {
 	@Test public void forChecked_get_throws() {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(IOException.class, ex -> null).end();
 
 		AsyncCheckedException found = assertThrows(AsyncCheckedException.class, fut::resultNow);
 		collector.checkThat(found.getCause(), sameInstance(expect));
@@ -173,6 +179,7 @@ public class ImmediateFutureTest {
 	@Test public void forChecked_toString_correct() {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(IOException.class, ex -> null).end();
 
 		collector.checkThat(fut.toString(),
 				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: test]"));
@@ -181,6 +188,7 @@ public class ImmediateFutureTest {
 	@Test public void forChecked_addPendingString_correct() {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(IOException.class, ex -> null).end();
 
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
@@ -192,6 +200,7 @@ public class ImmediateFutureTest {
 	@Test public void forChecked_cancel_isNoOp() {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(IOException.class, ex -> null).end();
 
 		fut.cancel(Future.MAY_INTERRUPT);
 
@@ -204,6 +213,7 @@ public class ImmediateFutureTest {
 	@Test public void forChecked_setException_isNoOp() {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.catching(IOException.class, ex -> null).end();
 
 		fut.setException(new IOException("FAILURE"));
 
@@ -228,6 +238,7 @@ public class ImmediateFutureTest {
 	@Test public void forCancellation_get_throws() {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.end();
 
 		CancellationException found = assertThrows(CancellationException.class, fut::resultNow);
 		collector.checkThat(found, sameInstance(expect));
@@ -240,6 +251,7 @@ public class ImmediateFutureTest {
 	@Test public void forCancellation_toString_correct() {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.end();
 
 		collector.checkThat(
 				fut.toString(),
@@ -249,6 +261,7 @@ public class ImmediateFutureTest {
 	@Test public void forCancellation_addPendingString_correct() {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.end();
 
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
@@ -262,6 +275,7 @@ public class ImmediateFutureTest {
 	@Test public void forCancellation_cancel_isNoOp() {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.end();
 
 		fut.cancel(Future.MAY_INTERRUPT);
 
@@ -274,6 +288,7 @@ public class ImmediateFutureTest {
 	@Test public void forCancellation_setException_isNoOp() {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
+		fut.end();
 
 		fut.setException(new IOException("FAILURE"));
 
