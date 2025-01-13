@@ -1,16 +1,13 @@
 package com.mpd.concurrent.futures.atomic;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.atomic.AbstractListenerFutures.SingleParentCatchingAbstractListenerFuture;
-
+import java.util.function.Function;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
-
-import java.util.function.Function;
 
 public class FutureCatchingFunction<E extends Throwable, O> extends SingleParentCatchingAbstractListenerFuture<E, O> {
 	// TODO function to use stub instead of Nullable?
@@ -18,8 +15,7 @@ public class FutureCatchingFunction<E extends Throwable, O> extends SingleParent
 	private volatile @Nullable Function<? super E, ? extends O> function;
 
 	public FutureCatchingFunction(
-			@NonNull Future<? extends O> parent,
-			@NonNull Function<? super E, ? extends O> function, Class<E> exceptionClass,
+			@NonNull Future<? extends O> parent, @NonNull Function<? super E, ? extends O> function, Class<E> exceptionClass,
 			@NonNull Executor executor)
 	{
 		super(exceptionClass, parent, executor);

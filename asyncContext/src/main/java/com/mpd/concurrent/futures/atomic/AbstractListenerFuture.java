@@ -1,19 +1,16 @@
 package com.mpd.concurrent.futures.atomic;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.SchedulableFuture;
 import com.mpd.concurrent.futures.SubmittableFuture;
-
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 // Listens to parent(s), and then executes itself on the executor.
 public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFuture<O>
@@ -97,7 +94,8 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 		Executor executor = atomicExecutor.get(this);
 		super.toStringAppendState(result, exception, setAsync, sb);
 		if (executor != null) {
-			sb.append(" executor=").append(executor);
+			sb.append(" executor=");
+			executor.toString(sb, /*includeState=*/false);
 		}
 	}
 

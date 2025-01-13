@@ -3,16 +3,13 @@ package com.mpd.concurrent.futures.atomic;
 import static com.mpd.concurrent.executors.MoreExecutors.directExecutor;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
-
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public final class AbstractListenerFutures {
 	private AbstractListenerFutures() {}
@@ -63,7 +60,7 @@ public final class AbstractListenerFutures {
 		@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 			Future<?> parent = this.parent;
 			super.addPendingString(sb, maxDepth);
-			if (parent != null) {
+			if (parent != null && maxDepth > 1) {
 				parent.addPendingString(sb, maxDepth - 1);
 			}
 		}
@@ -118,7 +115,7 @@ public final class AbstractListenerFutures {
 		@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 			Future<?> parent = this.parent;
 			super.addPendingString(sb, maxDepth);
-			if (parent != null) {
+			if (parent != null && maxDepth > 1) {
 				parent.addPendingString(sb, maxDepth - 1);
 			}
 		}
@@ -184,7 +181,7 @@ public final class AbstractListenerFutures {
 		@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 			Future<?> parent = this.parent;
 			super.addPendingString(sb, maxDepth);
-			if (parent != null) {
+			if (parent != null && maxDepth > 1) {
 				parent.addPendingString(sb, maxDepth - 1);
 			}
 		}
@@ -276,11 +273,11 @@ public final class AbstractListenerFutures {
 			Future<?> parent2 = this.parent2;
 			super.addPendingString(sb, maxDepth);
 			boolean didAppend = false;
-			if (parent1 != null) {
+			if (parent1 != null && maxDepth > 1) {
 				parent1.addPendingString(sb, maxDepth - 1);
 				didAppend = true;
 			}
-			if (parent2 != null) {
+			if (parent2 != null && maxDepth > 1) {
 				if (didAppend) {
 					sb.append("\nand also:\n");
 				}

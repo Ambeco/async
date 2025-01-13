@@ -3,19 +3,16 @@ package com.mpd.concurrent.futures.atomic;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import androidx.annotation.CallSuper;
-
 import com.google.common.collect.ImmutableList;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.executors.MoreExecutors;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
-
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.concurrent.CancellationException;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public abstract class AbstractFutureSuccessCombiner<I, O> extends AbstractListenerFuture<O> {
 	private final BitSet completed;
@@ -93,7 +90,7 @@ public abstract class AbstractFutureSuccessCombiner<I, O> extends AbstractListen
 		super.addPendingString(sb, maxDepth);
 		if (parents != null) {
 			for (Future<?> parent : parents) {
-				if (!parent.isDone()) {
+				if (!parent.isDone() && maxDepth > 1) {
 					parent.addPendingString(sb, maxDepth - 1);
 				}
 			}

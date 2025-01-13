@@ -2,17 +2,14 @@ package com.mpd.concurrent.futures.atomic;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
-
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
-
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 // FutureListener<Object>, because derived classes listen to multiple other futures of various types in addition
 public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Object> {
@@ -323,8 +320,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		return false;
 	}
 
-	@CallSuper
-	@Override public void onFutureSucceeded(Future<?> future, Object result) {
+	@CallSuper @Override public void onFutureSucceeded(Future<?> future, Object result) {
 		try {
 			if (!onParentComplete(future, result, SUCCESS_EXCEPTION, NO_INTERRUPT)) {
 				setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
@@ -334,8 +330,8 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 	}
 
-	@CallSuper
-	@Override public void onFutureFailed(Future<?> future, Throwable exception, boolean mayInterruptIfRunning) {
+	@CallSuper @Override
+	public void onFutureFailed(Future<?> future, Throwable exception, boolean mayInterruptIfRunning) {
 		try {
 			if (!onParentComplete(future, null, exception, mayInterruptIfRunning)) {
 				setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
@@ -429,7 +425,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		sb.append(" //");
 		toString(sb, TO_STRING_WITH_STATE);
 		Future<? extends O> setAsync = getSetAsync();
-		if (setAsync != null) {
+		if (setAsync != null && maxDepth > 1) {
 			setAsync.addPendingString(sb, maxDepth - 1);
 		}
 	}

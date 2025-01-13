@@ -1,15 +1,12 @@
 package com.mpd.concurrent.futures.atomic;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.RunnableFuture;
-
+import java.util.concurrent.TimeUnit;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
-
-import java.util.concurrent.TimeUnit;
 
 public class FutureRunnable<O> extends AbstractSubmittableFuture<O> implements RunnableFuture<O> {
 	// TODO function to use stub instead of Nullable?

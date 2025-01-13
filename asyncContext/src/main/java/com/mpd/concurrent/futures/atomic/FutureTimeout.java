@@ -1,16 +1,13 @@
 package com.mpd.concurrent.futures.atomic;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
-
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class FutureTimeout<O> extends AbstractListenerFuture<O> {
 	// TODO parent and exceptionOnTimeout to use stub instead of Nullable?
