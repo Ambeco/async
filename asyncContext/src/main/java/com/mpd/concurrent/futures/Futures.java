@@ -9,15 +9,13 @@ import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
 import com.mpd.concurrent.futures.atomic.AbstractFutureCompleteCombiner.VoidFutureCompleteCombiner;
 import com.mpd.concurrent.futures.atomic.AbstractFutureSuccessCombiner;
 import com.mpd.concurrent.futures.atomic.AbstractFutureSuccessCombiner.VoidFutureSuccessCombiner;
-
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public final class Futures {
 	private Futures() {}

@@ -1,7 +1,6 @@
 package com.mpd.concurrent.futures;
 
 import androidx.annotation.NonNull;
-
 import com.mpd.concurrent.AsyncFunction;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.FutureListener.RunnableListener;
@@ -11,13 +10,11 @@ import com.mpd.concurrent.futures.atomic.FutureCatchingAsyncFunction;
 import com.mpd.concurrent.futures.atomic.FutureCatchingFunction;
 import com.mpd.concurrent.futures.atomic.FutureFunction;
 import com.mpd.concurrent.futures.atomic.FutureTimeout;
-
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 // Based on Guava FluentFuture, except that each future can only have one listener,
 // and cancellationException results in a CancellationException

@@ -1,9 +1,7 @@
 package com.mpd.concurrent.futures;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.futures.atomic.AbstractFuture;
-
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class SettableFuture<O> extends AbstractFuture<O> {

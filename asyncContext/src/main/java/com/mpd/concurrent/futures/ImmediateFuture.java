@@ -1,7 +1,6 @@
 package com.mpd.concurrent.futures;
 
 import com.mpd.concurrent.futures.atomic.AbstractFuture;
-
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class ImmediateFuture<O> extends AbstractFuture<O> {
