@@ -1,13 +1,10 @@
 package com.mpd.concurrent.executors.locked;
 
 import android.os.SystemClock;
-
 import androidx.annotation.CallSuper;
-
 import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;

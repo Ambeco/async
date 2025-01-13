@@ -1,12 +1,10 @@
 package com.mpd.concurrent.executors.locked;
 
 import androidx.annotation.IntDef;
-
 import com.mpd.concurrent.AsyncCallable;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;

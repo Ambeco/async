@@ -1,15 +1,12 @@
 package com.mpd.concurrent.executors;
 
 import androidx.annotation.NonNull;
-
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
 import com.mpd.concurrent.futures.atomic.AbstractListenerFutures.SingleParentImmediateListenerFuture;
-
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Serializes future-chains, rather than individual runnables.
@@ -86,18 +83,20 @@ public class TaskSequencer {
 		}
 	}
 
-	@NonNull @Override public String toString() {
+	void toString(StringBuilder sb, boolean includeState) {
 		synchronized (queue) {
-			return getClass().getSimpleName()
-					+ '@'
-					+ System.identityHashCode(this)
-					+ "[delegate="
-					+ delegate.toString()
-					+ ", width="
-					+ width
-					+ ", queueSize="
-					+ queue.size()
-					+ ']';
+			sb.append(getClass().getSimpleName()).append('@').append(System.identityHashCode(this));
+			if (includeState) {
+				sb.append("[delegate=");
+				delegate.toString(sb, /*includeState=*/false);
+				sb.append(", width=").append(width).append(", queueSize=").append(queue.size()).append(']');
+			}
 		}
+	}
+
+	@NonNull @Override public String toString() {
+		StringBuilder sb = new StringBuilder();
+		toString(sb, /* includeState=*/ true);
+		return sb.toString();
 	}
 }

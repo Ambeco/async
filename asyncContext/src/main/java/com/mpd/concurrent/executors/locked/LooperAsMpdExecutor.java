@@ -7,15 +7,12 @@ import android.os.Looper;
 import android.os.MessageQueue;
 import android.os.MessageQueue.IdleHandler;
 import android.os.SystemClock;
-
 import androidx.annotation.NonNull;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.futures.SchedulableFuture;
 import com.mpd.concurrent.futures.SubmittableFuture;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
@@ -238,10 +235,23 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 		notifyAll();
 	}
 
-	@NonNull @Override public synchronized String toString() {
-		return getClass().getSimpleName() + '@' + System.identityHashCode(this) + "[thread=" + handler.getLooper()
-				.getThread()
-				.getId() + ", isShutdown=" + isShutdown() + ']';
+	@Override public void toString(StringBuilder sb, boolean includeState) {
+		synchronized (this) {
+			sb.append(getClass().getSimpleName()).append('@').append(System.identityHashCode(this));
+			if (includeState) {
+				sb.append("[thread=")
+						.append(handler.getLooper().getThread().getId())
+						.append(", isShutdown=")
+						.append(isShutdown())
+						.append(']');
+			}
+		}
+	}
+
+	@NonNull @Override public String toString() {
+		StringBuilder sb = new StringBuilder();
+		toString(sb, /* includeState=*/ true);
+		return sb.toString();
 	}
 
 	public static class MainThreadShouldNotShutDownException extends IllegalThreadStateException {}

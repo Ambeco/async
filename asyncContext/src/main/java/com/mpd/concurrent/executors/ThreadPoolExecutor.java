@@ -4,17 +4,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.mpd.concurrent.executors.Executor.threadInExecutorEnum;
 
 import android.os.SystemClock;
-
 import androidx.annotation.NonNull;
-
 import com.google.common.collect.ImmutableList;
 import com.mpd.concurrent.executors.locked.AndAlsoJavaExecutor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
 import com.mpd.concurrent.futures.atomic.FutureRunnable;
-
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -23,6 +18,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * This mirrors https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledThreadPoolExecutor.html
@@ -374,19 +370,20 @@ public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
 		}
 	}
 
-	@NonNull @Override public String toString() {
-		synchronized (threads) {
-			return getClass().getSimpleName()
-					+ '@'
-					+ System.identityHashCode(this)
-					+ "[poolSize="
-					+ threads.size()
-					+ ", queueSize="
-					+ queue.size()
-					+ ", isShutdown="
-					+ isShutdown
-					+ ']';
+	@Override public void toString(StringBuilder sb, boolean includeState) {
+		synchronized (queue) {
+			sb.append(getClass().getSimpleName()).append('@').append(System.identityHashCode(this));
+			if (includeState) {
+				sb.append("[poolSize=").append(threads.size()).append(", queueSize=").append(queue.size()).append(
+						", isShutdown=").append(isShutdown).append(']');
+			}
 		}
+	}
+
+	@NonNull @Override public String toString() {
+		StringBuilder sb = new StringBuilder();
+		toString(sb, /* includeState=*/ true);
+		return sb.toString();
 	}
 
 	protected void finalize() {

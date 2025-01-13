@@ -2,18 +2,15 @@ package com.mpd.concurrent.executors;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-
 import com.mpd.concurrent.executors.locked.AndAlsoJavaExecutor;
 import com.mpd.concurrent.futures.SubmittableFuture;
-
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /*
  * Serializes runnables to a given bandwidth
@@ -152,20 +149,21 @@ public class SequentialExecutor implements AndAlsoJavaExecutor, Executor.Executo
 		}
 	}
 
-	@NonNull @Override public String toString() {
+	@Override public void toString(StringBuilder sb, boolean includeState) {
 		synchronized (queue) {
-			return getClass().getSimpleName()
-					+ '@'
-					+ System.identityHashCode(this)
-					+ "[delegate="
-					+ delegate.toString()
-					+ ", width="
-					+ width
-					+ ", queueSize="
-					+ queue.size()
-					+ ", isShutdown="
-					+ isShutdown()
-					+ ']';
+			sb.append(getClass().getSimpleName()).append('@').append(System.identityHashCode(this));
+			if (includeState) {
+				sb.append("[delegate=");
+				delegate.toString(sb, /*includeState=*/false);
+				sb.append(", width=").append(width).append(", queueSize=").append(queue.size()).append(", isShutdown=").append(
+						isShutdown()).append(']');
+			}
 		}
+	}
+
+	@NonNull @Override public String toString() {
+		StringBuilder sb = new StringBuilder();
+		toString(sb, /* includeState=*/ true);
+		return sb.toString();
 	}
 }

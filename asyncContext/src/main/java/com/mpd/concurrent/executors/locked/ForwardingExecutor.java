@@ -1,12 +1,10 @@
 package com.mpd.concurrent.executors.locked;
 
 import androidx.annotation.NonNull;
-
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.mpd.concurrent.AsyncCallable;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -149,11 +147,27 @@ public abstract class ForwardingExecutor implements AndAlsoJavaExecutor {
 		return delegate.hashCode();
 	}
 
+	/**
+	 * @noinspection EqualsWhichDoesntCheckParameterClass
+	 */
 	@Override public boolean equals(Object obj) {
 		return delegate.equals(obj);
 	}
 
 	@NonNull @Override public String toString() {
-		return getClass().getSimpleName() + '@' + System.identityHashCode(this) + '[' + delegate.toString() + ']';
+		StringBuilder sb = new StringBuilder();
+		toString(sb, /* includeState=*/ true);
+		return sb.toString();
+	}
+
+	@Override public void toString(StringBuilder sb, boolean includeState) {
+		synchronized (this) {
+			sb.append(getClass().getSimpleName()).append('@').append(System.identityHashCode(this));
+			if (includeState) {
+				sb.append("[delegate=");
+				delegate.toString(sb, /*includeState=*/false);
+				sb.append(']');
+			}
+		}
 	}
 }

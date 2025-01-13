@@ -3,9 +3,7 @@ package com.mpd.concurrent.executors.locked;
 import static com.mpd.concurrent.executors.Executor.threadInExecutorEnum;
 
 import androidx.annotation.NonNull;
-
 import com.mpd.concurrent.futures.SubmittableFuture;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -71,6 +69,9 @@ public class DirectExecutor implements AndAlsoJavaExecutor {
 		return true;
 	}
 
+	@Override public void toString(StringBuilder sb, boolean includeState) {
+		sb.append(getClass().getSimpleName()).append('@').append(System.identityHashCode(this));
+	}
 
 	@NonNull @Override public String toString() {
 		return getClass().getSimpleName() + '@' + System.identityHashCode(this);

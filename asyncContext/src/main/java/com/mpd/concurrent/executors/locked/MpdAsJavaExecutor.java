@@ -1,11 +1,9 @@
 package com.mpd.concurrent.executors.locked;
 
 import androidx.annotation.NonNull;
-
 import com.google.common.collect.ImmutableList;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.SubmittableFuture;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -90,7 +88,20 @@ public class MpdAsJavaExecutor implements AndAlsoJavaExecutor {
 		}
 	}
 
+	@Override public void toString(StringBuilder sb, boolean includeState) {
+		synchronized (this) {
+			sb.append(getClass().getSimpleName()).append('@').append(System.identityHashCode(this));
+			if (includeState) {
+				sb.append("[delegate=");
+				delegate.toString(sb, /*includeState=*/false);
+				sb.append(']');
+			}
+		}
+	}
+
 	@NonNull @Override public String toString() {
-		return getClass().getSimpleName() + '@' + System.identityHashCode(this) + '[' + delegate.toString() + ']';
+		StringBuilder sb = new StringBuilder();
+		toString(sb, /* includeState=*/ true);
+		return sb.toString();
 	}
 }

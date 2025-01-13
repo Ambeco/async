@@ -4,7 +4,6 @@ import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionCo
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
-
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.mpd.concurrent.AsyncCallable;
@@ -19,7 +18,6 @@ import com.mpd.concurrent.futures.atomic.AbstractListenerFuture;
 import com.mpd.concurrent.futures.atomic.FutureAsyncCallable;
 import com.mpd.concurrent.futures.atomic.FutureCallable;
 import com.mpd.concurrent.futures.atomic.FutureRunnable;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -198,6 +196,10 @@ public interface Executor extends AutoCloseable {
 		} else {
 			return new MpdAsJavaExecutor(this);
 		}
+	}
+
+	default void toString(StringBuilder sb, boolean includeState) {
+		sb.append(this);
 	}
 
 	@NonNull @Override String toString();
