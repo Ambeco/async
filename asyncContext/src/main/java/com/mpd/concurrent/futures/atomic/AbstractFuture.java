@@ -417,12 +417,26 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		sb.append("\n  at ");
 		Class<?> sourceClass = sourceClass();
 		String method = sourceMethodName();
-		sb.append(sourceClass.getCanonicalName());
+		String rawCanonicalName = sourceClass.getCanonicalName();
+		String canonicalName = rawCanonicalName != null ? rawCanonicalName : sourceClass.getSimpleName();
+		sb.append(canonicalName);
 		if (method != null) {
 			sb.append('.').append(method);
 		}
-		sb.append('(').append(sourceClass.getSimpleName()).append(":0)");
-		sb.append(" //");
+		sb.append('(');
+		String fileName;
+		if (rawCanonicalName != null) {
+			fileName = sourceClass.getSimpleName();
+		} else {
+			int simpleNameEnd = canonicalName.indexOf('$');
+			int simpleNameStart = canonicalName.lastIndexOf('.', simpleNameEnd);
+			if (simpleNameStart >= 0 && simpleNameStart < simpleNameEnd) {
+				fileName = canonicalName.substring(simpleNameStart, simpleNameEnd);
+			} else {
+				fileName = canonicalName;
+			}
+		}
+		sb.append(fileName).append(":0) //");
 		toString(sb, TO_STRING_WITH_STATE);
 		Future<? extends O> setAsync = getSetAsync();
 		if (setAsync != null && maxDepth > 1) {
@@ -439,7 +453,10 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 		Class<?> sourceClass = sourceClass();
 		if (sourceClass != getClass()) {
-			sb.append('<').append(sourceClass.getCanonicalName()).append('>');
+			sb.append('<');
+			String sourceCanonicalName = sourceClass.getCanonicalName();
+			sb.append(sourceCanonicalName != null ? sourceCanonicalName : sourceClass.getSimpleName());
+			sb.append('>');
 		} else {
 			sb.append('@').append(System.identityHashCode(this));
 		}

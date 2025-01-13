@@ -265,15 +265,27 @@ public abstract class AbstractFuture<O> implements Future<O> {
 	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 		sb.append("\n  at ");
 		Object source = toStringSource();
-		if (source != null) {
-			sb.append(source.getClass().getCanonicalName())
-					.append(".apply(")
-					.append(source.getClass().getSimpleName())
-					.append(":0)");
-		} else {
+		if (source == null) {
 			sb.append(getClass().getCanonicalName()).append(".run(Unknown Source)");
+		} else {
+			String rawCanonicalName = source.getClass().getCanonicalName();
+			String canonicalName = rawCanonicalName != null ? rawCanonicalName : source.getClass().getSimpleName();
+			sb.append(canonicalName).append(".apply(");
+
+			String fileName;
+			if (rawCanonicalName != null) {
+				fileName = source.getClass().getSimpleName();
+			} else {
+				int simpleNameEnd = canonicalName.indexOf('$');
+				int simpleNameStart = canonicalName.lastIndexOf('.', simpleNameEnd);
+				if (simpleNameStart >= 0 && simpleNameStart < simpleNameEnd) {
+					fileName = canonicalName.substring(simpleNameStart, simpleNameEnd);
+				} else {
+					fileName = canonicalName;
+				}
+			}
+			sb.append(fileName).append(":0) //");
 		}
-		sb.append(" //");
 		toString(sb, TO_STRING_NO_STATE);
 	}
 

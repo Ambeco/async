@@ -20,7 +20,9 @@ import org.robolectric.RobolectricTestRunner;
 
 		fut1.setResult(fut2);
 
-		collector.checkThat(fut1.toString(), matchesPattern("SettableFuture@\\d{1,20}\\[ setAsync=FutureFunction<null>]"));
+		collector.checkThat(fut1.toString(),
+				matchesPattern("SettableFuture@\\d{1,20}\\[ "
+						+ "setAsync=FutureFunction<AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}>]"));
 		StringBuilder sb = new StringBuilder();
 		fut1.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(), matchesPattern(Pattern.compile(".+", Pattern.DOTALL)));
@@ -28,9 +30,9 @@ import org.robolectric.RobolectricTestRunner;
 
 		collector.checkThat(sb.toString(), matchesPattern(Pattern.compile(
 				"^\n\\s\\sat com.mpd.concurrent.futures.SettableFuture\\(SettableFuture:0\\) //[^\\n]+"
-						+ "\n\\s\\sat null.apply\\(AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}:0\\) //[^\\n]+"
+						+ "\n\\s\\sat AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}.apply\\(AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}:0\\) //[^\\n]+"
 						+ "\n\\s\\sat com.mpd.concurrent.futures.SettableFuture\\(SettableFuture:0\\) //[^\\n]+"
-						+ "\n\\s\\sat null.apply\\(AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}:0\\) //[^\\n]+",
+						+ "\n\\s\\sat AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}.apply\\(AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}:0\\) //[^\\n]+",
 				Pattern.DOTALL)));
 	}
 }
