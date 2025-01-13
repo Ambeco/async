@@ -2,16 +2,13 @@ package com.mpd.concurrent.futures.locked;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
-
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
-
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public abstract class AbstractFuture<O> implements Future<O> {
 	@Nullable protected static final Throwable NO_EXCEPTION = null;

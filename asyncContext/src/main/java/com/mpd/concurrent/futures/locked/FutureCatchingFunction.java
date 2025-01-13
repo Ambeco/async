@@ -1,15 +1,12 @@
 package com.mpd.concurrent.futures.locked;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.locked.AbstractListenerFutures.SingleParentCatchingAbstractListenerFuture;
-
+import java.util.function.Function;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
-
-import java.util.function.Function;
 
 public class FutureCatchingFunction<E extends Throwable, O> extends SingleParentCatchingAbstractListenerFuture<E, O> {
 	private @Nullable Function<? super E, ? extends O> function;

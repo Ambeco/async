@@ -5,7 +5,6 @@ import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionCo
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.IntDef;
-
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.executors.Executor.RunnablePriority;
@@ -13,14 +12,12 @@ import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.SchedulableFuture;
 import com.mpd.concurrent.futures.SubmittableFuture;
-
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 // Listens to parent(s), and then executes a body, which can execute synchronously or asynchronously.
 public abstract class AbstractListenerFuture<O> extends AbstractFuture<O>
@@ -134,7 +131,7 @@ public abstract class AbstractListenerFuture<O> extends AbstractFuture<O>
 	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 		super.addPendingString(sb, maxDepth);
 		Future<? extends O> asyncWork = this.asyncWork;
-		if (asyncWork != null) {
+		if (asyncWork != null && maxDepth > 1) {
 			asyncWork.addPendingString(sb, maxDepth - 1);
 		}
 	}

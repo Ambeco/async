@@ -3,17 +3,14 @@ package com.mpd.concurrent.futures.locked;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import androidx.annotation.CallSuper;
-
 import com.google.common.collect.ImmutableList;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
-
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.concurrent.CancellationException;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public abstract class AbstractFutureSuccessCombiner<I, O> extends AbstractListenerFuture<O> {
 	private final BitSet completed;
@@ -72,7 +69,9 @@ public abstract class AbstractFutureSuccessCombiner<I, O> extends AbstractListen
 	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 		sb.append("\n  at ");
 		toString(sb, TO_STRING_WITH_STATE);
-		super.addPendingString(sb, maxDepth - 1);
+		if (maxDepth > 1) {
+			super.addPendingString(sb, maxDepth - 1);
+		}
 	}
 
 	@CallSuper protected void toStringAppendState(

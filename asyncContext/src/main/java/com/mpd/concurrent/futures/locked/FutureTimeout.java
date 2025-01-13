@@ -1,14 +1,11 @@
 package com.mpd.concurrent.futures.locked;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.futures.Future;
-
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class FutureTimeout<O> extends AbstractListenerFuture<O> {
 	private final boolean interruptOnTimeout;

@@ -1,12 +1,10 @@
 package com.mpd.concurrent.futures.locked;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.AsyncFunction;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.locked.AbstractListenerFutures.SingleParentTransformListenerFuture;
-
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 

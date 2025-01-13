@@ -4,16 +4,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.mpd.concurrent.executors.MoreExecutors.directExecutor;
 
 import androidx.annotation.CallSuper;
-
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
-
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public final class AbstractListenerFutures {
 	private AbstractListenerFutures() {}
@@ -56,7 +53,7 @@ public final class AbstractListenerFutures {
 		@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 			super.addPendingString(sb, maxDepth);
 			Future<? extends I> parent = this.parent;
-			if (parent != null) {
+			if (parent != null && maxDepth > 1) {
 				parent.addPendingString(sb, maxDepth - 1);
 			}
 		}
@@ -115,7 +112,7 @@ public final class AbstractListenerFutures {
 		@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 			super.addPendingString(sb, maxDepth);
 			Future<? extends I> parent = this.parent;
-			if (parent != null) {
+			if (parent != null && maxDepth > 1) {
 				parent.addPendingString(sb, maxDepth - 1);
 			}
 		}
@@ -183,7 +180,7 @@ public final class AbstractListenerFutures {
 		@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 			super.addPendingString(sb, maxDepth);
 			Future<? extends O> parent = this.parent;
-			if (parent != null) {
+			if (parent != null && maxDepth > 1) {
 				parent.addPendingString(sb, maxDepth - 1);
 			}
 		}
@@ -266,12 +263,12 @@ public final class AbstractListenerFutures {
 			super.addPendingString(sb, maxDepth);
 			boolean didAppend = false;
 			Future<? extends I1> parent1 = this.parent1;
-			if (parent1 != null) {
+			if (parent1 != null && maxDepth > 1) {
 				parent1.addPendingString(sb, maxDepth - 1);
 				didAppend = true;
 			}
 			Future<? extends I2> parent2 = this.parent2;
-			if (parent2 != null) {
+			if (parent2 != null && maxDepth > 1) {
 				if (didAppend) {
 					sb.append("\nand also:\n");
 				}
@@ -303,6 +300,7 @@ public final class AbstractListenerFutures {
 				return false;
 			}
 		}
+
 		@Override protected final void execute() {
 			execute(checkNotNull(parent1).resultNow(), checkNotNull(parent2).resultNow());
 		}
