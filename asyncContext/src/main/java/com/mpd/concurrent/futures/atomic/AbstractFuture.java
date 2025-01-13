@@ -418,7 +418,8 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		Class<?> sourceClass = sourceClass();
 		String method = sourceMethodName();
 		String rawCanonicalName = sourceClass.getCanonicalName();
-		String canonicalName = rawCanonicalName != null ? rawCanonicalName : sourceClass.getSimpleName();
+		String rawSimpleName = sourceClass.getSimpleName();
+		String canonicalName = rawCanonicalName != null ? rawCanonicalName : rawSimpleName;
 		sb.append(canonicalName);
 		if (method != null) {
 			sb.append('.').append(method);
@@ -426,14 +427,14 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		sb.append('(');
 		String fileName;
 		if (rawCanonicalName != null) {
-			fileName = sourceClass.getSimpleName();
+			fileName = rawSimpleName;
 		} else {
-			int simpleNameEnd = canonicalName.indexOf('$');
-			int simpleNameStart = canonicalName.lastIndexOf('.', simpleNameEnd);
-			if (simpleNameStart >= 0 && simpleNameStart < simpleNameEnd) {
-				fileName = canonicalName.substring(simpleNameStart, simpleNameEnd);
+			int simpleNameEnd = rawSimpleName.indexOf('$');
+			int simpleNameStart = rawSimpleName.lastIndexOf('.', simpleNameEnd) + 1;
+			if (simpleNameStart < simpleNameEnd) {
+				fileName = rawSimpleName.substring(simpleNameStart, simpleNameEnd);
 			} else {
-				fileName = canonicalName;
+				fileName = rawSimpleName;
 			}
 		}
 		sb.append(fileName).append(":0) //");

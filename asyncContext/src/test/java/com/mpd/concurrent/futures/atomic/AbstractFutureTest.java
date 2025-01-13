@@ -30,9 +30,9 @@ import org.robolectric.RobolectricTestRunner;
 
 		collector.checkThat(sb.toString(), matchesPattern(Pattern.compile(
 				"^\n\\s\\sat com.mpd.concurrent.futures.SettableFuture\\(SettableFuture:0\\) //[^\\n]+"
-						+ "\n\\s\\sat AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}.apply\\(AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}:0\\) //[^\\n]+"
+						+ "\n\\s\\sat AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}.apply\\(AbstractFutureTest:0\\) //[^\\n]+"
 						+ "\n\\s\\sat com.mpd.concurrent.futures.SettableFuture\\(SettableFuture:0\\) //[^\\n]+"
-						+ "\n\\s\\sat AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}.apply\\(AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}:0\\) //[^\\n]+",
+						+ "\n\\s\\sat AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}.apply\\(AbstractFutureTest:0\\) //[^\\n]+",
 				Pattern.DOTALL)));
 	}
 }
