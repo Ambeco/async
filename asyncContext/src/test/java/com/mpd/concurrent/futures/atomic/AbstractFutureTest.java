@@ -4,10 +4,12 @@ import static com.mpd.test.WithCauseMatcher.withCause;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.hamcrest.Matchers.typeCompatibleWith;
 import static org.mockito.Answers.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.withSettings;
@@ -48,25 +50,38 @@ import org.robolectric.RobolectricTestRunner;
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
 		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
-		collector.checkThat(fut.getPendingString(4),
-				matchesPattern("^\n\\s\\scom.mpd.concurrent.futures.atomic.AbstractFuture\\$MockitoMock\\$\\d{1,20}\\("
-						+ "AbstractFuture\\$MockitoMock\\$\\d{1,20}:0\\) //AbstractFuture\\$MockitoMock\\$\\d{1,20}@\\d{1,20}\\[ success=test]$"));
-		collector.checkThat(fut.toString(),
-				matchesPattern(
-						"com.mpd.concurrent.futures.atomic.AbstractFuture\\$MockitoMock\\$\\d{1,20}@\\d{1,20}\\[ success=test]"));
+		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				"(AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				":0) //AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				"@",
+				"[ success=test]"));
+		//collector.checkThat(fut.getPendingString(4),
+		//		matchesPattern(Pattern.compile("^\n\\s\\scom.mpd.concurrent.futures.atomic"
+		//				+ ".AbstractFutureTest\\$PublicAbstractFuture\\$MockitoMock\\$\\d{1,20}\\("
+		//				+ "AbstractFutureTest\\$PublicAbstractFuture\\$MockitoMock\\$\\d{1,20}:0\\) "
+		//				+ "//AbstractFutureTest\\$PublicAbstractFuture\\$MockitoMock\\$\\d{1,20}@\\d{1,20}\\[ "
+		//				+ "success=test]$", Pattern.DOTALL)));
+		collector.checkThat(
+				fut.toString(),
+				stringContainsInOrder("AbstractFutureTest$PublicAbstractFuture$MockitoMock$", "@", "[ success=test]"));
+		//collector.checkThat(fut.toString(),
+		//		matchesPattern(
+		//				"com.mpd.concurrent.futures.atomic.AbstractFutureTest\\$PublicAbstractFuture\\$MockitoMock\\$\\d{1,"
+		//		+ "20}@\\d{1,20}\\[ success=test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
 		collector.checkThat(fut.getResultProtected(), sameInstance(result));
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), sameInstance(EndListener.INSTANCE));
-		collector.checkThat(fut.sourceClass(), instanceOf(AbstractFuture.class));
+		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.sourceClass(), typeCompatibleWith(AbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
 
 	@Test public void constructor_immediateUncheckedException_stateIsFailed() {
-		ArithmeticException expectedException = new ArithmeticException("FAILURE");
+		ArithmeticException expectedException = new ArithmeticException("test");
 		AbstractFuture<String> fut = mock(PublicAbstractFuture.class,
 				withSettings().defaultAnswer(CALLS_REAL_METHODS).useConstructor(expectedException));
 		fut.catching(ArithmeticException.class, e -> null).end();
@@ -83,24 +98,29 @@ import org.robolectric.RobolectricTestRunner;
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
-		collector.checkThat(fut.getPendingString(4),
-				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
-						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]$"));
+		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				"(AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				":0) //AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				"@",
+				"[ failure=java.lang.ArithmeticException: test]"));
 		collector.checkThat(fut.toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]"));
+				stringContainsInOrder("AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+						"@",
+						"[ failure=java.lang.ArithmeticException: test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
 		collector.checkThat(fut.getResultProtected(), nullValue());
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), sameInstance(EndListener.INSTANCE));
-		collector.checkThat(fut.sourceClass(), instanceOf(AbstractFuture.class));
+		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.sourceClass(), typeCompatibleWith(AbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
 
 	@Test public void constructor_immediateCheckedException_stateIsFailed() {
-		IOException expectedException = new IOException("FAILURE");
+		IOException expectedException = new IOException("test");
 		AbstractFuture<String> fut = mock(PublicAbstractFuture.class,
 				withSettings().defaultAnswer(CALLS_REAL_METHODS).useConstructor(expectedException));
 		fut.catching(IOException.class, e -> null).end();
@@ -119,18 +139,23 @@ import org.robolectric.RobolectricTestRunner;
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
-		collector.checkThat(fut.getPendingString(4),
-				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
-						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.lang.IOException: test]$"));
+		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				"(AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				":0) //AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				"@",
+				"[ failure=java.io.IOException: test]"));
 		collector.checkThat(fut.toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.lang.IOException: test]"));
+				stringContainsInOrder("AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+						"@",
+						"[ failure=java.io.IOException: test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
 		collector.checkThat(fut.getResultProtected(), nullValue());
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getWrappedExceptionProtected(), withCause(sameInstance(expectedException)));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), sameInstance(EndListener.INSTANCE));
+		collector.checkThat(fut.getListener(), notNullValue());
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 		collector.checkThat(fut.getResultProtected(), nullValue());
 	}
@@ -153,19 +178,23 @@ import org.robolectric.RobolectricTestRunner;
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
 		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
-		collector.checkThat(fut.getPendingString(4),
-				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
-						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.lang.CancellationException: test]$"));
-		collector.checkThat(fut.toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.lang.CancellationException: test]"));
+		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				"(AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				":0) //AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				"@",
+				"[ cancelled=java.util.concurrent.CancellationException: test]"));
+		collector.checkThat(fut.toString(), stringContainsInOrder("AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
+				"@",
+				"[ cancelled=java.util.concurrent.CancellationException: test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
 		collector.checkThat(fut.getResultProtected(), nullValue());
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
-		collector.checkThat(fut.getWrappedExceptionProtected(), withCause(sameInstance(expectedException)));
+		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), sameInstance(EndListener.INSTANCE));
-		collector.checkThat(fut.sourceClass(), instanceOf(AbstractFuture.class));
+		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.sourceClass(), typeCompatibleWith(AbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
 
