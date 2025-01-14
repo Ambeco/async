@@ -221,9 +221,9 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 	}
 
-	protected AbstractFuture<? extends O> getSetAsync() {
+	protected Future<? extends O> getSetAsync() {
 		//noinspection unchecked
-		return (AbstractFuture<? extends O>) atomicSetAsync.get(this);
+		return (Future<? extends O>) atomicSetAsync.get(this);
 	}
 
 	@Override public boolean isDone() {
