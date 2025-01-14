@@ -17,8 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
-@RunWith(RobolectricTestRunner.class)
-public class ImmediateFutureTest {
+@RunWith(RobolectricTestRunner.class) public class ImmediateFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
 
 	@Test public void forString_state_isSuccessful() {
