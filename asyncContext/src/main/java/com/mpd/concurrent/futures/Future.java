@@ -128,6 +128,12 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 
 	void addPendingString(StringBuilder sb, int maxDepth);
 
+	default String getPendingString(int maxDepth) {
+		StringBuilder sb = new StringBuilder();
+		addPendingString(sb, maxDepth);
+		return sb.toString();
+	}
+
 	void toString(StringBuilder sb, boolean includeState);
 
 	@Override @NonNull String toString();

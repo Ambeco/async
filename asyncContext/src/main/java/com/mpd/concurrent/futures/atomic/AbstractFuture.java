@@ -149,9 +149,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@CallSuper protected void afterDone(
-			@Nullable O result, Throwable exception,
-			boolean mayInterruptIfRunning,
-			FutureListener<? super O> listener)
+			@Nullable O result, Throwable exception, boolean mayInterruptIfRunning, FutureListener<? super O> listener)
 	{
 		if (mayInterruptIfRunning) {
 			interruptTask(exception);
