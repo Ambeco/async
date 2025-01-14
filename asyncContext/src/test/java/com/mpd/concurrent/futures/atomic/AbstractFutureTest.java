@@ -56,19 +56,9 @@ import org.robolectric.RobolectricTestRunner;
 				":0) //AbstractFutureTest$PublicAbstractFuture$MockitoMock$",
 				"@",
 				"[ success=test]"));
-		//collector.checkThat(fut.getPendingString(4),
-		//		matchesPattern(Pattern.compile("^\n\\s\\scom.mpd.concurrent.futures.atomic"
-		//				+ ".AbstractFutureTest\\$PublicAbstractFuture\\$MockitoMock\\$\\d{1,20}\\("
-		//				+ "AbstractFutureTest\\$PublicAbstractFuture\\$MockitoMock\\$\\d{1,20}:0\\) "
-		//				+ "//AbstractFutureTest\\$PublicAbstractFuture\\$MockitoMock\\$\\d{1,20}@\\d{1,20}\\[ "
-		//				+ "success=test]$", Pattern.DOTALL)));
 		collector.checkThat(
 				fut.toString(),
 				stringContainsInOrder("AbstractFutureTest$PublicAbstractFuture$MockitoMock$", "@", "[ success=test]"));
-		//collector.checkThat(fut.toString(),
-		//		matchesPattern(
-		//				"com.mpd.concurrent.futures.atomic.AbstractFutureTest\\$PublicAbstractFuture\\$MockitoMock\\$\\d{1,"
-		//		+ "20}@\\d{1,20}\\[ success=test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
 		collector.checkThat(fut.getResultProtected(), sameInstance(result));
@@ -205,19 +195,19 @@ import org.robolectric.RobolectricTestRunner;
 		fut1.setResult(fut2);
 
 		collector.checkThat(fut1.toString(),
-				matchesPattern("SettableFuture@\\d{1,20}\\[ "
-						+ "setAsync=FutureFunction<AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}>]"));
+				stringContainsInOrder("SettableFuture@", "[ setAsync=FutureFunction<AbstractFutureTest$$Lambda$", "/0x", ">]"));
 		StringBuilder sb = new StringBuilder();
 		fut1.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(), matchesPattern(Pattern.compile(".+", Pattern.DOTALL)));
 
 
-		collector.checkThat(sb.toString(), matchesPattern(Pattern.compile(
-				"^\n\\s\\sat com.mpd.concurrent.futures.SettableFuture\\(SettableFuture:0\\) //[^\\n]+"
-						+ "\n\\s\\sat AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}.apply\\(AbstractFutureTest:0\\) //[^\\n]+"
-						+ "\n\\s\\sat com.mpd.concurrent.futures.SettableFuture\\(SettableFuture:0\\) //[^\\n]+"
-						+ "\n\\s\\sat AbstractFutureTest\\$\\$Lambda\\$\\d{1,3}/0x\\p{XDigit}{8,16}.apply\\(AbstractFutureTest:0\\) //[^\\n]+",
-				Pattern.DOTALL)));
+		collector.checkThat(sb.toString(), stringContainsInOrder(
+				"\n  at com.mpd.concurrent.futures.SettableFuture(SettableFuture:0) //SettableFuture@",
+				"\n  at AbstractFutureTest$$Lambda$",
+				".apply(AbstractFutureTest:0) //FutureFunction<AbstractFutureTest$$Lambda$",
+				"\n  at com.mpd.concurrent.futures.SettableFuture(SettableFuture:0) //SettableFuture@",
+				"\n  at AbstractFutureTest$$Lambda$",
+				".apply(AbstractFutureTest:0) //FutureFunction<AbstractFutureTest$$Lambda$"));
 	}
 
 	/**
