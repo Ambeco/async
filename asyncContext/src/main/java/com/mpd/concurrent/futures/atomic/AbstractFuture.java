@@ -13,7 +13,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 // FutureListener<Object>, because derived classes listen to multiple other futures of various types in addition
 public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Object> {
-	protected static final RuntimeException SUCCESS_EXCEPTION = new RuntimeException("Future succeeded");
+	protected static final RuntimeException SUCCESS_EXCEPTION = new SuccessException();
 	/**
 	 * @noinspection unchecked
 	 */
@@ -149,8 +149,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@CallSuper protected void afterDone(
-			@Nullable O result,
-			@Nullable Throwable exception,
+			@Nullable O result, Throwable exception,
 			boolean mayInterruptIfRunning,
 			FutureListener<? super O> listener)
 	{
@@ -162,7 +161,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 		if (listener != null) {
 			exceptionPropagated = true;
-			if (exception == null) {
+			if (exception == SUCCESS_EXCEPTION) {
 				listener.onFutureSucceeded(this, result);
 			} else {
 				listener.onFutureFailed(this, exception, mayInterruptIfRunning);
@@ -574,6 +573,16 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 
 		public LeakedFutureException(String message, @Nullable Throwable throwable) {
 			super(message, throwable);
+		}
+	}
+
+	private static class SuccessException extends RuntimeException {
+		@Override public String getMessage() {
+			throw new IllegalStateException("SUCCESS_EXCEPTION should never be accessed");
+		}
+
+		@NonNull @Override public String toString() {
+			throw new IllegalStateException("SUCCESS_EXCEPTION should never be accessed");
 		}
 	}
 }
