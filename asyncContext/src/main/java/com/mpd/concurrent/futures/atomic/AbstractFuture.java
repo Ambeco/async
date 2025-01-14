@@ -79,11 +79,11 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	protected static void toStringAppendLimitedRecursion(StringBuilder sb, @Nullable Object object) {
 		if (object == null) {
 			sb.append((String) null);
-		} else if (sb.length() > 256) {
+		} else if (sb.length() > 512) {
 			sb.append(object.getClass());
 		} else {
 			String text = object.toString();
-			if (sb.length() + text.length() > 256) {
+			if (sb.length() + text.length() > 512) {
 				sb.append(object.getClass());
 			} else {
 				sb.append(object);
