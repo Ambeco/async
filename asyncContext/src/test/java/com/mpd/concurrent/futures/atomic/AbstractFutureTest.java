@@ -241,6 +241,17 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
 
+	// TODO: test setResult(result)
+	// TODO: test setResult(Future)
+	// TODO: test setException(Throwable)
+	// TODO: test setException(Throwable, mayInterruptIfRunning)
+	// TODO: test cancel
+	// TODO: test onFutureSucceeded
+	// TODO: test onFutureFailed
+	// TODO: test getPendingString
+	// TODO: test toString
+	// TODO: test compareTo
+
 	@Test public void toString_recursiveFuture_limitedDepth() {
 		SettableFuture<String> fut1 = new SettableFuture<>();
 		Future<String> fut2 = fut1.transform(s -> s);
