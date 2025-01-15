@@ -46,7 +46,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
-		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
+		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
 		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
 				"//PublicAbstractFuture@",
@@ -55,6 +55,7 @@ import org.robolectric.RobolectricTestRunner;
 				fut.toString(), stringContainsInOrder("PublicAbstractFuture@", "[ success=test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
+		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(-1L));
 		collector.checkThat(fut.getResultProtected(), sameInstance(result));
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
@@ -80,7 +81,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
+		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
 		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
 				" //PublicAbstractFuture@",
@@ -90,6 +91,7 @@ import org.robolectric.RobolectricTestRunner;
 						"[ failure=java.lang.ArithmeticException: test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
+		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(-1L));
 		collector.checkThat(fut.getResultProtected(), nullValue());
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(expectedException));
@@ -117,7 +119,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
+		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
 		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
 				" //PublicAbstractFuture@",
@@ -127,6 +129,7 @@ import org.robolectric.RobolectricTestRunner;
 						"[ failure=java.io.IOException: test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
+		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(-1L));
 		collector.checkThat(fut.getResultProtected(), nullValue());
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getWrappedExceptionProtected(), withCause(sameInstance(expectedException)));
@@ -152,7 +155,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
+		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
 		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture",
 				"(PublicAbstractFuture:0) //PublicAbstractFuture@",
@@ -162,6 +165,7 @@ import org.robolectric.RobolectricTestRunner;
 				"[ cancelled=java.util.concurrent.CancellationException: test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
+		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(-1L));
 		collector.checkThat(fut.getResultProtected(), nullValue());
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(expectedException));
@@ -189,7 +193,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
-		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
+		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
 		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
 				"//PublicAbstractFuture@",
@@ -197,6 +201,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.toString(), stringContainsInOrder("PublicAbstractFuture@", "[ success=test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
+		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(-1L));
 		collector.checkThat(fut.getResultProtected(), sameInstance(result));
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
@@ -224,7 +229,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 		//com.mpd.concurrent.futures.Future
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
-		collector.checkThat(fut.getScheduledTimeNanos(), equalTo(-1L));
+		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
 		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
 				"//PublicAbstractFuture@",
@@ -232,6 +237,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.toString(), stringContainsInOrder("PublicAbstractFuture@", "[ success=test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
+		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(-1L));
 		collector.checkThat(fut.getResultProtected(), sameInstance(result));
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
@@ -297,6 +303,10 @@ import org.robolectric.RobolectricTestRunner;
 
 		@Override public Future<? extends O> getSetAsync() {
 			return super.getSetAsync();
+		}
+
+		@Override public long getScheduledTimeNanosProtected() {
+			return super.getScheduledTimeNanosProtected();
 		}
 
 		@Override public @Nullable O getResultProtected() {

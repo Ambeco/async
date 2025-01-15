@@ -408,6 +408,13 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@Override public long getScheduledTimeNanos() {
+		if (scheduledNanos < 0) {
+			throw new UnsupportedOperationException("not a scheduled future");
+		}
+		return scheduledNanos;
+	}
+
+	protected long getScheduledTimeNanosProtected() {
 		return scheduledNanos;
 	}
 
