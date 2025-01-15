@@ -15,6 +15,7 @@ import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.SettableFuture;
+import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
@@ -28,6 +29,7 @@ import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class) public class AbstractFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
+	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
 
 	@Test public void constructor_immediateSuccess_stateIsSuccessful() {
 		String result = "test";

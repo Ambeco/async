@@ -9,6 +9,7 @@ import static org.junit.internal.matchers.ThrowableCauseMatcher.hasCause;
 
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
+import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
@@ -20,6 +21,7 @@ import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class) public class SettableFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
+	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
 
 	@Test public void construct_incomplete() {
 		SettableFuture<String> fut = new SettableFuture<>();

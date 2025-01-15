@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThrows;
 
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
+import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
@@ -19,6 +20,7 @@ import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class) public class ImmediateFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
+	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
 
 	@Test public void forString_state_isSuccessful() {
 		Future<String> fut = Futures.immediateFuture("test");
