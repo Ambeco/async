@@ -1,6 +1,7 @@
 package com.mpd.concurrent.executors.locked;
 
 import androidx.annotation.NonNull;
+import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.SubmittableFuture;
 import java.util.Collection;
 import java.util.List;
@@ -19,6 +20,7 @@ public class JavaAsMpdExecutor implements AndAlsoJavaExecutor {
 	public JavaAsMpdExecutor(java.util.concurrent.Executor executor, int width) {
 		delegate = executor;
 		this.width = width;
+		Executor.addExecutor(this);
 	}
 
 	@Override public int getWidth() {

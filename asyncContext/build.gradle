@@ -33,6 +33,7 @@ dependencies {
     implementation "org.checkerframework:checker-qual:3.33.0"
     implementation 'com.google.flogger:flogger:0.8'
     implementation 'com.google.flogger:flogger-system-backend:0.8'
+    implementation libs.espresso.idling.resource
     testImplementation(libs.junit)
     testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'
     testImplementation 'org.robolectric:robolectric:4.14'

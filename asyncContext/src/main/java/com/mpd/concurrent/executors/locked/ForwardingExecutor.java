@@ -3,6 +3,7 @@ package com.mpd.concurrent.executors.locked;
 import androidx.annotation.NonNull;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.mpd.concurrent.AsyncCallable;
+import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
 import java.util.Collection;
@@ -18,6 +19,7 @@ public abstract class ForwardingExecutor implements AndAlsoJavaExecutor {
 
 	protected ForwardingExecutor(ForwardingExecutor delegate) {
 		this.delegate = delegate;
+		Executor.addExecutor(this);
 	}
 
 	public ForwardingExecutor getDelegate() {

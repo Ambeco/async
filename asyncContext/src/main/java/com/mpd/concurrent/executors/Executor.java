@@ -22,7 +22,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -265,5 +267,22 @@ public interface Executor extends AutoCloseable {
 		@Override public void onIdle() {
 			countDown();
 		}
+	}
+
+	CopyOnWriteArraySet<WeakReference<Executor>> allExecutors = new CopyOnWriteArraySet<>();
+	CopyOnWriteArraySet<WeakReference<AllExecutorListListener>> allExecutorListeners = new CopyOnWriteArraySet<>();
+
+	static void addExecutor(Executor e) {
+		allExecutors.add(new WeakReference<>(e));
+		for (WeakReference<AllExecutorListListener> ref : allExecutorListeners) {
+			AllExecutorListListener listener = ref.get();
+			if (listener != null) {
+				listener.onNewExecutor(e);
+			}
+		}
+	}
+
+	interface AllExecutorListListener {
+		void onNewExecutor(Executor e);
 	}
 }

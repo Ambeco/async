@@ -89,6 +89,7 @@ public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
 		}
 		int initialPoolSize = Math.min(Math.max(DEFAULT_POOL_SIZE, corePoolSize), maximumPoolSize);
 		threads = new ArrayList<>(initialPoolSize);
+		Executor.addExecutor(this);
 	}
 
 	// Factory methods

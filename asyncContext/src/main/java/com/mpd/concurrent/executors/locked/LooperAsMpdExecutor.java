@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.SchedulableFuture;
 import com.mpd.concurrent.futures.SubmittableFuture;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 		this.handler = new Handler(looper);
 		queue = handler.getLooper().getQueue();
 		queue.addIdleHandler(this);
+		Executor.addExecutor(this);
 	}
 
 	@Override public int getWidth() {
