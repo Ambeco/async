@@ -5,7 +5,6 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.matchesPattern;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -60,7 +59,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceClass(), typeCompatibleWith(AbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
@@ -95,7 +94,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceClass(), typeCompatibleWith(AbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
@@ -132,7 +131,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getWrappedExceptionProtected(), withCause(sameInstance(expectedException)));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 		collector.checkThat(fut.getResultProtected(), nullValue());
 	}
@@ -167,7 +166,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(expectedException));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceClass(), typeCompatibleWith(AbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
@@ -202,7 +201,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceClass(), typeCompatibleWith(AbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
@@ -237,7 +236,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceClass(), typeCompatibleWith(AbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}

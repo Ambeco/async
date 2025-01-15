@@ -381,7 +381,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@CallSuper @Override public void setListener(FutureListener<? super O> listener) {
-		if (!atomicListener.compareAndSet(this, null, listener)) {
+		if (exceptionPropagated || !atomicListener.compareAndSet(this, null, listener)) {
 			FutureListener<?> oldListener = atomicListener.get(this);
 			if (oldListener == listener) {
 				return; // called same listener twice. Weird, but safe.
@@ -403,6 +403,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			} else {
 				listener.onFutureFailed(this, exception, wasInterrupted != null);
 			}
+			atomicListener.lazySet(this, null);
 		}
 	}
 
