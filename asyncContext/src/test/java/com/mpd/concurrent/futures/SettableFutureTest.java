@@ -23,7 +23,7 @@ import org.robolectric.RobolectricTestRunner;
 	@Rule public ErrorCollector collector = new ErrorCollector();
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
 
-	@Test public void construct_incomplete() {
+	@Test public void construct_incomplete() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.end();
 
@@ -35,7 +35,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(TimeUnit.MILLISECONDS));
 	}
 
-	@Test public void toString_afterConstructed_isCorrect() {
+	@Test public void toString_afterConstructed_isCorrect() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.end();
 
@@ -48,7 +48,7 @@ import org.robolectric.RobolectricTestRunner;
 						+ "SettableFuture:0\\) //SettableFuture@\\d{1,20}\\[ state=unset]$"));
 	}
 
-	@Test public void setResult_isSuccessful() {
+	@Test public void setResult_isSuccessful() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.end();
 
@@ -64,7 +64,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.get(1, DAYS), equalTo("test"));
 	}
 
-	@Test public void toString_afterSuccess_isCorrect() {
+	@Test public void toString_afterSuccess_isCorrect() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.end();
 
@@ -79,7 +79,7 @@ import org.robolectric.RobolectricTestRunner;
 						+ "SettableFuture:0\\) //SettableFuture@\\d{1,20}\\[ success=test]$"));
 	}
 
-	@Test public void setException_UncheckedException_isFailed() {
+	@Test public void setException_UncheckedException_isFailed() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.catching(ArithmeticException.class, e -> null).end();
 
@@ -96,7 +96,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, DAYS));
 	}
 
-	@Test public void toString_afterUncheckedException_isCorrect() {
+	@Test public void toString_afterUncheckedException_isCorrect() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.catching(ArithmeticException.class, e -> null).end();
 
@@ -114,7 +114,7 @@ import org.robolectric.RobolectricTestRunner;
 						+ "SettableFuture:0\\) //SettableFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]$"));
 	}
 
-	@Test public void setException_checkedException_isFailed() {
+	@Test public void setException_checkedException_isFailed() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.catching(IOException.class, e -> null).end();
 
@@ -131,7 +131,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(AsyncCheckedException.class, () -> fut.get(1, DAYS), hasCause(sameInstance(e)));
 	}
 
-	@Test public void toString_afterCheckedException_isCorrect() {
+	@Test public void toString_afterCheckedException_isCorrect() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.catching(IOException.class, e -> null).end();
 
@@ -149,7 +149,7 @@ import org.robolectric.RobolectricTestRunner;
 						+ "SettableFuture:0\\) //SettableFuture@\\d{1,20}\\[ failure=java.io.IOException: test]$"));
 	}
 
-	@Test public void setException_cancelledException_isFailed() {
+	@Test public void setException_cancelledException_isFailed() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.end();
 
@@ -166,7 +166,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(CancellationException.class, () -> fut.get(1, DAYS));
 	}
 
-	@Test public void toString_afterCancelledException_isCorrect() {
+	@Test public void toString_afterCancelledException_isCorrect() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
 		fut.end();
 

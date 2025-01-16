@@ -22,7 +22,7 @@ import org.robolectric.RobolectricTestRunner;
 	@Rule public ErrorCollector collector = new ErrorCollector();
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
 
-	@Test public void forString_state_isSuccessful() {
+	@Test public void forString_state_isSuccessful() throws Throwable {
 		Future<String> fut = Futures.immediateFuture("test");
 		fut.end();
 
@@ -33,7 +33,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
-	@Test public void forString_get_isSuccessful() {
+	@Test public void forString_get_isSuccessful() throws Throwable {
 		Future<String> fut = Futures.immediateFuture("test");
 		fut.end();
 
@@ -42,7 +42,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.get(1, DAYS), equalTo("test"));
 	}
 
-	@Test public void forString_toString_correct() {
+	@Test public void forString_toString_correct() throws Throwable {
 		Future<String> fut = Futures.immediateFuture("test");
 		fut.end();
 
@@ -54,7 +54,7 @@ import org.robolectric.RobolectricTestRunner;
 						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ success=test]$"));
 	}
 
-	@Test public void forString_cancel_isNoOp() {
+	@Test public void forString_cancel_isNoOp() throws Throwable {
 		Future<String> fut = Futures.immediateFuture("test");
 		fut.end();
 
@@ -66,7 +66,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), nullValue());
 	}
 
-	@Test public void forString_setException_isNoOp() {
+	@Test public void forString_setException_isNoOp() throws Throwable {
 		Future<String> fut = Futures.immediateFuture("test");
 		fut.end();
 
@@ -78,7 +78,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), nullValue());
 	}
 
-	@Test public void forUnchecked_state_isFailed() {
+	@Test public void forUnchecked_state_isFailed() throws Throwable {
 		ArithmeticException e = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(e);
 		fut.catching(ArithmeticException.class, ex -> null).end();
@@ -90,7 +90,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
-	@Test public void forUnchecked_get_throws() {
+	@Test public void forUnchecked_get_throws() throws Throwable {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(ArithmeticException.class, ex -> null).end();
@@ -100,7 +100,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, DAYS), sameInstance(expect));
 	}
 
-	@Test public void forUnchecked_toString_correct() {
+	@Test public void forUnchecked_toString_correct() throws Throwable {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(ArithmeticException.class, ex -> null).end();
@@ -114,7 +114,7 @@ import org.robolectric.RobolectricTestRunner;
 						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]$"));
 	}
 
-	@Test public void forUnchecked_cancel_isNoOp() {
+	@Test public void forUnchecked_cancel_isNoOp() throws Throwable {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(ArithmeticException.class, ex -> null).end();
@@ -127,7 +127,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
 	}
 
-	@Test public void forUnchecked_setException_isNoOp() {
+	@Test public void forUnchecked_setException_isNoOp() throws Throwable {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(ArithmeticException.class, ex -> null).end();
@@ -140,7 +140,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
 	}
 
-	@Test public void forChecked_state_isFailed() {
+	@Test public void forChecked_state_isFailed() throws Throwable {
 		IOException e = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(e);
 		fut.catching(IOException.class, ex -> null).end();
@@ -152,7 +152,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
-	@Test public void forChecked_get_throws() {
+	@Test public void forChecked_get_throws() throws Throwable {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(IOException.class, ex -> null).end();
@@ -165,7 +165,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(found.getCause(), sameInstance(expect));
 	}
 
-	@Test public void forChecked_toString_correct() {
+	@Test public void forChecked_toString_correct() throws Throwable {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(IOException.class, ex -> null).end();
@@ -179,7 +179,7 @@ import org.robolectric.RobolectricTestRunner;
 						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: test]$"));
 	}
 
-	@Test public void forChecked_cancel_isNoOp() {
+	@Test public void forChecked_cancel_isNoOp() throws Throwable {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(IOException.class, ex -> null).end();
@@ -192,7 +192,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
 	}
 
-	@Test public void forChecked_setException_isNoOp() {
+	@Test public void forChecked_setException_isNoOp() throws Throwable {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(IOException.class, ex -> null).end();
@@ -205,7 +205,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
 	}
 
-	@Test public void forCancellation_state_isFailed() {
+	@Test public void forCancellation_state_isFailed() throws Throwable {
 		CancellationException e = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(e);
 		fut.end();
@@ -217,7 +217,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
-	@Test public void forCancellation_get_throws() {
+	@Test public void forCancellation_get_throws() throws Throwable {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.end();
@@ -230,7 +230,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(found, sameInstance(expect));
 	}
 
-	@Test public void forCancellation_toString_correct() {
+	@Test public void forCancellation_toString_correct() throws Throwable {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.end();
@@ -247,7 +247,7 @@ import org.robolectric.RobolectricTestRunner;
 						+ ".CancellationException: test]$"));
 	}
 
-	@Test public void forCancellation_cancel_isNoOp() {
+	@Test public void forCancellation_cancel_isNoOp() throws Throwable {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.end();
@@ -260,7 +260,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
 	}
 
-	@Test public void forCancellation_setException_isNoOp() {
+	@Test public void forCancellation_setException_isNoOp() throws Throwable {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.end();
