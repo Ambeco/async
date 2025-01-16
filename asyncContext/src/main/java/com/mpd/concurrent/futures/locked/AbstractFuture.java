@@ -2,17 +2,22 @@ package com.mpd.concurrent.futures.locked;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
+import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 public abstract class AbstractFuture<O> implements Future<O> {
+	private static final FluentLogger log = FluentLogger.forEnclosingClass();
+
 	@Nullable protected static final Throwable NO_EXCEPTION = null;
 	@SuppressWarnings("ConstantConditions") protected final @Nullable O FAILED_RESULT = null;
+	private static final int NANOS_PER_MILLI = 1000000;
 
 	private final long delay;
 	private final TimeUnit delayUnit;
@@ -180,8 +185,10 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		return isDone;
 	}
 
-	@Override public O get(long timeout, TimeUnit unit) {
-		long until = System.nanoTime() + unit.toNanos(timeout);
+	@Override public O get(long timeout, TimeUnit unit) throws TimeoutException {
+		long timeoutNs = unit.toNanos(timeout);
+		long startTimeNanos = System.nanoTime();
+		long until = startTimeNanos + timeoutNs;
 		synchronized (this) {
 			try {
 				while (true) {
@@ -191,11 +198,33 @@ public abstract class AbstractFuture<O> implements Future<O> {
 						return result;
 					} else {
 						long remaining = until - System.nanoTime();
-						this.wait(remaining / TimeUnit.MILLISECONDS.toNanos(1),
-								(int) (remaining % TimeUnit.MILLISECONDS.toNanos(1)));
+						if (remaining > 0) {
+							log.atFine().log(
+									"Thread %s blocking for up to %dns, out of a maximum of %dns, waiting for future %s to complete",
+									Thread.currentThread(),
+									remaining,
+									timeoutNs,
+									this);
+							this.wait(remaining / NANOS_PER_MILLI, (int) (remaining % NANOS_PER_MILLI));
+						} else {
+							log.atFine().log(
+									"Thread %s timed out after %dns, out of a maximum of %dns, waiting for future %s to complete",
+									Thread.currentThread(),
+									System.nanoTime() - startTimeNanos,
+									timeoutNs,
+									this);
+							throw new TimeoutException();
+						}
 					}
 				}
 			} catch (InterruptedException e) {
+				log.atFine().log(
+						"Thread %s interrupted after %dns, out of a maximum of %dns, while waiting for future %s to complete",
+						Thread.currentThread(),
+						System.nanoTime() - startTimeNanos,
+						timeoutNs,
+						this);
+				Thread.currentThread().interrupt();
 				if (!isDone) {
 					// ignored result because we check isDone before calling
 					setComplete(FAILED_RESULT, e, MAY_INTERRUPT);

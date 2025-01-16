@@ -6,6 +6,7 @@ import static com.mpd.concurrent.executors.Executor.threadInExecutorEnum;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.executors.locked.AndAlsoJavaExecutor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
@@ -24,6 +25,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * This mirrors https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledThreadPoolExecutor.html
  */
 public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
+	private static final FluentLogger log = FluentLogger.forEnclosingClass();
+
 	private static final long DEFAULT_KEEP_ALIVE_TIME = 10;
 	private static final TimeUnit DEFAULT_KEEP_ALIVE_UNIT = TimeUnit.SECONDS;
 	private static final int DEFAULT_POOL_SIZE = 8;
@@ -289,6 +292,10 @@ public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
 			synchronized (threads) {
 				isShutdown = true;
 				while (!threads.isEmpty()) {
+					log.atFine().log(
+							"Thread %s blocking without limit, waiting for threads %s to finish stopping",
+							Thread.currentThread(),
+							threads);
 					threads.wait();
 				}
 			}

@@ -12,6 +12,7 @@ import com.mpd.concurrent.futures.atomic.FutureFunction;
 import com.mpd.concurrent.futures.atomic.FutureTimeout;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -53,15 +54,19 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	/**
 	 * @noinspection DeprecatedIsStillUsed
 	 */
-	@Deprecated default O get() {
-		//noinspection deprecation
-		return get(Integer.MAX_VALUE, TimeUnit.NANOSECONDS);
+	@Deprecated default O get() throws InterruptedException {
+		try {
+			//noinspection deprecation
+			return get(Long.MAX_VALUE / 2, TimeUnit.NANOSECONDS);
+		} catch (TimeoutException e) {
+			throw new RuntimeException("Future not completed after heat death of the universe");
+		}
 	}
 
 	/**
 	 * @noinspection DeprecatedIsStillUsed
 	 */
-	@Deprecated O get(long timeout, TimeUnit unit);
+	@Deprecated O get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException;
 
 	@SuppressWarnings("UnusedReturnValue") boolean cancel(CancellationException exception, boolean mayInterruptIfRunning);
 

@@ -2,18 +2,24 @@ package com.mpd.concurrent.futures.atomic;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
+import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 // FutureListener<Object>, because derived classes listen to multiple other futures of various types in addition
 public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Object> {
+	protected static final long NOT_SCHEDULED = Long.MIN_VALUE;
+
 	protected static final RuntimeException SUCCESS_EXCEPTION = new SuccessException();
+	private static final FluentLogger log = FluentLogger.forEnclosingClass();
+	private static final int NANOS_PER_MILLI = 1000000;
 	/**
 	 * @noinspection unchecked
 	 */
@@ -53,18 +59,18 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	private volatile boolean exceptionPropagated = false;
 
 	protected AbstractFuture() {
-		scheduledNanos = -1;
+		scheduledNanos = NOT_SCHEDULED;
 	}
 
 	protected AbstractFuture(long delay, TimeUnit delayUnit) {
-		scheduledNanos = delayUnit.toNanos(delay);
+		scheduledNanos = System.nanoTime() + delayUnit.toNanos(delay);
 	}
 
 	protected AbstractFuture(@Nullable O result) {
 		this.exception = SUCCESS_EXCEPTION;
 		this.wrappedException = SUCCESS_EXCEPTION;
 		this.result = result;
-		scheduledNanos = -1;
+		scheduledNanos = NOT_SCHEDULED;
 	}
 
 	protected AbstractFuture(Throwable exception) {
@@ -73,7 +79,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 				(exception instanceof RuntimeException)
 						? ((RuntimeException) exception)
 						: (new AsyncCheckedException(exception));
-		scheduledNanos = -1;
+		scheduledNanos = NOT_SCHEDULED;
 	}
 
 	protected static void toStringAppendLimitedRecursion(StringBuilder sb, @Nullable Object object) {
@@ -261,9 +267,11 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		return setComplete(FAILED_RESULT, exception, mayInterruptIfRunning);
 	}
 
-	@Override public O get(long timeout, TimeUnit unit) {
+	@Override public O get(long timeout, TimeUnit unit) throws TimeoutException {
+		long timeoutNs = unit.toNanos(timeout);
+		long startTimeNanos = System.nanoTime();
 		try {
-			long until = System.nanoTime() + unit.toNanos(timeout);
+			long untilNs = startTimeNanos + timeoutNs;
 			synchronized (this) {
 				while (true) {
 					RuntimeException exception = wrappedException;
@@ -272,11 +280,34 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 					} else if (exception != null) {
 						throw exception;
 					}
-					long remaining = until - System.nanoTime();
-					this.wait(remaining / TimeUnit.MILLISECONDS.toNanos(1), (int) (remaining % TimeUnit.MILLISECONDS.toNanos(1)));
+					long remainingNs = untilNs - System.nanoTime();
+					if (remainingNs > 0) {
+						log.atFine().log(
+								"Thread %s blocking for up to %dns, out of a maximum of %dns, waiting for future %s to complete",
+								Thread.currentThread(),
+								remainingNs,
+								timeoutNs,
+								this);
+						this.wait(remainingNs / NANOS_PER_MILLI, (int) (remainingNs % NANOS_PER_MILLI));
+					} else {
+						log.atFine().log(
+								"Thread %s timed out after %dns out of a maximum of %dns, waiting for future %s to complete",
+								Thread.currentThread(),
+								System.nanoTime() - startTimeNanos,
+								timeoutNs,
+								this);
+						throw new TimeoutException();
+					}
 				}
 			}
 		} catch (InterruptedException e) {
+			log.atFine().log(
+					"Thread %s interrupted after %dns out of a maximum of %dns, while waiting for future %s to complete",
+					Thread.currentThread(),
+					System.nanoTime() - startTimeNanos,
+					timeoutNs,
+					this);
+			Thread.currentThread().interrupt();
 			throw new AsyncCheckedException(e);
 		}
 	}
@@ -408,7 +439,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@Override public long getScheduledTimeNanos() {
-		if (scheduledNanos < 0) {
+		if (scheduledNanos == NOT_SCHEDULED) {
 			throw new UnsupportedOperationException("not a scheduled future");
 		}
 		return scheduledNanos;
@@ -474,17 +505,17 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@Override public long getDelay(TimeUnit timeUnit) {
-		if (scheduledNanos < 0) {
+		if (scheduledNanos == NOT_SCHEDULED) {
 			throw new UnsupportedOperationException("not a scheduled future");
 		}
-		return timeUnit.convert(System.currentTimeMillis() - scheduledNanos, TimeUnit.NANOSECONDS);
+		return timeUnit.convert(scheduledNanos - System.nanoTime(), TimeUnit.NANOSECONDS);
 	}
 
 	@Override public int compareTo(Delayed delayed) {
 		if (delayed instanceof AbstractFuture) {
 			return Long.compare(scheduledNanos, ((AbstractFuture<?>) delayed).scheduledNanos);
 		} else {
-			long selfRemain = scheduledNanos - System.currentTimeMillis();
+			long selfRemain = scheduledNanos - System.nanoTime();
 			long delayedRemain = delayed.getDelay(TimeUnit.NANOSECONDS);
 			return Long.compare(selfRemain, delayedRemain);
 		}
@@ -513,7 +544,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		} else if (setAsync != null) {
 			sb.append(" setAsync=");
 			setAsync.toString(sb, TO_STRING_NO_STATE);
-		} else if (scheduledNanos > 0) {
+		} else if (scheduledNanos > NOT_SCHEDULED) {
 			sb.append(" scheduledNanos=").append(scheduledNanos);
 		}
 	}
