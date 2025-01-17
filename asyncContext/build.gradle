@@ -28,6 +28,7 @@ android {
             includeAndroidResources = true
             all {
                 systemProperty "robolectric.logging", "stdout"
+                systemProperty "flogger.backend_factory", "com.tbohne.android.flogger.backend.AndroidBackendFactory"
                 //testLogging {
                 //    showStandardStreams = true
                 //    events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
@@ -44,6 +45,7 @@ dependencies {
     implementation libs.guava
     implementation libs.checker.qual
     implementation libs.flogger
+    runtimeOnly project(':floggerandroidbackend')
     testImplementation libs.flogger.system.backend
     testImplementation libs.espresso.idling.resource
     testImplementation libs.junit
