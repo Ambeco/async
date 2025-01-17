@@ -27,3 +27,4 @@ dependencyResolutionManagement {
 rootProject.name = "ContextFuture"
 include(":app")
 include(":asyncContext")
+include ':floggerandroidbackend'
