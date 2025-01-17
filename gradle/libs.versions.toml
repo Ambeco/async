@@ -1,19 +1,32 @@
 [versions]
 agp = "8.8.0"
+checkerQual = "3.43.0"
+flogger = "0.8"
+guava = "33.3.1-jre"
+javaHamcrest = "2.0.0.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
 espressoIdlingResource = "3.6.1"
+mockitoCore = "3.12.4"
+robolectric = "4.14"
 
 [libraries]
+flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
+checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "checkerQual" }
+flogger-system-backend = { module = "com.google.flogger:flogger-system-backend", version.ref = "flogger" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+java-hamcrest = { module = "org.hamcrest:java-hamcrest", version.ref = "javaHamcrest" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 espresso-idling-resource = { group = "androidx.test.espresso", name = "espresso-idling-resource", version.ref = "espressoIdlingResource" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
