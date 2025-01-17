@@ -26,6 +26,13 @@ android {
     testOptions {
         unitTests {
             includeAndroidResources = true
+            all {
+                systemProperty "robolectric.logging", "stdout"
+                //testLogging {
+                //    showStandardStreams = true
+                //    events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
+                //}
+            }
         }
     }
 }
@@ -37,8 +44,8 @@ dependencies {
     implementation 'com.google.guava:guava:32.1.1-jre'
     implementation "org.checkerframework:checker-qual:3.33.0"
     implementation 'com.google.flogger:flogger:0.8'
-    implementation 'com.google.flogger:flogger-system-backend:0.8'
-    implementation libs.espresso.idling.resource
+    testImplementation 'com.google.flogger:flogger-system-backend:0.8'
+    testImplementation libs.espresso.idling.resource
     testImplementation(libs.junit)
     testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'
     testImplementation 'org.robolectric:robolectric:4.14'
