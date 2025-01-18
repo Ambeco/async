@@ -26,6 +26,22 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all {
+                it.systemProperty("robolectric.logging", "stdout")
+                it.systemProperty(
+                    "flogger.backend_factory",
+                    "com.tbohne.android.flogger.backend.AndroidBackendFactory"
+                )
+                //testLogging {
+                //    showStandardStreams = true
+                //    events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
+                //}
+            }
+        }
+    }
 }
 
 dependencies {
@@ -36,8 +52,11 @@ dependencies {
     implementation(libs.checker.qual)
     implementation(libs.flogger.system.backend)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.hamcrest.all)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
 }
 
 java {

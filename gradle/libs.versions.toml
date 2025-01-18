@@ -3,6 +3,7 @@ agp = "8.8.0"
 checkerQual = "3.43.0"
 flogger = "0.8"
 guava = "33.3.1-jre"
+hamcrestAll = "1.3"
 javaHamcrest = "2.0.0.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -18,6 +19,7 @@ flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
 checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "checkerQual" }
 flogger-system-backend = { module = "com.google.flogger:flogger-system-backend", version.ref = "flogger" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
+hamcrest-all = { module = "org.hamcrest:hamcrest-all", version.ref = "hamcrestAll" }
 java-hamcrest = { module = "org.hamcrest:java-hamcrest", version.ref = "javaHamcrest" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
