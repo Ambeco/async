@@ -46,6 +46,7 @@ dependencies {
     implementation libs.checker.qual
     implementation libs.flogger
     runtimeOnly project(':floggerandroidbackend')
+    testImplementation project(':floggerandroidbackend')
     testImplementation libs.flogger.system.backend
     testImplementation libs.espresso.idling.resource
     testImplementation libs.junit
