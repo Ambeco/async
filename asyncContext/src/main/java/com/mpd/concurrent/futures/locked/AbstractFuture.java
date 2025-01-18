@@ -3,6 +3,7 @@ package com.mpd.concurrent.futures.locked;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import java.util.concurrent.CancellationException;
@@ -193,6 +194,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 			try {
 				while (true) {
 					if (exception != null) {
+						log.atFine().withStackTrace(StackSize.SMALL).log("Future get throwing %s", exception);
 						throw wrappedException;
 					} else if (isDone) {
 						return result;
@@ -231,6 +233,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 				}
 			}
 			if (exception != null) {
+				log.atFine().withStackTrace(StackSize.SMALL).log("Future get throwing %s", exception);
 				throw wrappedException;
 			} else {
 				return result;
@@ -322,6 +325,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		if (!isDone) {
 			throw new FutureNotCompleteException();
 		} else if (exception != null) {
+			log.atFine().withStackTrace(StackSize.SMALL).log("Future getDoneLocked throwing %s", exception);
 			throw wrappedException;
 		} else {
 			return result;

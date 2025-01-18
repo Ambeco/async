@@ -3,6 +3,7 @@ package com.mpd.concurrent.futures.atomic;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import java.util.concurrent.CancellationException;
@@ -243,6 +244,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		} else if (exception == SUCCESS_EXCEPTION) {
 			return result;
 		} else {
+			log.atFine().withStackTrace(StackSize.SMALL).log("Future resultNow throwing %s", exception);
 			throw exception;
 		}
 	}
@@ -278,6 +280,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 					if (exception == SUCCESS_EXCEPTION) {
 						return result;
 					} else if (exception != null) {
+						log.atFine().withStackTrace(StackSize.SMALL).log("Future get throwing %s", exception);
 						throw exception;
 					}
 					long remainingNs = untilNs - System.nanoTime();

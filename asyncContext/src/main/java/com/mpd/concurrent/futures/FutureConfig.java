@@ -7,7 +7,6 @@ import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.executors.locked.JavaAsMpdExecutor;
 import com.mpd.concurrent.executors.locked.LooperAsMpdExecutor;
-import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.CancellationException;
 
@@ -60,14 +59,11 @@ public interface FutureConfig {
 			log.atFine().log("Unhandled Exception handled by crash-in-main-thread-fallback");
 			return (thread, throwable) -> {
 				log.atSevere().withCause(throwable).log("Unhandled Exception in thread %s", thread);
+				RuntimeException wrapped = new RuntimeException("Unhandled Exception in thread " + thread, throwable);
 				Handler mainHandler = new Handler(Looper.getMainLooper());
 				mainHandler.post(() -> {
 					log.atFine().log("Unhandled Exception handler crash-in-main-thread-fallback crashing now");
-					if (throwable instanceof RuntimeException) {
-						throw (RuntimeException) throwable;
-					} else {
-						throw new AsyncCheckedException(throwable);
-					}
+					throw wrapped;
 				});
 			};
 		}
