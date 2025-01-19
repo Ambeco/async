@@ -1,6 +1,8 @@
 package com.mpd.concurrent.futures.atomic;
 
 import androidx.annotation.CallSuper;
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
@@ -16,8 +18,10 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFuture<O>
 		implements SubmittableFuture<O>, FutureListener<Object>, SchedulableFuture<O>
 {
+	protected static final boolean DO_NOT_QUEUE_WORK = false;
+
 	protected static final boolean SHOULD_QUEUE_WORK = true;
-	protected static final boolean DO_NOT_QUEUE_WORK = true;
+	private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
 	/**
 	 * @noinspection unchecked
@@ -72,6 +76,7 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 			if (interrupt != null) { // interrupted.
 				setException(interrupt, MAY_INTERRUPT);
 			} else {
+				log.atFinest().withStackTrace(StackSize.SMALL).log("submitting %s to %s due to %s", this, oldExecutor, future);
 				oldExecutor.submit(this);
 			}
 		}
@@ -96,6 +101,22 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 		if (executor != null) {
 			sb.append(" executor=");
 			executor.toString(sb, /*includeState=*/false);
+		}
+	}
+
+	public static class ParentNotCompleteException extends IllegalStateException {
+		public ParentNotCompleteException() {}
+
+		public ParentNotCompleteException(String message) {
+			super(message);
+		}
+
+		public ParentNotCompleteException(@Nullable Throwable cause) {
+			super(cause);
+		}
+
+		public ParentNotCompleteException(String message, @Nullable Throwable cause) {
+			super(message, cause);
 		}
 	}
 
