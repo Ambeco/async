@@ -34,6 +34,10 @@ import org.robolectric.RobolectricTestRunner;
 	@Rule public ErrorCollector collector = new ErrorCollector();
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
 
+	@Before public void enableDebugLogging() {
+		AndroidBackend.setLogLevelOverride(DEBUG);
+	}
+
 	@Test public void constructor_default_stateIsPending() throws Throwable {
 		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>();
 		fut.end();
@@ -157,9 +161,8 @@ import org.robolectric.RobolectricTestRunner;
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
 				" //PublicAbstractFuture@",
 				"[ failure=java.lang.ArithmeticException: test]"));
-		collector.checkThat(fut.toString(), stringContainsInOrder(
-				"PublicAbstractFuture@",
-						"[ failure=java.lang.ArithmeticException: test]"));
+		collector.checkThat(fut.toString(),
+				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.lang.ArithmeticException: test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
 		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(Long.MIN_VALUE));
@@ -194,9 +197,8 @@ import org.robolectric.RobolectricTestRunner;
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
 				" //PublicAbstractFuture@",
 				"[ failure=java.io.IOException: test]"));
-		collector.checkThat(fut.toString(), stringContainsInOrder(
-				"PublicAbstractFuture@",
-						"[ failure=java.io.IOException: test]"));
+		collector.checkThat(fut.toString(),
+				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.io.IOException: test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
 		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(Long.MIN_VALUE));
@@ -245,11 +247,11 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
 
-	@Test public void setResult_withResult_whenUnset_isSuccess() throws Throwable {
-		String result = "test";
+	@Test public void setResult_withSuccessValue_whenUnset_isSuccess() throws Throwable {
 		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>();
 		fut.end();
 
+		String result = "test";
 		fut.setResult(result);
 
 		//java.util.concurrent.Future state
@@ -281,7 +283,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
 
-	@Test public void setResult_withResult_whenAlreadySucceeded_crashes() throws Throwable {
+	@Test public void setResult_withSuccessValue_afterAlreadySucceeded_crashes() throws Throwable {
 		String result = "test";
 		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>(result);
 		fut.end();

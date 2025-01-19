@@ -1,5 +1,6 @@
 package com.mpd.concurrent.futures;
 
+import static android.util.Log.DEBUG;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -11,9 +12,11 @@ import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
 import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
+import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +25,10 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class) public class SettableFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
+
+	@Before public void enableDebugLogging() {
+		AndroidBackend.setLogLevelOverride(DEBUG);
+	}
 
 	@Test public void construct_incomplete() throws Throwable {
 		SettableFuture<String> fut = new SettableFuture<>();
