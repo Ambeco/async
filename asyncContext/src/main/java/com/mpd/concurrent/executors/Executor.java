@@ -49,6 +49,10 @@ public interface Executor extends AutoCloseable {
 
 	@CanIgnoreReturnValue <O> SubmittableFuture<O> execute(SubmittableFuture<O> task);
 
+	default <O> SubmittableFuture<O> submit(SubmittableFuture<O> task) {
+		return execute(task);
+	}
+
 	default Future<?> submit(Runnable task) {
 		return execute(new FutureRunnable<Void>(null, task));
 	}
