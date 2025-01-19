@@ -1,5 +1,6 @@
 package com.mpd.concurrent.futures.atomic;
 
+import static android.util.Log.DEBUG;
 import static com.mpd.test.WithCauseMatcher.withCause;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -18,19 +19,22 @@ import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.SettableFuture;
 import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
+import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.shadows.ShadowLooper;
 
 @RunWith(RobolectricTestRunner.class) public class AbstractFutureTest {
 	protected static final long NOT_SCHEDULED = Long.MIN_VALUE;
-	
+
 	@Rule public ErrorCollector collector = new ErrorCollector();
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
 
@@ -39,6 +43,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void constructor_default_stateIsPending() throws Throwable {
+
 		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>();
 		fut.end();
 
@@ -126,8 +131,7 @@ import org.robolectric.RobolectricTestRunner;
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
 				"//PublicAbstractFuture@",
 				"[ success=test]"));
-		collector.checkThat(
-				fut.toString(), stringContainsInOrder("PublicAbstractFuture@", "[ success=test]"));
+		collector.checkThat(fut.toString(), stringContainsInOrder("PublicAbstractFuture@", "[ success=test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
 		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(Long.MIN_VALUE));
@@ -232,9 +236,9 @@ import org.robolectric.RobolectricTestRunner;
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture",
 				"(PublicAbstractFuture:0) //PublicAbstractFuture@",
 				"[ cancelled=java.util.concurrent.CancellationException: test]"));
-		collector.checkThat(fut.toString(), stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ cancelled=java.util.concurrent.CancellationException: test]"));
+		collector.checkThat(fut.toString(),
+				stringContainsInOrder("PublicAbstractFuture@",
+						"[ cancelled=java.util.concurrent.CancellationException: test]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkThat(fut.getSetAsync(), nullValue());
 		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(Long.MIN_VALUE));
@@ -317,10 +321,50 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceClass(), equalTo(PublicAbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
+
+		ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
 	}
 
-	// TODO: test setResult(result)
+	@Test public void setResult_withSuccessValue_afterAlreadyFailed_crashes() throws Throwable {
+		ArithmeticException expectedException = new ArithmeticException("test");
+		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>(expectedException);
+		fut.end();
+
+		String result = "test";
+		fut.setResult(result);
+
+		//java.util.concurrent.Future state
+		collector.checkThat(fut.exceptionNow(), sameInstance(expectedException));
+		collector.checkThrows(ArithmeticException.class, fut::get, sameInstance(expectedException));
+		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
+		collector.checkThat(fut.isCancelled(), equalTo(false));
+		collector.checkThat(fut.isDone(), equalTo(true));
+		collector.checkThrows(ArithmeticException.class, fut::resultNow, sameInstance(expectedException));
+		//java.util.concurrent.Delayed
+		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
+		//com.mpd.concurrent.futures.Future
+		collector.checkThat(fut.isSuccessful(), equalTo(false));
+		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
+		collector.checkThat(fut.getPendingString(4), stringContainsInOrder(
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
+				" //PublicAbstractFuture@",
+				"[ failure=java.lang.ArithmeticException: test]"));
+		collector.checkThat(fut.toString(),
+				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.lang.ArithmeticException: test]"));
+		//com.mpd.concurrent.futures.impl.AbstractFuture
+		collector.checkThat(fut.getSetAsync(), nullValue());
+		collector.checkThat(fut.getScheduledTimeNanosProtected(), equalTo(Long.MIN_VALUE));
+		collector.checkThat(fut.getResultProtected(), nullValue());
+		collector.checkThat(fut.getExceptionProtected(), sameInstance(expectedException));
+		collector.checkThat(fut.getWrappedExceptionProtected(), sameInstance(expectedException));
+		collector.checkThat(fut.getInterrupt(), nullValue());
+		collector.checkThat(fut.getListener(), nullValue());
+		collector.checkThat(fut.sourceClass(), equalTo(PublicAbstractFuture.class));
+		collector.checkThat(fut.sourceMethodName(), nullValue());
+	}
+
 	// TODO: test setResult(Future)
+	// TODO: test setResult(Future) then complete
 	// TODO: test setException(Throwable)
 	// TODO: test setException(Throwable, mayInterruptIfRunning)
 	// TODO: test cancel
