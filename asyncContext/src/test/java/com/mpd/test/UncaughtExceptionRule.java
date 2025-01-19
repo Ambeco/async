@@ -59,8 +59,9 @@ public class UncaughtExceptionRule implements TestRule {
 		UncaughtException uncaught = new UncaughtException(thread, ex);
 		for (ExpectedUncaughtException expected : expectedExceptions) {
 			if (expected.matches(uncaught)) {
-				unmatchedExpectedExceptions.remove(expected);
-				log.atInfo().log("expected uncaught exception was detected: " + uncaught);
+				if (unmatchedExpectedExceptions.remove(expected)) {
+					log.atInfo().log("expected uncaught exception was detected: " + uncaught);
+				}
 				return;
 			}
 		}
