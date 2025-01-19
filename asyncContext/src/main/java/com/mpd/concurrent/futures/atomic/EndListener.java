@@ -6,6 +6,8 @@ import com.mpd.concurrent.futures.FutureListener;
 public class EndListener implements FutureListener<Object> {
 	public static final EndListener INSTANCE = new EndListener();
 
+	protected EndListener() {}
+
 	@Override public void onFutureSucceeded(Future<?> future, Object result) {
 	}
 
