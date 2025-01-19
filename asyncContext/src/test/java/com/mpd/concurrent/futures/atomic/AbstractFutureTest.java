@@ -7,7 +7,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.matchesPattern;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -17,7 +16,6 @@ import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
 import com.mpd.concurrent.futures.Future.FutureSucceededTwiceException;
 import com.mpd.concurrent.futures.FutureListener;
-import com.mpd.concurrent.futures.SettableFuture;
 import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
 import com.mpd.test.UncaughtExceptionRule;
@@ -28,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,13 +40,34 @@ import org.robolectric.RobolectricTestRunner;
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
 	@Rule public UncaughtExceptionRule uncaughtExceptionRule = new UncaughtExceptionRule();
 
+	@Nullable PublicAbstractFuture<String> fut;
+
 	@Before public void enableDebugLogging() {
 		AndroidBackend.setLogLevelOverride(DEBUG);
 	}
 
+	public static void ensureFutureComplete(AbstractFuture<?> fut) {
+		if (fut != null) {
+			fut.cancel(Future.MAY_INTERRUPT); // cancel and interrupt anything in progress
+			for (int i = 0; i < 10 && fut.getListener() instanceof AbstractFuture; i++) {
+				fut = (AbstractFuture<?>) fut.getListener();  // traverse down chain up to a depth of 10 to find the end
+			}
+			if (fut.getListener() instanceof EndListener) { // if it's an end listener, then we don't need to do anything
+				return;
+			}
+			if (fut.getListener() == null) { // at the end of the chain, then swallow exceptions and end.
+				fut.catching(Throwable.class, e -> null).end();
+			}  // else If there's an unknown listener, then all we can do is pray :(
+		}
+	}
+
+	@After public void ensureFutureComplete() {
+		ensureFutureComplete(fut);
+		this.fut = null;
+	}
+
 	@Test public void constructor_default_stateIsPending() throws Throwable {
-		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>();
-		fut.end();
+		fut = new PublicAbstractFuture<>();
 
 		//java.util.concurrent.Future state
 		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
@@ -73,14 +93,13 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getExceptionProtected(), nullValue());
 		collector.checkThat(fut.getWrappedExceptionProtected(), nullValue());
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceClass(), equalTo(PublicAbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
 
 	@Test public void constructor_scheduled_stateIsPending() throws Throwable {
-		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>(3, SECONDS);
-		fut.end();
+		fut = new PublicAbstractFuture<>(3, SECONDS);
 
 		//java.util.concurrent.Future state
 		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
@@ -107,15 +126,14 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getExceptionProtected(), nullValue());
 		collector.checkThat(fut.getWrappedExceptionProtected(), nullValue());
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceClass(), equalTo(PublicAbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
 
 	@Test public void constructor_immediateSuccess_stateIsSuccessful() throws Throwable {
 		String result = "test";
-		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>(result);
-		fut.end();
+		fut = new PublicAbstractFuture<>(result);
 
 		//java.util.concurrent.Future state
 		collector.checkThat(fut.exceptionNow(), nullValue());
@@ -148,8 +166,7 @@ import org.robolectric.RobolectricTestRunner;
 
 	@Test public void constructor_immediateUncheckedException_stateIsFailed() throws Throwable {
 		ArithmeticException expectedException = new ArithmeticException("test");
-		AbstractFuture<String> fut = new PublicAbstractFuture<>(expectedException);
-		fut.catching(ArithmeticException.class, e -> null).end();
+		fut = new PublicAbstractFuture<>(expectedException);
 
 		//java.util.concurrent.Future state
 		collector.checkThat(fut.exceptionNow(), sameInstance(expectedException));
@@ -183,8 +200,7 @@ import org.robolectric.RobolectricTestRunner;
 
 	@Test public void constructor_immediateCheckedException_stateIsFailed() throws Throwable {
 		IOException expectedException = new IOException("test");
-		AbstractFuture<String> fut = new PublicAbstractFuture<>(expectedException);
-		fut.catching(IOException.class, e -> null).end();
+		fut = new PublicAbstractFuture<>(expectedException);
 
 		//java.util.concurrent.Future state
 		collector.checkThat(fut.exceptionNow(), sameInstance(expectedException));
@@ -219,8 +235,7 @@ import org.robolectric.RobolectricTestRunner;
 
 	@Test public void constructor_immediateCancelled_stateIsCancelled() throws Throwable {
 		CancellationException expectedException = new CancellationException("test");
-		AbstractFuture<String> fut = new PublicAbstractFuture<>(expectedException);
-		fut.end();
+		fut = new PublicAbstractFuture<>(expectedException);
 
 		//java.util.concurrent.Future state
 		collector.checkThat(fut.exceptionNow(), sameInstance(expectedException));
@@ -254,8 +269,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void setResultWithSuccessValue_whenPending_isSuccess() throws Throwable {
-		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>();
-		fut.end();
+		fut = new PublicAbstractFuture<>();
 
 		String result = "test";
 		fut.setResult(result);
@@ -291,8 +305,7 @@ import org.robolectric.RobolectricTestRunner;
 
 	@Test public void setResultWithSuccessValue_afterAlreadySucceeded_crashes() throws Throwable {
 		String result = "test";
-		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>(result);
-		fut.end();
+		fut = new PublicAbstractFuture<>(result);
 
 		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.instanceOf(FutureSucceededTwiceException.class));
 		fut.setResult(result);
@@ -328,8 +341,7 @@ import org.robolectric.RobolectricTestRunner;
 
 	@Test public void setResultWithSuccessValue_afterAlreadyFailed_isNoOp() throws Throwable {
 		ArithmeticException expectedException = new ArithmeticException("test");
-		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>(expectedException);
-		fut.catching(ArithmeticException.class, e -> null).end();
+		fut = new PublicAbstractFuture<>(expectedException);
 
 		String result = "test";
 		fut.setResult(result);
@@ -365,8 +377,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void setResultWithFuture_whenPending_resultIsPending_setsAsync() throws Throwable {
-		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>();
-		fut.end();
+		fut = new PublicAbstractFuture<>();
 
 		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
 		fut.setResult(async);
@@ -397,7 +408,7 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.getExceptionProtected(), nullValue());
 		collector.checkThat(fut.getWrappedExceptionProtected(), nullValue());
 		collector.checkThat(fut.getInterrupt(), nullValue());
-		collector.checkThat(fut.getListener(), notNullValue());
+		collector.checkThat(fut.getListener(), nullValue());
 		collector.checkThat(fut.sourceClass(), equalTo(PublicAbstractFuture.class));
 		collector.checkThat(fut.sourceMethodName(), nullValue());
 	}
@@ -414,23 +425,26 @@ import org.robolectric.RobolectricTestRunner;
 	// TODO: test compareTo
 
 	@Test public void toString_recursiveFuture_limitedDepth() throws Throwable {
-		SettableFuture<String> fut1 = new SettableFuture<>();
-		Future<String> fut2 = fut1.transform(s -> s);
+		fut = new PublicAbstractFuture<>();
+		Future<String> fut2 = fut.transform(s -> s);
 
-		fut1.setResult(fut2);
+		fut.setResult(fut2);
 
-		collector.checkThat(fut1.toString(),
-				stringContainsInOrder("SettableFuture@", "[ setAsync=FutureFunction<AbstractFutureTest$$Lambda$", "/0x", ">]"));
+		collector.checkThat(fut.toString(),
+				stringContainsInOrder("PublicAbstractFuture@",
+						"[ setAsync=FutureFunction<AbstractFutureTest$$Lambda$",
+						"/0x",
+						">]"));
 		StringBuilder sb = new StringBuilder();
-		fut1.addPendingString(sb, 4);
+		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(), matchesPattern(Pattern.compile(".+", Pattern.DOTALL)));
 
 
 		collector.checkThat(sb.toString(), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.SettableFuture(SettableFuture:0) //SettableFuture@",
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) //PublicAbstractFuture@",
 				"\n  at AbstractFutureTest$$Lambda$",
 				".apply(AbstractFutureTest:0) //FutureFunction<AbstractFutureTest$$Lambda$",
-				"\n  at com.mpd.concurrent.futures.SettableFuture(SettableFuture:0) //SettableFuture@",
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) //PublicAbstractFuture@",
 				"\n  at AbstractFutureTest$$Lambda$",
 				".apply(AbstractFutureTest:0) //FutureFunction<AbstractFutureTest$$Lambda$"));
 	}

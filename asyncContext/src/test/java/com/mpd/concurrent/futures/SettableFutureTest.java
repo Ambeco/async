@@ -10,6 +10,7 @@ import static org.junit.internal.matchers.ThrowableCauseMatcher.hasCause;
 
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
+import com.mpd.concurrent.futures.atomic.AbstractFutureTest;
 import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
 import com.mpd.test.UncaughtExceptionRule;
@@ -17,6 +18,8 @@ import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,13 +31,19 @@ import org.robolectric.RobolectricTestRunner;
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
 	@Rule public UncaughtExceptionRule uncaughtExceptionRule = new UncaughtExceptionRule();
 
+	@Nullable SettableFuture<String> fut;
+
 	@Before public void enableDebugLogging() {
 		AndroidBackend.setLogLevelOverride(DEBUG);
 	}
 
+	@After public void ensureFutureComplete() {
+		AbstractFutureTest.ensureFutureComplete(fut);
+		this.fut = null;
+	}
+
 	@Test public void construct_incomplete() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.end();
+		fut = new SettableFuture<>();
 
 		collector.checkThrows(FutureNotCompleteException.class, fut::resultNow);
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
@@ -45,8 +54,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void toString_afterConstructed_isCorrect() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.end();
+		fut = new SettableFuture<>();
 
 		collector.checkThat(fut.toString(), matchesPattern("SettableFuture@\\d{1,20}\\[ state=unset]"));
 		StringBuilder sb = new StringBuilder();
@@ -58,8 +66,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void setResult_isSuccessful() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.end();
+		fut = new SettableFuture<>();
 
 		fut.setResult("test");
 
@@ -74,8 +81,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void toString_afterSuccess_isCorrect() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.end();
+		fut = new SettableFuture<>();
 
 		fut.setResult("test");
 
@@ -89,8 +95,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void setException_UncheckedException_isFailed() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.catching(ArithmeticException.class, e -> null).end();
+		fut = new SettableFuture<>();
 
 		ArithmeticException e = new ArithmeticException("test");
 		fut.setException(e);
@@ -106,8 +111,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void toString_afterUncheckedException_isCorrect() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.catching(ArithmeticException.class, e -> null).end();
+		fut = new SettableFuture<>();
 
 		ArithmeticException e = new ArithmeticException("test");
 		fut.setException(e);
@@ -124,8 +128,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void setException_checkedException_isFailed() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.catching(IOException.class, e -> null).end();
+		fut = new SettableFuture<>();
 
 		IOException e = new IOException("test");
 		fut.setException(e);
@@ -141,8 +144,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void toString_afterCheckedException_isCorrect() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.catching(IOException.class, e -> null).end();
+		fut = new SettableFuture<>();
 
 		IOException e = new IOException("test");
 		fut.setException(e);
@@ -159,8 +161,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void setException_cancelledException_isFailed() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.end();
+		fut = new SettableFuture<>();
 
 		CancellationException e = new CancellationException("test");
 		fut.setException(e);
@@ -176,8 +177,7 @@ import org.robolectric.RobolectricTestRunner;
 	}
 
 	@Test public void toString_afterCancelledException_isCorrect() throws Throwable {
-		SettableFuture<String> fut = new SettableFuture<>();
-		fut.end();
+		fut = new SettableFuture<>();
 
 		CancellationException e = new CancellationException("test");
 		fut.setException(e);
