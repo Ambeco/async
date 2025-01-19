@@ -15,16 +15,19 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
+import com.mpd.concurrent.futures.Future.FutureSucceededTwiceException;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.SettableFuture;
 import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
+import com.mpd.test.UncaughtExceptionRule;
 import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,13 +40,13 @@ import org.robolectric.shadows.ShadowLooper;
 
 	@Rule public ErrorCollector collector = new ErrorCollector();
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
+	@Rule public UncaughtExceptionRule uncaughtExceptionRule = new UncaughtExceptionRule();
 
 	@Before public void enableDebugLogging() {
 		AndroidBackend.setLogLevelOverride(DEBUG);
 	}
 
 	@Test public void constructor_default_stateIsPending() throws Throwable {
-
 		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>();
 		fut.end();
 
@@ -292,6 +295,7 @@ import org.robolectric.shadows.ShadowLooper;
 		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>(result);
 		fut.end();
 
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.instanceOf(FutureSucceededTwiceException.class));
 		fut.setResult(result);
 
 		//java.util.concurrent.Future state
@@ -325,10 +329,10 @@ import org.robolectric.shadows.ShadowLooper;
 		ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
 	}
 
-	@Test public void setResult_withSuccessValue_afterAlreadyFailed_crashes() throws Throwable {
+	@Test public void setResult_withSuccessValue_afterAlreadyFailed_isNoOp() throws Throwable {
 		ArithmeticException expectedException = new ArithmeticException("test");
 		PublicAbstractFuture<String> fut = new PublicAbstractFuture<>(expectedException);
-		fut.end();
+		fut.catching(ArithmeticException.class, e -> null).end();
 
 		String result = "test";
 		fut.setResult(result);

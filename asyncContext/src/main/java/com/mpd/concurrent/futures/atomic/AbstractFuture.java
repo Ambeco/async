@@ -17,7 +17,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 // FutureListener<Object>, because derived classes listen to multiple other futures of various types in addition
 public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Object> {
 	protected static final long NOT_SCHEDULED = Long.MIN_VALUE;
-
 	protected static final RuntimeException SUCCESS_EXCEPTION = new SuccessException();
 	private static final FluentLogger log = FluentLogger.forEnclosingClass();
 	private static final int NANOS_PER_MILLI = 1000000;

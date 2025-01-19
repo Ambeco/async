@@ -12,6 +12,7 @@ import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
 import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
+import com.mpd.test.UncaughtExceptionRule;
 import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
@@ -25,6 +26,7 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class) public class SettableFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
+	@Rule public UncaughtExceptionRule uncaughtExceptionRule = new UncaughtExceptionRule();
 
 	@Before public void enableDebugLogging() {
 		AndroidBackend.setLogLevelOverride(DEBUG);

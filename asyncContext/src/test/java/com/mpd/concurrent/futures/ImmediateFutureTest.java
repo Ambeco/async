@@ -12,6 +12,7 @@ import static org.junit.Assert.assertThrows;
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.test.AsyncContextRule;
 import com.mpd.test.ErrorCollector;
+import com.mpd.test.UncaughtExceptionRule;
 import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
@@ -24,6 +25,7 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class) public class ImmediateFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
 	@Rule public AsyncContextRule asyncContextRule = new AsyncContextRule();
+	@Rule public UncaughtExceptionRule uncaughtExceptionRule = new UncaughtExceptionRule();
 
 	@Before public void enableDebugLogging() {
 		AndroidBackend.setLogLevelOverride(DEBUG);
@@ -73,11 +75,13 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), nullValue());
 	}
 
-	@Test public void forString_setException_isNoOp() throws Throwable {
+	@Test public void forString_setException_crashes() throws Throwable {
 		Future<String> fut = Futures.immediateFuture("test");
-		fut.catching(ArithmeticException.class, ex -> null).end();
+		fut.end();
 
-		fut.setException(new ArithmeticException("FAILURE"));
+		ArithmeticException secondException = new ArithmeticException("test-exception-after-success");
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
+		fut.setException(secondException);
 
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
@@ -134,12 +138,14 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
 	}
 
-	@Test public void forUnchecked_setException_isNoOp() throws Throwable {
+	@Test public void forUnchecked_setException_crashes() throws Throwable {
 		ArithmeticException expect = new ArithmeticException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(ArithmeticException.class, ex -> null).end();
 
-		fut.setException(new ArithmeticException("FAILURE"));
+		IOException secondException = new IOException("test-exception-after-unchecked");
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
+		fut.setException(secondException);
 
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
@@ -199,12 +205,14 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
 	}
 
-	@Test public void forChecked_setException_isNoOp() throws Throwable {
+	@Test public void forChecked_setException_crashes() throws Throwable {
 		IOException expect = new IOException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
 		fut.catching(IOException.class, ex -> null).end();
 
-		fut.setException(new IOException("FAILURE"));
+		IOException secondException = new IOException("test-exception-after-checked");
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
+		fut.setException(secondException);
 
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
@@ -267,12 +275,14 @@ import org.robolectric.RobolectricTestRunner;
 		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
 	}
 
-	@Test public void forCancellation_setException_isNoOp() throws Throwable {
+	@Test public void forCancellation_setException_crashes() throws Throwable {
 		CancellationException expect = new CancellationException("test");
 		Future<String> fut = Futures.immediateFailedFuture(expect);
-		fut.catching(IOException.class, ex -> null).end();
+		fut.end();
 
-		fut.setException(new IOException("FAILURE"));
+		IOException secondException = new IOException("test-exception-after-cancel");
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
+		fut.setException(secondException);
 
 		collector.checkThat(fut.isDone(), equalTo(true));
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
