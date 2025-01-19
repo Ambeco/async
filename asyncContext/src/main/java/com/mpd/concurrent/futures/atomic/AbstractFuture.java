@@ -244,7 +244,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		} else if (exception == SUCCESS_EXCEPTION) {
 			return result;
 		} else {
-			log.atFine().withStackTrace(StackSize.SMALL).log("Future resultNow throwing %s", exception);
+			log.atFinest().withStackTrace(StackSize.SMALL).log("Future resultNow throwing %s", exception);
 			throw exception;
 		}
 	}
@@ -280,7 +280,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 					if (exception == SUCCESS_EXCEPTION) {
 						return result;
 					} else if (exception != null) {
-						log.atFine().withStackTrace(StackSize.SMALL).log("Future get throwing %s", exception);
+						log.atFinest().withStackTrace(StackSize.SMALL).log("Future get throwing %s", exception);
 						throw exception;
 					}
 					long remainingNs = untilNs - System.nanoTime();
