@@ -25,14 +25,19 @@ public class FutureCatchingFunction<E extends Throwable, O> extends SingleParent
 
 	@Override protected void execute() {
 		Function<? super E, ? extends O> function = this.function;
-		if (function == null) {
+		Future<? extends O> parent = getParent();
+		if (parent == null || function == null) {
 			throw new RunCalledTwiceException();
 		}
-		Throwable exception = getParent().exceptionNow();
-		if (getExceptionClass().isInstance(exception)) {
+		Throwable exception = parent.exceptionNow();
+		if (exception == null) {
+			setException(new ParentNotCompleteException());
+		} else if (getExceptionClass().isInstance(exception)) {
 			setResult(function.apply(getExceptionClass().cast(exception)));
+		} else if (exception == SUCCESS_EXCEPTION) {
+			setResult(parent.resultNow());
 		} else {
-			setResult(getParent());
+			setException(exception);
 		}
 	}
 
