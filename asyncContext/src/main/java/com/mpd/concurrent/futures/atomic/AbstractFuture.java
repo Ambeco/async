@@ -23,6 +23,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	protected static final RuntimeException SUCCESS_EXCEPTION = new SuccessException();
 	private static final FluentLogger log = FluentLogger.forEnclosingClass();
 	private static final int NANOS_PER_MILLI = 1000000;
+	private static final ListenerAlreadyDispatched LISTENER_ALREADY_DISPATCHED = new ListenerAlreadyDispatched();
 	/**
 	 * @noinspection unchecked
 	 */
@@ -53,22 +54,22 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 
 	// TODO listener + setAsync to use stubs instead of Nullable?
 	private final long scheduledNanos;
-	private volatile @Nullable FutureListener<? super O> listener = null; // TODO: atomicListener
+	private final @MonotonicNonNull RuntimeException futureConstructionLocation;
 	private volatile @Nullable Future<? extends O> setAsync = null; // TODO: atomicSetAsync
 	private volatile @MonotonicNonNull Throwable exception = null; // TODO: atomicExeption
 	private volatile @MonotonicNonNull O result = null;
 	private volatile @MonotonicNonNull RuntimeException wrappedException = null;
 	private volatile @MonotonicNonNull Throwable wasInterrupted = null;
-	private volatile @Nullable RuntimeException exceptionNeedsPropagating; // non-null until propagated.
+	private volatile @MonotonicNonNull FutureListener<? super O> listener = null; // TODO: atomicListener
 
 	protected AbstractFuture() {
 		scheduledNanos = NOT_SCHEDULED;
-		exceptionNeedsPropagating = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
+		futureConstructionLocation = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
 	}
 
 	protected AbstractFuture(long delay, TimeUnit delayUnit) {
 		scheduledNanos = System.nanoTime() + delayUnit.toNanos(delay);
-		exceptionNeedsPropagating = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
+		futureConstructionLocation = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
 	}
 
 	protected AbstractFuture(@Nullable O result) {
@@ -76,7 +77,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		this.wrappedException = SUCCESS_EXCEPTION;
 		this.result = result;
 		scheduledNanos = NOT_SCHEDULED;
-		exceptionNeedsPropagating = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
+		futureConstructionLocation = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
 	}
 
 	protected AbstractFuture(Throwable exception) {
@@ -86,7 +87,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 						? ((RuntimeException) exception)
 						: (new AsyncCheckedException(exception));
 		scheduledNanos = NOT_SCHEDULED;
-		exceptionNeedsPropagating = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
+		futureConstructionLocation = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
 	}
 
 	protected static void toStringAppendLimitedRecursion(StringBuilder sb, @Nullable Object object) {
@@ -111,8 +112,6 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		wasInterrupted = mayInterruptIfRunning ? exception : null;
 		wrappedException = exception instanceof RuntimeException ? (RuntimeException) exception : new AsyncCheckedException(
 				exception);
-		//noinspection NonAtomicOperationOnVolatileField
-		exceptionNeedsPropagating = DEBUG_LEAKED_FUTURES ? exceptionNeedsPropagating : wrappedException;
 	}
 
 	@CallSuper protected boolean setComplete(
@@ -172,15 +171,13 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		if (exception instanceof CancellationException) {
 			onCancelled(((CancellationException) exception), mayInterruptIfRunning);
 		}
-		if (listener != null) {
-			exceptionNeedsPropagating = null;
+		if (listener != null && atomicListener.compareAndSet(this, listener, LISTENER_ALREADY_DISPATCHED)) {
 			if (exception == SUCCESS_EXCEPTION) {
 				listener.onFutureSucceeded(this, result);
 			} else {
 				listener.onFutureFailed(this, exception, mayInterruptIfRunning);
 			}
 		}
-		atomicListener.lazySet(this, null);
 		atomicSetAsync.lazySet(this, null);
 	}
 
@@ -236,9 +233,9 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 	}
 
-	protected Future<? extends O> getSetAsync() {
+	protected @Nullable Future<? extends O> getSetAsync() {
 		//noinspection unchecked
-		return (Future<? extends O>) atomicSetAsync.get(this);
+		return (@Nullable Future<? extends O>) atomicSetAsync.get(this);
 	}
 
 	@Override public boolean isDone() {
@@ -423,7 +420,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@CallSuper @Override public void setListener(FutureListener<? super O> listener) {
-		if (exceptionNeedsPropagating == null || !atomicListener.compareAndSet(this, null, listener)) {
+		if (!atomicListener.compareAndSet(this, null, listener)) {
 			FutureListener<?> oldListener = atomicListener.get(this);
 			if (oldListener == listener) {
 				return; // called same listener twice. Weird, but safe.
@@ -438,14 +435,13 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 					+ oldListener);
 		}
 		Throwable exception = atomicException.get(this);
-		if (exception != null) { // if this was already complete, then notify the listener immediately
-			exceptionNeedsPropagating = null;
+		// if this was already complete, then notify the listener immediately
+		if (exception != null && atomicListener.compareAndSet(this, listener, LISTENER_ALREADY_DISPATCHED)) {
 			if (exception == SUCCESS_EXCEPTION) {
 				listener.onFutureSucceeded(this, result);
 			} else {
 				listener.onFutureFailed(this, exception, wasInterrupted != null);
 			}
-			atomicListener.lazySet(this, null);
 		}
 	}
 
@@ -567,13 +563,25 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@Override protected void finalize() throws Throwable {
-		if (exceptionNeedsPropagating != null) {
-			Future.futureConfig.onUnhandledException(new LeakedFutureException("future \""
+		if (atomicListener.get(this) != LISTENER_ALREADY_DISPATCHED) {
+			Future.futureConfig.onUnhandledException(new LeakedFutureException(((atomicException.get(this) == null)
+					? "Completed future \""
+					: "Incomplete future \"")
 					+ this
 					+ "\" was leaked without having a listener set or #end() being called. This silently drops exceptions,"
-					+ " which makes bugs virtually impossible to detect, diagnose, or debug.", exceptionNeedsPropagating));
+					+ " which makes bugs virtually impossible to detect, diagnose, or debug.", futureConstructionLocation));
 		}
 		super.finalize();
+	}
+
+	protected static final class ListenerAlreadyDispatched implements FutureListener<Object> {
+		@Override public void onFutureSucceeded(Future<?> future, Object result) {
+			throw new UnsupportedOperationException("ListenerAlreadyDispatched should never be called");
+		}
+
+		@Override public void onFutureFailed(Future<?> future, Throwable exception, boolean mayInterruptIfRunning) {
+			throw new UnsupportedOperationException("ListenerAlreadyDispatched should never be called");
+		}
 	}
 
 	public static class SetResultCalledAfterSuccessException extends IllegalStateException {
