@@ -535,12 +535,15 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	public void onFutureFailed(Future<?> future, Throwable exception, boolean mayInterruptIfRunning) {
 		try {
 			if (!onParentComplete(future, null, exception, mayInterruptIfRunning)) {
-				setComplete(FAILED_RESULT, new WrongParentFutureException(future
-						+ " notified "
-						+ this
-						+ " of failure, but we"
-						+ " were not expecting that future to notify. failing with "
-						+ exception, exception), NO_INTERRUPT);
+				setComplete(
+						FAILED_RESULT,
+						new WrongParentFutureException(future
+								+ " notified "
+								+ this
+								+ " of failure, but we"
+								+ " were not expecting that future to notify. failing with "
+								+ exception, exception),
+						NO_INTERRUPT);
 			}
 		} catch (RuntimeException e) {
 			log.atFinest().log("%s when %s notified %s of exception %s", e, future, this, exception);

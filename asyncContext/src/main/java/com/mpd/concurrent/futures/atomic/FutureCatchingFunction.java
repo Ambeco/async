@@ -31,7 +31,9 @@ public class FutureCatchingFunction<E extends Throwable, O> extends SingleParent
 		}
 		if (!parent.isDone()) {
 			setException(new ParentNotCompleteException(this
-					+ " running, but parent " + parent + " does not appear to be complete. Failing this"));
+					+ " running, but parent "
+					+ parent
+					+ " does not appear to be complete. Failing this"));
 		}
 		Throwable exception = parent.exceptionNow();
 		if (exception == null) {
