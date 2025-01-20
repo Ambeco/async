@@ -38,6 +38,7 @@ import org.robolectric.shadows.ShadowLog;
 	@Before public void enableDebugLogging() {
 		AndroidBackend.setLogLevelOverride(DEBUG);
 		ShadowLog.setLoggable("atomic", VERBOSE);
+		ShadowLog.setLoggable("futures", VERBOSE);
 	}
 
 	@After public void ensureFutureComplete() {
@@ -46,7 +47,7 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forString_state_isSuccessful() throws Throwable {
-		fut = Futures.immediateFuture("test");
+		fut = Futures.immediateFuture("forString_state_isSuccessful");
 
 		collector.checkThat(fut.isSuccessful(), equalTo(true));
 		collector.checkThat(fut.isDone(), equalTo(true));
@@ -56,26 +57,28 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forString_get_isSuccessful() throws Throwable {
-		fut = Futures.immediateFuture("test");
+		fut = Futures.immediateFuture("forString_get_isSuccessful");
 
-		collector.checkThat(fut.resultNow(), equalTo("test"));
-		collector.checkThat(fut.get(), equalTo("test"));
-		collector.checkThat(fut.get(1, DAYS), equalTo("test"));
+		collector.checkThat(fut.resultNow(), equalTo("forString_get_isSuccessful"));
+		collector.checkThat(fut.get(), equalTo("forString_get_isSuccessful"));
+		collector.checkThat(fut.get(1, DAYS), equalTo("forString_get_isSuccessful"));
 	}
 
 	@Test public void forString_toString_correct() throws Throwable {
-		fut = Futures.immediateFuture("test");
+		fut = Futures.immediateFuture("forString_toString_correct");
 
-		collector.checkThat(fut.toString(), matchesPattern("ImmediateFuture@\\d{1,20}\\[ success=test]"));
+		collector.checkThat(
+				fut.toString(),
+				matchesPattern("ImmediateFuture@\\d{1,20}\\[ success=forString_toString_correct]"));
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
 				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
-						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ success=test]$"));
+						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ success=forString_toString_correct]$"));
 	}
 
 	@Test public void forString_cancel_isNoOp() throws Throwable {
-		fut = Futures.immediateFuture("test");
+		fut = Futures.immediateFuture("forString_cancel_isNoOp");
 
 		fut.cancel(Future.MAY_INTERRUPT);
 
@@ -86,9 +89,9 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forString_setException_crashes() throws Throwable {
-		fut = Futures.immediateFuture("test");
+		fut = Futures.immediateFuture("forString_setException_crashes_imm");
 
-		ArithmeticException secondException = new ArithmeticException("test-exception-after-success");
+		ArithmeticException secondException = new ArithmeticException("forString_setException_crashes_exc");
 		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
 		fut.setException(secondException);
 
@@ -99,7 +102,7 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forUnchecked_state_isFailed() throws Throwable {
-		ArithmeticException e = new ArithmeticException("test");
+		ArithmeticException e = new ArithmeticException("forUnchecked_state_isFailed");
 		fut = Futures.immediateFailedFuture(e);
 
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
@@ -110,7 +113,7 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forUnchecked_get_throws() throws Throwable {
-		ArithmeticException expect = new ArithmeticException("test");
+		ArithmeticException expect = new ArithmeticException("forUnchecked_get_throws");
 		fut = Futures.immediateFailedFuture(expect);
 
 		collector.checkThrows(ArithmeticException.class, fut::resultNow, sameInstance(expect));
@@ -119,20 +122,21 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forUnchecked_toString_correct() throws Throwable {
-		ArithmeticException expect = new ArithmeticException("test");
+		ArithmeticException expect = new ArithmeticException("forUnchecked_toString_correct");
 		fut = Futures.immediateFailedFuture(expect);
 
 		collector.checkThat(fut.toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]"));
+				matchesPattern(
+						"ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: forUnchecked_toString_correct]"));
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
 				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
-						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: test]$"));
+						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: forUnchecked_toString_correct]$"));
 	}
 
 	@Test public void forUnchecked_cancel_isNoOp() throws Throwable {
-		ArithmeticException expect = new ArithmeticException("test");
+		ArithmeticException expect = new ArithmeticException("forUnchecked_cancel_isNoOp");
 		fut = Futures.immediateFailedFuture(expect);
 
 		fut.cancel(Future.MAY_INTERRUPT);
@@ -144,10 +148,10 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forUnchecked_setException_crashes() throws Throwable {
-		ArithmeticException expect = new ArithmeticException("test");
+		ArithmeticException expect = new ArithmeticException("forUnchecked_setException_crashes_expect");
 		fut = Futures.immediateFailedFuture(expect);
 
-		IOException secondException = new IOException("test-exception-after-unchecked");
+		IOException secondException = new IOException("forUnchecked_setException_crashes_second");
 		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
 		fut.setException(secondException);
 
@@ -158,7 +162,7 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forChecked_state_isFailed() throws Throwable {
-		IOException e = new IOException("test");
+		IOException e = new IOException("forChecked_state_isFailed");
 		fut = Futures.immediateFailedFuture(e);
 
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
@@ -169,7 +173,7 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forChecked_get_throws() throws Throwable {
-		IOException expect = new IOException("test");
+		IOException expect = new IOException("forChecked_get_throws");
 		fut = Futures.immediateFailedFuture(expect);
 
 		AsyncCheckedException found = assertThrows(AsyncCheckedException.class, fut::resultNow);
@@ -181,20 +185,20 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forChecked_toString_correct() throws Throwable {
-		IOException expect = new IOException("test");
+		IOException expect = new IOException("forChecked_toString_correct");
 		fut = Futures.immediateFailedFuture(expect);
 
 		collector.checkThat(fut.toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: test]"));
+				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: forChecked_toString_correct]"));
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(sb.toString(),
 				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
-						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: test]$"));
+						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: forChecked_toString_correct]$"));
 	}
 
 	@Test public void forChecked_cancel_isNoOp() throws Throwable {
-		IOException expect = new IOException("test");
+		IOException expect = new IOException("forChecked_cancel_isNoOp");
 		fut = Futures.immediateFailedFuture(expect);
 
 		fut.cancel(Future.MAY_INTERRUPT);
@@ -206,10 +210,10 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forChecked_setException_crashes() throws Throwable {
-		IOException expect = new IOException("test");
+		IOException expect = new IOException("forChecked_setException_crashes_expect");
 		fut = Futures.immediateFailedFuture(expect);
 
-		IOException secondException = new IOException("test-exception-after-checked");
+		IOException secondException = new IOException("forChecked_setException_crashes_second");
 		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
 		fut.setException(secondException);
 
@@ -220,7 +224,7 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forCancellation_state_isFailed() throws Throwable {
-		CancellationException e = new CancellationException("test");
+		CancellationException e = new CancellationException("forCancellation_state_isFailed");
 		fut = Futures.immediateFailedFuture(e);
 
 		collector.checkThat(fut.isSuccessful(), equalTo(false));
@@ -231,7 +235,7 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forCancellation_get_throws() throws Throwable {
-		CancellationException expect = new CancellationException("test");
+		CancellationException expect = new CancellationException("forCancellation_get_throws");
 		fut = Futures.immediateFailedFuture(expect);
 
 		CancellationException found = assertThrows(CancellationException.class, fut::resultNow);
@@ -243,23 +247,24 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forCancellation_toString_correct() throws Throwable {
-		CancellationException expect = new CancellationException("test");
+		CancellationException expect = new CancellationException("forCancellation_toString_correct");
 		fut = Futures.immediateFailedFuture(expect);
 
 		collector.checkThat(
 				fut.toString(),
-				matchesPattern("ImmediateFuture@\\d{1,20}\\[ cancelled=java.util.concurrent.CancellationException: test]"));
+				matchesPattern(
+						"ImmediateFuture@\\d{1,20}\\[ cancelled=java.util.concurrent.CancellationException: forCancellation_toString_correct]"));
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
 		collector.checkThat(
 				sb.toString(),
 				matchesPattern("^\n\\s\\sat com.mpd.concurrent.futures.ImmediateFuture\\("
 						+ "ImmediateFuture:0\\) //ImmediateFuture@\\d{1,20}\\[ cancelled=java.util.concurrent"
-						+ ".CancellationException: test]$"));
+						+ ".CancellationException: forCancellation_toString_correct]$"));
 	}
 
 	@Test public void forCancellation_cancel_isNoOp() throws Throwable {
-		CancellationException expect = new CancellationException("test");
+		CancellationException expect = new CancellationException("forCancellation_cancel_isNoOp");
 		fut = Futures.immediateFailedFuture(expect);
 
 		fut.cancel(Future.MAY_INTERRUPT);
@@ -271,10 +276,10 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@Test public void forCancellation_setException_crashes() throws Throwable {
-		CancellationException expect = new CancellationException("test");
+		CancellationException expect = new CancellationException("forCancellation_setException_crashes_cancel");
 		fut = Futures.immediateFailedFuture(expect);
 
-		IOException secondException = new IOException("test-exception-after-cancel");
+		IOException secondException = new IOException("forCancellation_setException_crashes_second");
 		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
 		fut.setException(secondException);
 
