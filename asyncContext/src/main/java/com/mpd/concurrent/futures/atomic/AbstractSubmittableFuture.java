@@ -3,6 +3,7 @@ package com.mpd.concurrent.futures.atomic;
 import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionContext;
 
 import androidx.annotation.CallSuper;
+import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.executors.Executor.RunnablePriority;
 import com.mpd.concurrent.futures.Future;
@@ -17,6 +18,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 		implements SubmittableFuture<O>, FutureListener<@Nullable Object>, SchedulableFuture<O>
 {
+	private static final FluentLogger log = FluentLogger.forEnclosingClass();
+
 	// This class used to have a `state` field, but keeping it synchronized was error-prone. Instead we now deduce state.
 	// STATE_LISTENING can only be accurately distinguished by derived classes: we don't know how many parents there are.
 	// STATE_SCHEDULED can be distinguished by `#getScheduledTimeNanos()`
@@ -64,18 +67,23 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 
 	@CallSuper protected boolean startRunning() {
 		if (!atomicThread.compareAndSet(this, null, Thread.currentThread())) { // was already STATE_RUNNING
+			log.atFinest().log("%s startRunning called, but was already being run in %s", this, atomicThread.get(this));
 			setException(new RunCalledTwiceException());
 			return false;
 		}
 		Throwable oldException = getExceptionProtected();
-		// STATE_FAILED
 		if (oldException == SUCCESS_EXCEPTION || getSetAsync() != null) { // STATE_SUCCESS || STATE_ASYNC
+			log.atFinest().log("%s startRunning called, but future had already succeeded or gone async", this);
 			setException(new RunCalledTwiceException());
 			return false;
-		} else {
-			return oldException == null;
+		} else if (oldException != null) { // STATE_FAILED
+			log.atFinest().log("%s startRunning called, but future had already failed. Possibly a race with cancellation",
+					this);
+			return false;
+		} else { // STATE_LISTENING || STATE_SCHEDULED || STATE_SUBMITTED
+			log.atFinest().log("%s startRunning succeeded", this);
+			return true;
 		}
-		// STATE_LISTENING || STATE_SCHEDULED || STATE_SUBMITTED
 	}
 
 	protected void endRunning() {
@@ -83,18 +91,23 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 		Throwable oldException = getExceptionProtected();
 		if (oldException == null && getSetAsync() == null) { // NOT (STATE_SUCCESS || STATE_FAILED || STATE_ASYNC)
 			if (atomicThread.get(this) == currentThread) { // STATE_RUNNING
+				log.atFinest().log("%s endRunning called, but future neither completed nor went async", this);
 				setException(new RunDidNotSetFutureCompletionException("SubmittableFuture \""
 						+ this
 						+ "\" execute() method "
 						+ "did not "
 						+ "call #setResult(O) or #setException(E) nor #setResult(Future)"));
 			} else { //STATE_LISTENING || STATE_SCHEDULED || STATE_SUBMITTED
+				log.atFinest().log("%s endRunning called, but on incorrect %s", this, currentThread);
 				setException(new FutureStateMachineWentBackwardsException("#endRunning called but future \""
 						+ this
 						+ "\" was not currently running. This should only have been called by #run"));
 			}
+			atomicThread.set(this, null);
+		} else {
+			atomicThread.set(this, null);
+			log.atFinest().log("%s endRunning succeeded");
 		}
-		atomicThread.set(this, null);
 	}
 
 	@Override public final void run() {
@@ -108,6 +121,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 			}
 			endRunning(); // cleanup
 		} catch (Throwable e) {
+			log.atFinest().log("%s run threw %s", this, e);
 			setException(e);
 		} finally {
 			AsyncContext.pauseExecutionContext(selfContext, oldContext);
@@ -130,6 +144,9 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 		if (oldException != null) { // STATE_SUCCESS || STATE_FAILED
 			return super.setResult(asyncWork);
 		} else if (atomicThread.get(this) == null) { // STATE_LISTENING || STATE_SCHEDULED || STATE_SUBMITTED || STATE_ASYNC
+			log.atFinest().log("%s setResult(%s) called on thread %s before this started running",
+					this,
+					atomicThread.get(this));
 			setException(new SetResultCalledBeforeRunException("setResult("
 					+ asyncWork
 					+ " called on SubmittableFuture \""
@@ -144,6 +161,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 	@CallSuper @Override protected void interruptTask(Throwable exception) {
 		Thread thread = atomicThread.get(this);
 		if (thread != null) {
+			log.atFinest().log("%s interrupting itself", this);
 			thread.interrupt();
 		}
 		super.interruptTask(exception);

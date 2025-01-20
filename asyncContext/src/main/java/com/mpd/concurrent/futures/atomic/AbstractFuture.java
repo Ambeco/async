@@ -16,12 +16,12 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 // FutureListener<Object>, because derived classes listen to multiple other futures of various types in addition
 public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Object> {
+	private static final FluentLogger log = FluentLogger.forEnclosingClass();
 	// Enables additional logging for leaked futures, at the expense of dramatically slower constructors.
 	private static final boolean DEBUG_LEAKED_FUTURES = true;
 
 	protected static final long NOT_SCHEDULED = Long.MIN_VALUE;
 	protected static final RuntimeException SUCCESS_EXCEPTION = new SuccessException();
-	private static final FluentLogger log = FluentLogger.forEnclosingClass();
 	private static final int NANOS_PER_MILLI = 1000000;
 	private static final ListenerAlreadyDispatched LISTENER_ALREADY_DISPATCHED = new ListenerAlreadyDispatched();
 	/**
@@ -121,6 +121,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			Throwable oldException;
 			// This is the only real lock in the Futures. It ensures that #result, #interrupted, and #wrapped
 			// are stable after #execption is finalized. It also gives us a way to release Threads blocked by #get.
+			log.atFinest().log("completing %s with %s and %s", this, exception, result);
 			synchronized (this) {
 				oldException = atomicException.get(this);
 				// exception is the "source of truth" for future completeness
@@ -166,12 +167,15 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			@Nullable O result, Throwable exception, boolean mayInterruptIfRunning, FutureListener<? super O> listener)
 	{
 		if (mayInterruptIfRunning) {
+			log.atFinest().log("%s  interrupting with %s", this, exception);
 			interruptTask(exception);
 		}
 		if (exception instanceof CancellationException) {
+			log.atFinest().log("%s cancelling with %s", this, exception);
 			onCancelled(((CancellationException) exception), mayInterruptIfRunning);
 		}
 		if (listener != null && atomicListener.compareAndSet(this, listener, LISTENER_ALREADY_DISPATCHED)) {
+			log.atFinest().log("%s completed. Notifying %s", this, listener);
 			if (exception == SUCCESS_EXCEPTION) {
 				listener.onFutureSucceeded(this, result);
 			} else {
@@ -191,20 +195,20 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			Throwable oldException = atomicException.get(this);
 			boolean didSetAsync = (oldException == null) && atomicSetAsync.compareAndSet(this, null, asyncWork);
 			Future<?> oldListener = atomicSetAsync.get(this);
-			if (oldException == null && !didSetAsync && oldListener == asyncWork) {
-				// same result set twice. weird, but fine.
+			if (oldListener == asyncWork) {
+				log.atFinest().log("Future#setResult called twice on %s with the same %s. Weird, but ok", this, asyncWork);
 			} else if (oldException == SUCCESS_EXCEPTION) {
-				setException(new SetResultCalledAfterSuccessException("setResult tried to set the result of future \""
+				setException(new SetResultCalledAfterSuccessException("setResult tried to set the result of \""
 						+ this
-						+ "\" with the result of future \""
+						+ "\" with the result of \""
 						+ asyncWork
 						+ "\" but this has already succeeded with \""
 						+ this.result
 						+ "\"", asyncWork.isDone() ? asyncWork.exceptionNow() : null));
 			} else if (oldException == null && !didSetAsync) {
-				setException(new SetResultCalledTwiceException("setResult tried to set the result of future \""
+				setException(new SetResultCalledTwiceException("setResult tried to set the result of \""
 						+ this
-						+ " with the result of future \""
+						+ " with the result of \""
 						+ asyncWork
 						+ "\" (@"
 						+ System.identityHashCode(asyncWork)
@@ -215,6 +219,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 						+ ")", asyncWork.isDone() ? asyncWork.exceptionNow() : null));
 			} else if (didSetAsync) {
 				try {
+					log.atFinest().log("%s #setResult(%s) succeeded. Registering self as the listener", this, asyncWork);
 					asyncWork.setListener(this);
 					didSetListener = true;
 				} catch (SetListenerCalledTwiceException e) {
@@ -228,6 +233,9 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			return false;
 		} finally {
 			if (!didSetListener) {
+				log.atFinest().log("%s #setResult(%s) failed. telling asyncWork to report all exceptions as unhandled",
+						this,
+						asyncWork);
 				asyncWork.end();
 			}
 		}
@@ -291,7 +299,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 					long remainingNs = untilNs - System.nanoTime();
 					if (remainingNs > 0) {
 						log.atFine().log(
-								"Thread %s blocking for up to %dns, out of a maximum of %dns, waiting for future %s to complete",
+								"%s blocking for up to %dns, out of a maximum of %dns, waiting for %s to complete",
 								Thread.currentThread(),
 								remainingNs,
 								timeoutNs,
@@ -299,7 +307,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 						this.wait(remainingNs / NANOS_PER_MILLI, (int) (remainingNs % NANOS_PER_MILLI));
 					} else {
 						log.atFine().log(
-								"Thread %s timed out after %dns out of a maximum of %dns, waiting for future %s to complete",
+								"%s timed out after %dns out of a maximum of %dns, waiting for %s to complete",
 								Thread.currentThread(),
 								System.nanoTime() - startTimeNanos,
 								timeoutNs,
@@ -310,7 +318,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			}
 		} catch (InterruptedException e) {
 			log.atFine().log(
-					"Thread %s interrupted after %dns out of a maximum of %dns, while waiting for future %s to complete",
+					"%s interrupted after %dns out of a maximum of %dns, while waiting for %s to complete",
 					Thread.currentThread(),
 					System.nanoTime() - startTimeNanos,
 					timeoutNs,
@@ -325,107 +333,15 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		return setComplete(FAILED_RESULT, exception, mayInterruptIfRunning);
 	}
 
-	/**
-	 * @noinspection BooleanMethodIsAlwaysInverted
-	 */
-	@CallSuper protected boolean onParentComplete(
-			Future<?> future, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
-	{
-		Throwable oldThrowable = getExceptionProtected();
-		Future<?> setAsync = getSetAsync();
-		if (oldThrowable == SUCCESS_EXCEPTION) { // STATE_SUCCESS
-			setException(new AbstractListenerFuture.SucceededBeforeParentException("ListenerFuture \""
-					+ this
-					+ "\" already succeeded with \""
-					+ getResultProtected()
-					+ "\" before Future \""
-					+ future
-					+ "\" completed"));
-			return true;
-		} else if (oldThrowable != null) { // STATE_FAILED
-			return true;
-		} else if (future == setAsync) { //STATE_ASYNC
-			if (exception == SUCCESS_EXCEPTION) {
-				//noinspection unchecked
-				setResult((O) result);
-			} else {
-				setException(exception, mayInterruptIfRunning);
-			}
-			return true;
-		}
-		return false;
-	}
-
-	@CallSuper @Override public void onFutureSucceeded(Future<?> future, Object result) {
-		try {
-			if (!onParentComplete(future, result, SUCCESS_EXCEPTION, NO_INTERRUPT)) {
-				setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
-			}
-		} catch (RuntimeException e) {
-			setException(e);
-		}
-	}
-
-	@CallSuper @Override
-	public void onFutureFailed(Future<?> future, Throwable exception, boolean mayInterruptIfRunning) {
-		try {
-			if (!onParentComplete(future, null, exception, mayInterruptIfRunning)) {
-				setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
-			}
-		} catch (RuntimeException e) {
-			e.addSuppressed(exception);
-			setException(e);
-		}
-	}
-
-	protected @Nullable O getResultProtected() {
-		return result;
-	}
-
-	protected @Nullable Throwable getExceptionProtected() {
-		return atomicException.get(this);
-	}
-
-	protected @Nullable RuntimeException getWrappedExceptionProtected() {
-		return wrappedException;
-	}
-
-	protected @Nullable Throwable getInterrupt() {
-		return wasInterrupted;
-	}
-
-	@CallSuper protected void interruptTask(Throwable exception) {
-		Throwable realException = atomicException.get(this);
-		if (exception != realException) {
-			setException(new FutureNotCompleteException("interruptTask called with \""
-					+ exception
-					+ "\", but the future was "
-					+ "actually interrupted with \""
-					+ realException
-					+ "\".\nIf caller was attempting to interrupt a future, "
-					+ "then it should call #cancel or #setException or #setComplete instead of #interruptTask."));
-		}
-	}
-
-	@CallSuper protected void onCancelled(CancellationException exception, boolean mayInterruptIfRunning) {
-		Future<? extends O> setAsync = getSetAsync();
-		if (setAsync != null) {
-			setAsync.cancel(exception, mayInterruptIfRunning);
-		}
-	}
-
-	protected @Nullable FutureListener<? super O> getListener() {
-		//noinspection unchecked
-		return (FutureListener<? super O>) atomicListener.get(this);
-	}
-
 	@CallSuper @Override public void setListener(FutureListener<? super O> listener) {
 		if (!atomicListener.compareAndSet(this, null, listener)) {
 			FutureListener<?> oldListener = atomicListener.get(this);
 			if (oldListener == listener) {
-				return; // called same listener twice. Weird, but safe.
+				log.atFinest().log("%s #setListener(%s) called twice. Weird, but safe", this, listener);
+				return;
 			} else if (listener instanceof EndListener) {
-				return; // #end() allowed to be called extra times, just to be safe.
+				log.atFinest().log("%s #setListener(%s) unnecessarily called called multiple times.", this, listener);
+				return;
 			}
 			throw new SetListenerCalledTwiceException("setListener called with \""
 					+ listener
@@ -437,28 +353,25 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		Throwable exception = atomicException.get(this);
 		// if this was already complete, then notify the listener immediately
 		if (exception != null && atomicListener.compareAndSet(this, listener, LISTENER_ALREADY_DISPATCHED)) {
+			log.atFinest().log("%s #setListener(%s) succeeded. Since this future was already complete, notifying immediately",
+					this,
+					listener);
 			if (exception == SUCCESS_EXCEPTION) {
 				listener.onFutureSucceeded(this, result);
 			} else {
 				listener.onFutureFailed(this, exception, wasInterrupted != null);
 			}
+		} else {
+			log.atFinest().log("%s #setListener(%s) succeeded. Waiting for completion", this, listener);
 		}
-	}
-
-	@Override public long getScheduledTimeNanos() {
-		if (scheduledNanos == NOT_SCHEDULED) {
-			throw new UnsupportedOperationException("not a scheduled future");
-		}
-		return scheduledNanos;
-	}
-
-	protected long getScheduledTimeNanosProtected() {
-		return scheduledNanos;
 	}
 
 	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
 		sb.append("\n  at ");
 		Class<?> sourceClass = sourceClass();
+		if (sourceClass == null) {
+			sourceClass = getClass();
+		}
 		String method = sourceMethodName();
 		String rawCanonicalName = sourceClass.getCanonicalName();
 		String rawSimpleName = sourceClass.getSimpleName();
@@ -496,7 +409,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			sb.append(getClass().getCanonicalName());
 		}
 		Class<?> sourceClass = sourceClass();
-		if (sourceClass != getClass()) {
+		if (sourceClass != null && sourceClass != getClass()) {
 			sb.append('<');
 			String sourceCanonicalName = sourceClass.getCanonicalName();
 			sb.append(sourceCanonicalName != null ? sourceCanonicalName : sourceClass.getSimpleName());
@@ -508,6 +421,133 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			sb.append('[');
 			toStringAppendState(getResultProtected(), getExceptionProtected(), getSetAsync(), sb);
 			sb.append(']');
+		}
+	}
+
+	protected @Nullable O getResultProtected() {
+		return result;
+	}
+
+	protected @Nullable Throwable getExceptionProtected() {
+		return atomicException.get(this);
+	}
+
+	protected @Nullable RuntimeException getWrappedExceptionProtected() {
+		return wrappedException;
+	}
+
+	protected @Nullable Throwable getInterrupt() {
+		return wasInterrupted;
+	}
+
+	/**
+	 * @return true if the future was processed, false if the future was unknown
+	 * @noinspection BooleanMethodIsAlwaysInverted
+	 */
+	@CallSuper protected boolean onParentComplete(
+			Future<?> future, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
+	{
+		Throwable oldThrowable = getExceptionProtected();
+		Future<?> setAsync = getSetAsync();
+		if (oldThrowable == SUCCESS_EXCEPTION) { // STATE_SUCCESS
+			setException(new AbstractListenerFuture.SucceededBeforeParentException("ListenerFuture \""
+					+ this
+					+ "\" already succeeded with \""
+					+ getResultProtected()
+					+ "\" before Future \""
+					+ future
+					+ "\" completed"));
+			return true;
+		} else if (oldThrowable != null) { // STATE_FAILED
+			if (exception == SUCCESS_EXCEPTION) {
+				log.atFinest().log("%s notified %s of successful result %s,"
+						+ " but that had already failed, so the result is being silently dropped", future, result, this);
+				return true;
+			} else {
+				log.atFinest().log("%s notified %s of completion, but it was already failed, so the %s is unhandled",
+						future,
+						this,
+						exception);
+				setException(exception);
+				return true;
+			}
+		} else if (future == setAsync) { //STATE_ASYNC
+			if (exception == SUCCESS_EXCEPTION) {
+				//noinspection unchecked
+				setResult((O) result);
+			} else {
+				setException(exception, mayInterruptIfRunning);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	@CallSuper protected void onCancelled(CancellationException exception, boolean mayInterruptIfRunning) {
+		Future<? extends O> setAsync = getSetAsync();
+		if (setAsync != null) {
+			setAsync.cancel(exception, mayInterruptIfRunning);
+		}
+	}
+
+	protected @Nullable FutureListener<? super O> getListener() {
+		//noinspection unchecked
+		return (FutureListener<? super O>) atomicListener.get(this);
+	}
+
+	@CallSuper @Override public void onFutureSucceeded(Future<?> future, Object result) {
+		try {
+			if (!onParentComplete(future, result, SUCCESS_EXCEPTION, NO_INTERRUPT)) {
+				log.atFinest().log("%s notified %s of success, but we were not expecting that future to notify."
+						+ " Silently dropping result %s", future, this, result);
+				setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
+			}
+		} catch (RuntimeException e) {
+			log.atFinest().log("%s when %s notified %s of success", e, future, this);
+			setException(e);
+		}
+	}
+
+	@Override public long getScheduledTimeNanos() {
+		if (scheduledNanos == NOT_SCHEDULED) {
+			throw new UnsupportedOperationException("not a scheduled future");
+		}
+		return scheduledNanos;
+	}
+
+	protected long getScheduledTimeNanosProtected() {
+		return scheduledNanos;
+	}
+
+	@CallSuper @Override
+	public void onFutureFailed(Future<?> future, Throwable exception, boolean mayInterruptIfRunning) {
+		try {
+			if (!onParentComplete(future, null, exception, mayInterruptIfRunning)) {
+				log.atFinest().log("%s notified %s of failure, but we were not expecting that future to notify."
+								+ " failing with %s",
+						future,
+						this,
+						exception);
+				setComplete(FAILED_RESULT, new WrongParentFutureException(exception), NO_INTERRUPT);
+			}
+		} catch (RuntimeException e) {
+			log.atFinest().log("%s when %s notified %s of exception %s", e, future, this, exception);
+			e.addSuppressed(exception);
+			setException(e);
+		}
+	}
+
+	@CallSuper protected void interruptTask(Throwable exception) {
+		Throwable realException = atomicException.get(this);
+		if (exception != realException) {
+			log.atFinest().log("%s originally interrupted %s, but now interrupted with %s", this, realException, exception);
+			setException(new OnFutureCompleteCalledTwiceException("interruptTask called with \""
+					+ exception
+					+ "\", but the future was "
+					+ "actually interrupted with \""
+					+ realException
+					+ "\".\nIf caller was attempting to interrupt a future, "
+					+ "then it should call #cancel or #setException or #setComplete instead of #interruptTask.", exception));
 		}
 	}
 
@@ -634,11 +674,11 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 
 	private static class SuccessException extends RuntimeException {
 		@Override public String getMessage() {
-			throw new IllegalStateException("SUCCESS_EXCEPTION should never be accessed");
+			return "SuccessException";
 		}
 
 		@NonNull @Override public String toString() {
-			throw new IllegalStateException("SUCCESS_EXCEPTION should never be accessed");
+			return "SuccessException";
 		}
 	}
 }

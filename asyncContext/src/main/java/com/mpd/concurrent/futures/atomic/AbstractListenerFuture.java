@@ -18,10 +18,10 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFuture<O>
 		implements SubmittableFuture<O>, FutureListener<Object>, SchedulableFuture<O>
 {
-	protected static final boolean DO_NOT_QUEUE_WORK = false;
-
-	protected static final boolean SHOULD_QUEUE_WORK = true;
 	private static final FluentLogger log = FluentLogger.forEnclosingClass();
+
+	protected static final boolean DO_NOT_QUEUE_WORK = false;
+	protected static final boolean SHOULD_QUEUE_WORK = true;
 
 	/**
 	 * @noinspection unchecked
@@ -66,6 +66,7 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 		if (!shouldQueueExecutionAfterParentComplete(future, result, exception, mayInterruptIfRunning)) {
 			// TODO keep the executor around for a while. Use something else to distinguish double submission
 		} else if (!atomicExecutor.compareAndSet(this, oldExecutor, null)) { // another thread changed the state
+			log.atFinest().log("%s notified %s of completion(%s, %s), but had already submitted itself to an executor");
 			setException(new ParentSucceededTwiceException("ListenerFuture \""
 					+ this
 					+ "\" already submitted while processing completion of future "
@@ -74,9 +75,15 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 		} else { // successful transition to STATE_SUBMITTED
 			Throwable interrupt = getInterrupt();
 			if (interrupt != null) { // interrupted.
+				log.atFinest().log("%s notified %s of completion(%s, %s), but we were already interrupted, so set that now");
 				setException(interrupt, MAY_INTERRUPT);
 			} else {
-				log.atFinest().withStackTrace(StackSize.SMALL).log("submitting %s to %s due to %s", this, oldExecutor, future);
+				log.atFinest().withStackTrace(StackSize.SMALL).log("%s notified %s of completion(%s, %s), so submitting to %s",
+						future,
+						this,
+						result,
+						exception,
+						oldExecutor);
 				oldExecutor.submit(this);
 			}
 		}
