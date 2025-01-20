@@ -67,14 +67,15 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 
 	@CallSuper protected boolean startRunning() {
 		if (!atomicThread.compareAndSet(this, null, Thread.currentThread())) { // was already STATE_RUNNING
-			log.atFinest().log("%s startRunning called, but was already being run in %s", this, atomicThread.get(this));
-			setException(new RunCalledTwiceException());
+			setException(new RunCalledTwiceException(this
+					+ " startRunning called, but was already being run in "
+					+ atomicThread.get(this)));
 			return false;
 		}
 		Throwable oldException = getExceptionProtected();
 		if (oldException == SUCCESS_EXCEPTION || getSetAsync() != null) { // STATE_SUCCESS || STATE_ASYNC
-			log.atFinest().log("%s startRunning called, but future had already succeeded or gone async", this);
-			setException(new RunCalledTwiceException());
+			setException(new RunCalledTwiceException(this
+					+ "#startRunning called, but future had already succeeded or gone async"));
 			return false;
 		} else if (oldException != null) { // STATE_FAILED
 			log.atFinest().log("%s startRunning called, but future had already failed. Possibly a race with cancellation",
@@ -91,14 +92,12 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 		Throwable oldException = getExceptionProtected();
 		if (oldException == null && getSetAsync() == null) { // NOT (STATE_SUCCESS || STATE_FAILED || STATE_ASYNC)
 			if (atomicThread.get(this) == currentThread) { // STATE_RUNNING
-				log.atFinest().log("%s endRunning called, but future neither completed nor went async", this);
 				setException(new RunDidNotSetFutureCompletionException("SubmittableFuture \""
 						+ this
 						+ "\" execute() method "
 						+ "did not "
 						+ "call #setResult(O) or #setException(E) nor #setResult(Future)"));
 			} else { //STATE_LISTENING || STATE_SCHEDULED || STATE_SUBMITTED
-				log.atFinest().log("%s endRunning called, but on incorrect %s", this, currentThread);
 				setException(new FutureStateMachineWentBackwardsException("#endRunning called but future \""
 						+ this
 						+ "\" was not currently running. This should only have been called by #run"));

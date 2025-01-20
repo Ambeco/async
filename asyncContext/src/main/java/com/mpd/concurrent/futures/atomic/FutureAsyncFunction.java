@@ -27,7 +27,7 @@ public class FutureAsyncFunction<I, O> extends SingleParentTransformListenerFutu
 	@Override protected void execute() {
 		AsyncFunction<? super I, ? extends O> function = this.function;
 		if (function == null) {
-			throw new RunCalledTwiceException();
+			throw new RunCalledTwiceException(this + " #run appears to have been called twice");
 		}
 		setResult(function.apply(getParent().resultNow()));
 	}

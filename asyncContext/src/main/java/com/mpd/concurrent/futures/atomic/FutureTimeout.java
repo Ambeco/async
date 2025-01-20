@@ -24,7 +24,11 @@ public class FutureTimeout<O> extends AbstractListenerFuture<O> {
 	{
 		super(null, Future.futureConfig.getDelegateScheduledExecutor(), delay, delayUnit);
 		this.parent = parent;
-		this.exceptionOnTimeout = exceptionOnTimeout != null ? exceptionOnTimeout : new TimeoutException();
+		this.exceptionOnTimeout = exceptionOnTimeout != null ? exceptionOnTimeout : new TimeoutException(parent
+				+ " timed"
+				+ " out after "
+				+ delay
+				+ delayUnit);
 		this.interruptOnTimeout = interruptOnTimeout;
 		parent.setListener(this);
 		Future.futureConfig.getDelegateScheduledExecutor().submit(this);

@@ -30,7 +30,7 @@ public class FutureAsyncCallable<O> extends AbstractSubmittableFuture<O> {
 	@Override protected void execute() throws Exception {
 		AsyncCallable<? extends O> function = this.function;
 		if (function == null) {
-			throw new RunCalledTwiceException();
+			throw new RunCalledTwiceException(this + " #run appears to have been called twice");
 		}
 		setResult(function.call());
 	}

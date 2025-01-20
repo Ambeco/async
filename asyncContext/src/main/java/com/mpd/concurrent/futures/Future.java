@@ -42,7 +42,7 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	O resultNow(); //or throws FutureNotCompleteException, or the completed RuntimeException, or AsyncCheckedException
 
 	@SuppressWarnings("UnusedReturnValue") default boolean cancel(boolean mayInterruptIfRunning) {
-		return cancel(new CancellationException(), mayInterruptIfRunning);
+		return cancel(new CancellationException("Future#cancel"), mayInterruptIfRunning);
 	}
 
 	default boolean isCancelled() {
@@ -59,7 +59,7 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 			//noinspection deprecation
 			return get(Long.MAX_VALUE / 2, TimeUnit.NANOSECONDS);
 		} catch (TimeoutException e) {
-			throw new RuntimeException("Future not completed after heat death of the universe");
+			throw new RuntimeException(this + " not completed after heat death of the universe");
 		}
 	}
 

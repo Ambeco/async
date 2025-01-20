@@ -253,7 +253,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	@Override public O resultNow() {
 		RuntimeException exception = wrappedException;
 		if (exception == null) {
-			throw new FutureNotCompleteException("resultNow called on incomplete future" + this);
+			throw new FutureNotCompleteException("resultNow called on incomplete future " + this);
 		} else if (exception == SUCCESS_EXCEPTION) {
 			return result;
 		} else {
@@ -265,7 +265,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	@Override public @Nullable Throwable exceptionNow() {
 		Throwable exception = atomicException.get(this);
 		if (exception == null) {
-			throw new FutureNotCompleteException("exceptionNow called on incomplete future" + this);
+			throw new FutureNotCompleteException("exceptionNow called on incomplete future " + this);
 		} else if (exception == SUCCESS_EXCEPTION) {
 			return null;
 		} else {
@@ -306,13 +306,16 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 								this);
 						this.wait(remainingNs / NANOS_PER_MILLI, (int) (remainingNs % NANOS_PER_MILLI));
 					} else {
-						log.atFine().log(
-								"%s timed out after %dns out of a maximum of %dns, waiting for %s to complete",
-								Thread.currentThread(),
-								System.nanoTime() - startTimeNanos,
-								timeoutNs,
-								this);
-						throw new TimeoutException();
+						long blockedTime = System.nanoTime() - startTimeNanos;
+						throw new TimeoutException(Thread.currentThread()
+								+ " timed out after "
+								+ blockedTime
+								+ "ns out of a "
+								+ "maximum of "
+								+ timeoutNs
+								+ "ns, waiting for "
+								+ this
+								+ " to complete");
 					}
 				}
 			}
@@ -496,24 +499,32 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		return (FutureListener<? super O>) atomicListener.get(this);
 	}
 
+	@Override public long getScheduledTimeNanos() {
+		if (scheduledNanos == NOT_SCHEDULED) {
+			throw new UnsupportedOperationException(this + " is not a scheduled future");
+		}
+		return scheduledNanos;
+	}
+
 	@CallSuper @Override public void onFutureSucceeded(Future<?> future, Object result) {
 		try {
 			if (!onParentComplete(future, result, SUCCESS_EXCEPTION, NO_INTERRUPT)) {
-				log.atFinest().log("%s notified %s of success, but we were not expecting that future to notify."
-						+ " Silently dropping result %s", future, this, result);
-				setComplete(FAILED_RESULT, new WrongParentFutureException(), NO_INTERRUPT);
+				setComplete(
+						FAILED_RESULT,
+						new WrongParentFutureException(future
+								+ " notified "
+								+ this
+								+ " of success, but we were not expecting that future to notify. Silently "
+								+ "dropping result "
+								+ result
+								+ " and marking "
+								+ "this future as failed"),
+						NO_INTERRUPT);
 			}
 		} catch (RuntimeException e) {
 			log.atFinest().log("%s when %s notified %s of success", e, future, this);
 			setException(e);
 		}
-	}
-
-	@Override public long getScheduledTimeNanos() {
-		if (scheduledNanos == NOT_SCHEDULED) {
-			throw new UnsupportedOperationException("not a scheduled future");
-		}
-		return scheduledNanos;
 	}
 
 	protected long getScheduledTimeNanosProtected() {
@@ -524,12 +535,12 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	public void onFutureFailed(Future<?> future, Throwable exception, boolean mayInterruptIfRunning) {
 		try {
 			if (!onParentComplete(future, null, exception, mayInterruptIfRunning)) {
-				log.atFinest().log("%s notified %s of failure, but we were not expecting that future to notify."
-								+ " failing with %s",
-						future,
-						this,
-						exception);
-				setComplete(FAILED_RESULT, new WrongParentFutureException(exception), NO_INTERRUPT);
+				setComplete(FAILED_RESULT, new WrongParentFutureException(future
+						+ " notified "
+						+ this
+						+ " of failure, but we"
+						+ " were not expecting that future to notify. failing with "
+						+ exception, exception), NO_INTERRUPT);
 			}
 		} catch (RuntimeException e) {
 			log.atFinest().log("%s when %s notified %s of exception %s", e, future, this, exception);
@@ -542,7 +553,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		Throwable realException = atomicException.get(this);
 		if (exception != realException) {
 			log.atFinest().log("%s originally interrupted %s, but now interrupted with %s", this, realException, exception);
-			setException(new OnFutureCompleteCalledTwiceException("interruptTask called with \""
+			setException(new OnFutureCompleteCalledTwiceException("interruptTask called on " + this + " with \""
 					+ exception
 					+ "\", but the future was "
 					+ "actually interrupted with \""
@@ -554,7 +565,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 
 	@Override public long getDelay(TimeUnit timeUnit) {
 		if (scheduledNanos == NOT_SCHEDULED) {
-			throw new UnsupportedOperationException("not a scheduled future");
+			throw new UnsupportedOperationException(this + " is not a scheduled future");
 		}
 		return timeUnit.convert(scheduledNanos - System.nanoTime(), TimeUnit.NANOSECONDS);
 	}

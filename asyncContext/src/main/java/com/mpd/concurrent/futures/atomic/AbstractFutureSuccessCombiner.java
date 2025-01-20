@@ -47,7 +47,14 @@ public abstract class AbstractFutureSuccessCombiner<I, O> extends AbstractListen
 		ImmutableList<Future<? extends I>> parents = checkNotNull(this.parents);
 		int idx = parents.indexOf(parent);
 		if (idx == -1) {
-			throw new WrongParentFutureException();
+			throw new WrongParentFutureException(parent
+					+ " notifying "
+					+ this
+					+ " of completion("
+					+ exception
+					+ ", "
+					+ result
+					+ ") but this wasn't expecting that parent. Silently ignoring");
 		}
 		completed.set(idx);
 		if (exception != null) {

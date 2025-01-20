@@ -27,11 +27,15 @@ public class FutureCatchingFunction<E extends Throwable, O> extends SingleParent
 		Function<? super E, ? extends O> function = this.function;
 		Future<? extends O> parent = getParent();
 		if (parent == null || function == null) {
-			throw new RunCalledTwiceException();
+			throw new RunCalledTwiceException(this + " #run appears to have been called twice");
 		}
 		Throwable exception = parent.exceptionNow();
 		if (exception == null) {
-			setException(new ParentNotCompleteException());
+			setException(new ParentNotCompleteException(this
+					+ " running, but parent "
+					+ parent
+					+ " does not appear to be "
+					+ "complete. Failing this"));
 		} else if (getExceptionClass().isInstance(exception)) {
 			setResult(function.apply(getExceptionClass().cast(exception)));
 		} else if (exception == SUCCESS_EXCEPTION) {

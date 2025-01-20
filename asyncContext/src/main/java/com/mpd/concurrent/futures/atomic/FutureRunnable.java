@@ -43,7 +43,7 @@ public class FutureRunnable<O> extends AbstractSubmittableFuture<O> implements R
 	@Override public void execute() throws Exception {
 		Runnable function = this.function;
 		if (function == null) {
-			throw new RunCalledTwiceException();
+			throw new RunCalledTwiceException(this + " #run appears to have been called twice");
 		}
 		function.run();
 		setResult(futureResult);

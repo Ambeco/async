@@ -31,7 +31,16 @@ public final class AbstractListenerFutures {
 				Future<?> parent, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
 		{
 			if (parent != this.parent) {
-				setComplete(FAILED_RESULT, new WrongParentFutureException(exception), NO_INTERRUPT);
+				setComplete(FAILED_RESULT, new WrongParentFutureException(parent
+						+ " notifying "
+						+ this
+						+ " of completion("
+						+ exception
+						+ ", "
+						+ result
+						+ ") but was listening to "
+						+ this.parent
+						+ ". Failing", exception), NO_INTERRUPT);
 				return false;
 			} else {
 				return true;
@@ -82,7 +91,18 @@ public final class AbstractListenerFutures {
 				Future<?> parent, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
 		{
 			if (parent != this.parent) {
-				setComplete(FAILED_RESULT, new WrongParentFutureException(exception), NO_INTERRUPT);
+				setComplete(FAILED_RESULT,
+						new WrongParentFutureException(parent
+								+ " notifying "
+								+ this
+								+ " of completion("
+								+ exception
+								+ ", "
+								+ result
+								+ ") but was listening to "
+								+ this.parent
+								+ ". Failing", exception),
+						NO_INTERRUPT);
 				return false;
 			} else if (exception != null) {
 				setComplete(FAILED_RESULT, exception, mayInterruptIfRunning);
@@ -146,7 +166,17 @@ public final class AbstractListenerFutures {
 				Future<?> parent, @Nullable Object result, @Nullable Throwable exception, boolean mayInterruptIfRunning)
 		{
 			if (parent != this.parent) {
-				setComplete(FAILED_RESULT, new WrongParentFutureException(exception), NO_INTERRUPT);
+				setComplete(FAILED_RESULT, new WrongParentFutureException(parent
+						+ " notifying "
+						+ this
+						+ " of "
+						+ "completion("
+						+ exception
+						+ ", "
+						+ result
+						+ ") but was listening to "
+						+ this.parent
+						+ ". Failing", exception), NO_INTERRUPT);
 				return false;
 			} else if (exceptionClass.isInstance(exception)) {
 				return true;
@@ -224,7 +254,14 @@ public final class AbstractListenerFutures {
 			} else if (parent == this.parent2) {
 				completedFutureBit = 1 << 1;
 			} else {
-				setException(new WrongParentFutureException());
+				setException(new WrongParentFutureException(parent
+						+ " notifying "
+						+ this
+						+ " of completion("
+						+ exception
+						+ ", "
+						+ result
+						+ ") but wasn't listening for that Future. Failing this", exception));
 				return false;
 			}
 			int oldBitfield;
@@ -233,7 +270,14 @@ public final class AbstractListenerFutures {
 				oldBitfield = atomicComplete.get(this);
 				newBitfield = oldBitfield | completedFutureBit;
 				if (oldBitfield == newBitfield) {
-					setException(new ParentSucceededTwiceException());
+					setException(new ParentSucceededTwiceException(parent
+							+ " notifying "
+							+ this
+							+ " of completion("
+							+ exception
+							+ ", "
+							+ result
+							+ ") but that future had already completed once. Failing this", exception));
 					return false;
 				}
 			} while (!atomicComplete.compareAndSet(this, oldBitfield, newBitfield));

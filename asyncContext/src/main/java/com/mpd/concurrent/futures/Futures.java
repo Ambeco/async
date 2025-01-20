@@ -38,7 +38,7 @@ public final class Futures {
 	}
 
 	public static <O> Future<O> immediateCancelledFuture() {
-		return new ImmediateFuture<>(new CancellationException());
+		return new ImmediateFuture<>(new CancellationException("Futures#immediateCancelledFuture"));
 	}
 
 	public static <O> Future<O> immediateFailedFuture(Throwable exception) {

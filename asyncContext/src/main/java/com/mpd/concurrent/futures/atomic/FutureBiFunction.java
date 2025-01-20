@@ -28,7 +28,7 @@ abstract class FutureBiFunction<I1, I2, O> extends TwoParentAbstractListenerFutu
 	@Override protected void execute() {
 		BiFunction<I1, I2, O> function = this.function;
 		if (function == null) {
-			throw new RunCalledTwiceException();
+			throw new RunCalledTwiceException(this + " #run appears to have been called twice");
 		}
 		setResult(function.apply(getParent1().resultNow(), getParent2().resultNow()));
 	}
