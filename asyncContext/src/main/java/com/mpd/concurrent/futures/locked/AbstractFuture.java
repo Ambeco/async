@@ -194,7 +194,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 			try {
 				while (true) {
 					if (exception != null) {
-						log.atFinest().withStackTrace(StackSize.SMALL).log("Future get throwing %s", exception);
+						log.atFiner().withStackTrace(StackSize.SMALL).log("Future get throwing %s", exception);
 						throw wrappedException;
 					} else if (isDone) {
 						return result;
@@ -233,7 +233,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 				}
 			}
 			if (exception != null) {
-				log.atFinest().withStackTrace(StackSize.SMALL).log("Future get throwing %s", exception);
+				log.atFiner().withStackTrace(StackSize.SMALL).log("Future get throwing %s", exception);
 				throw wrappedException;
 			} else {
 				return result;
@@ -326,7 +326,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		if (!isDone) {
 			throw new FutureNotCompleteException();
 		} else if (exception != null) {
-			log.atFinest().withStackTrace(StackSize.SMALL).log("Future getDoneLocked throwing %s", exception);
+			log.atFiner().withStackTrace(StackSize.SMALL).log("Future getDoneLocked throwing %s", exception);
 			throw wrappedException;
 		} else {
 			return result;

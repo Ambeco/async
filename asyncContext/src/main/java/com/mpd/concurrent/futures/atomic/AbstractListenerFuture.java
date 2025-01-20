@@ -75,7 +75,8 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 				log.atFinest().log("%s notified %s of completion(%s, %s), but we were already interrupted, so set that now");
 				setException(interrupt, MAY_INTERRUPT);
 			} else {
-				log.atFinest().withStackTrace(StackSize.SMALL).log("%s notified %s of completion(%s, %s), so submitting to %s",
+				log.atFiner().withStackTrace(StackSize.SMALL).log(
+						"%s notified %s of completion(%s, %s), so submitting to %s",
 						future,
 						this,
 						result,

@@ -106,7 +106,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 			atomicThread.set(this, null);
 		} else {
 			atomicThread.set(this, null);
-			log.atFinest().log("%s endRunning succeeded");
+			log.atFinest().log("%s endRunning succeeded", this);
 		}
 	}
 
