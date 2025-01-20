@@ -1,4 +1,4 @@
-package com.mpd.test;
+package com.mpd.test.rules;
 
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import org.junit.rules.TestRule;

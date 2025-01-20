@@ -1,4 +1,4 @@
-package com.mpd.test;
+package com.mpd.test.rules;
 
 import static org.junit.Assert.assertThrows;
 

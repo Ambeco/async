@@ -1,4 +1,4 @@
-package com.mpd.test;
+package com.mpd.test.matchers;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

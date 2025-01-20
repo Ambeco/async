@@ -1,4 +1,4 @@
-package com.mpd.test;
+package com.mpd.test.rules;
 
 import static org.hamcrest.CoreMatchers.any;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -86,6 +86,8 @@ public class UncaughtExceptionRule implements TestRule {
 					try {
 						// run the test
 						base.evaluate();
+					} catch (MultipleFailureException e) {
+						uncaughtExceptions.addAll(e.getFailures());
 					} catch (RuntimeException e) {
 						uncaughtExceptions.add(e);
 					}
