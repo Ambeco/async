@@ -20,9 +20,6 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 {
 	private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
-	protected static final boolean DO_NOT_QUEUE_WORK = false;
-	protected static final boolean SHOULD_QUEUE_WORK = true;
-
 	/**
 	 * @noinspection unchecked
 	 */
