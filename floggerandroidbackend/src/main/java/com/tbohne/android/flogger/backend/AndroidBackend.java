@@ -45,10 +45,14 @@ public class AndroidBackend extends LoggerBackend {
 
 	@Override public boolean isLoggable(Level lvl) {
 		int androidLogLevel = toAndroidLevel(lvl);
+		boolean androidLoggable = Log.isLoggable(tag, androidLogLevel);
+		if (androidLoggable) {
+			return true;
+		}
 		if (androidLogLevelOverride != -1) {
 			return androidLogLevel >= androidLogLevelOverride;
 		}
-		return Log.isLoggable(tag, androidLogLevel);
+		return false;
 	}
 
 	@Override public void log(LogData data) {

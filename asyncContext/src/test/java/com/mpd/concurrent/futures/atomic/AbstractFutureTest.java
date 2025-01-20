@@ -1,6 +1,7 @@
 package com.mpd.concurrent.futures.atomic;
 
 import static android.util.Log.DEBUG;
+import static android.util.Log.VERBOSE;
 import static com.mpd.test.WithCauseMatcher.withCause;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -33,6 +34,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.shadows.ShadowLog;
 
 @RunWith(RobolectricTestRunner.class) public class AbstractFutureTest {
 	protected static final long NOT_SCHEDULED = Long.MIN_VALUE;
@@ -45,6 +47,7 @@ import org.robolectric.RobolectricTestRunner;
 
 	@Before public void enableDebugLogging() {
 		AndroidBackend.setLogLevelOverride(DEBUG);
+		ShadowLog.setLoggable("atomic", VERBOSE);
 	}
 
 	public static void ensureFutureComplete(AbstractFuture<?> fut) {

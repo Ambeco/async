@@ -1,6 +1,7 @@
 package com.mpd.concurrent.futures;
 
 import static android.util.Log.DEBUG;
+import static android.util.Log.VERBOSE;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -25,6 +26,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.shadows.ShadowLog;
 
 @RunWith(RobolectricTestRunner.class) public class SettableFutureTest {
 	@Rule public ErrorCollector collector = new ErrorCollector();
@@ -35,6 +37,7 @@ import org.robolectric.RobolectricTestRunner;
 
 	@Before public void enableDebugLogging() {
 		AndroidBackend.setLogLevelOverride(DEBUG);
+		ShadowLog.setLoggable("atomic", VERBOSE);
 	}
 
 	@After public void ensureFutureComplete() {
