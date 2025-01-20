@@ -27,7 +27,10 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	boolean TO_STRING_WITH_STATE = true;
 	boolean TO_STRING_NO_STATE = false;
 
-	boolean isDone();
+	@Override
+	default boolean isCancelled() {
+		return isDone() && exceptionNow() instanceof CancellationException;
+	}
 
 	default boolean isSuccessful() {
 		return isDone() && exceptionNow() == null;
@@ -45,9 +48,8 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 		return cancel(new CancellationException("Future#cancel"), mayInterruptIfRunning);
 	}
 
-	default boolean isCancelled() {
-		return isDone() && exceptionNow() instanceof CancellationException;
-	}
+	@Override
+	boolean isDone();
 
 	@MonotonicNonNull Throwable exceptionNow(); //or throws FutureNotCompleteException
 

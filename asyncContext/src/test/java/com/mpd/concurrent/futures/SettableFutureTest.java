@@ -53,9 +53,9 @@ import org.robolectric.shadows.ShadowLog;
 		fut = new SettableFuture<>();
 
 		collector.checkThrows(FutureNotCompleteException.class, fut::resultNow);
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isDone(), equalTo(false));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isDone, equalTo(false));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
 		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(TimeUnit.MILLISECONDS));
 	}
@@ -63,7 +63,7 @@ import org.robolectric.shadows.ShadowLog;
 	@Test public void toString_afterConstructed_isCorrect() throws Throwable {
 		fut = new SettableFuture<>();
 
-		collector.checkThat(fut.toString(), matchesPattern("SettableFuture@\\d{1,20}\\[ state=unset]"));
+		collector.checkSucceeds(fut::toString, matchesPattern("SettableFuture@\\d{1,20}\\[ state=unset]"));
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 10);
 		collector.checkThat(
@@ -77,14 +77,14 @@ import org.robolectric.shadows.ShadowLog;
 
 		fut.setResult("setResult_isSuccessful");
 
-		collector.checkThat(fut.resultNow(), equalTo("setResult_isSuccessful"));
-		collector.checkThat(fut.isSuccessful(), equalTo(true));
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), nullValue());
+		collector.checkSucceeds(fut::resultNow, equalTo("setResult_isSuccessful"));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(true));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, nullValue());
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(TimeUnit.MILLISECONDS));
-		collector.checkThat(fut.get(), equalTo("setResult_isSuccessful"));
-		collector.checkThat(fut.get(1, DAYS), equalTo("setResult_isSuccessful"));
+		collector.checkSucceeds(fut::get, equalTo("setResult_isSuccessful"));
+		collector.checkSucceeds(() -> fut.get(1, DAYS), equalTo("setResult_isSuccessful"));
 	}
 
 	@Test public void toString_afterSuccess_isCorrect() throws Throwable {
@@ -110,10 +110,10 @@ import org.robolectric.shadows.ShadowLog;
 		fut.setException(e);
 
 		collector.checkThrows(ArithmeticException.class, fut::resultNow);
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), sameInstance(e));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(TimeUnit.MILLISECONDS));
 		collector.checkThrows(ArithmeticException.class, fut::get);
 		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, DAYS));
@@ -144,10 +144,10 @@ import org.robolectric.shadows.ShadowLog;
 		fut.setException(e);
 
 		collector.checkThrows(AsyncCheckedException.class, fut::resultNow, hasCause(sameInstance(e)));
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), sameInstance(e));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(TimeUnit.MILLISECONDS));
 		collector.checkThrows(AsyncCheckedException.class, fut::get, hasCause(sameInstance(e)));
 		collector.checkThrows(AsyncCheckedException.class, () -> fut.get(1, DAYS), hasCause(sameInstance(e)));
@@ -178,10 +178,10 @@ import org.robolectric.shadows.ShadowLog;
 		fut.setException(e);
 
 		collector.checkThrows(CancellationException.class, fut::resultNow);
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(true));
-		collector.checkThat(fut.exceptionNow(), sameInstance(e));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(true));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(TimeUnit.MILLISECONDS));
 		collector.checkThrows(CancellationException.class, fut::get);
 		collector.checkThrows(CancellationException.class, () -> fut.get(1, DAYS));

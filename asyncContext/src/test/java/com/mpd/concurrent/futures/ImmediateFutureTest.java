@@ -53,19 +53,19 @@ import org.robolectric.shadows.ShadowLog;
 	@Test public void forString_state_isSuccessful() throws Throwable {
 		fut = Futures.immediateFuture("forString_state_isSuccessful");
 
-		collector.checkThat(fut.isSuccessful(), equalTo(true));
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), nullValue());
+		collector.checkSucceeds(fut::isSuccessful, equalTo(true));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, nullValue());
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
 	@Test public void forString_get_isSuccessful() throws Throwable {
 		fut = Futures.immediateFuture("forString_get_isSuccessful");
 
-		collector.checkThat(fut.resultNow(), equalTo("forString_get_isSuccessful"));
-		collector.checkThat(fut.get(), equalTo("forString_get_isSuccessful"));
-		collector.checkThat(fut.get(1, DAYS), equalTo("forString_get_isSuccessful"));
+		collector.checkSucceeds(fut::resultNow, equalTo("forString_get_isSuccessful"));
+		collector.checkSucceeds(fut::get, equalTo("forString_get_isSuccessful"));
+		collector.checkSucceeds(() -> fut.get(1, DAYS), equalTo("forString_get_isSuccessful"));
 	}
 
 	@Test public void forString_toString_correct() throws Throwable {
@@ -86,10 +86,10 @@ import org.robolectric.shadows.ShadowLog;
 
 		fut.cancel(Future.MAY_INTERRUPT);
 
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.isSuccessful(), equalTo(true));
-		collector.checkThat(fut.exceptionNow(), nullValue());
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(true));
+		collector.checkSucceeds(fut::exceptionNow, nullValue());
 	}
 
 	@Test public void forString_setException_crashes() throws Throwable {
@@ -99,20 +99,20 @@ import org.robolectric.shadows.ShadowLog;
 		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
 		fut.setException(secondException);
 
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isSuccessful(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), nullValue());
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, nullValue());
 	}
 
 	@Test public void forUnchecked_state_isFailed() throws Throwable {
 		ArithmeticException e = new ArithmeticException("forUnchecked_state_isFailed");
 		fut = Futures.immediateFailedFuture(e);
 
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), sameInstance(e));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
@@ -129,7 +129,8 @@ import org.robolectric.shadows.ShadowLog;
 		ArithmeticException expect = new ArithmeticException("forUnchecked_toString_correct");
 		fut = Futures.immediateFailedFuture(expect);
 
-		collector.checkThat(fut.toString(),
+		collector.checkSucceeds(
+				fut::toString,
 				matchesPattern(
 						"ImmediateFuture@\\d{1,20}\\[ failure=java.lang.ArithmeticException: forUnchecked_toString_correct]"));
 		StringBuilder sb = new StringBuilder();
@@ -145,10 +146,10 @@ import org.robolectric.shadows.ShadowLog;
 
 		fut.cancel(Future.MAY_INTERRUPT);
 
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(expect));
 	}
 
 	@Test public void forUnchecked_setException_crashes() throws Throwable {
@@ -159,20 +160,20 @@ import org.robolectric.shadows.ShadowLog;
 		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
 		fut.setException(secondException);
 
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(expect));
 	}
 
 	@Test public void forChecked_state_isFailed() throws Throwable {
 		IOException e = new IOException("forChecked_state_isFailed");
 		fut = Futures.immediateFailedFuture(e);
 
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), sameInstance(e));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
@@ -192,7 +193,8 @@ import org.robolectric.shadows.ShadowLog;
 		IOException expect = new IOException("forChecked_toString_correct");
 		fut = Futures.immediateFailedFuture(expect);
 
-		collector.checkThat(fut.toString(),
+		collector.checkSucceeds(
+				fut::toString,
 				matchesPattern("ImmediateFuture@\\d{1,20}\\[ failure=java.io.IOException: forChecked_toString_correct]"));
 		StringBuilder sb = new StringBuilder();
 		fut.addPendingString(sb, 4);
@@ -207,10 +209,10 @@ import org.robolectric.shadows.ShadowLog;
 
 		fut.cancel(Future.MAY_INTERRUPT);
 
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(expect));
 	}
 
 	@Test public void forChecked_setException_crashes() throws Throwable {
@@ -221,20 +223,20 @@ import org.robolectric.shadows.ShadowLog;
 		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
 		fut.setException(secondException);
 
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isCancelled(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(expect));
 	}
 
 	@Test public void forCancellation_state_isFailed() throws Throwable {
 		CancellationException e = new CancellationException("forCancellation_state_isFailed");
 		fut = Futures.immediateFailedFuture(e);
 
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(true));
-		collector.checkThat(fut.exceptionNow(), sameInstance(e));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(true));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(e));
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 	}
 
@@ -273,10 +275,10 @@ import org.robolectric.shadows.ShadowLog;
 
 		fut.cancel(Future.MAY_INTERRUPT);
 
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isCancelled(), equalTo(true));
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isCancelled, equalTo(true));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(expect));
 	}
 
 	@Test public void forCancellation_setException_crashes() throws Throwable {
@@ -287,9 +289,9 @@ import org.robolectric.shadows.ShadowLog;
 		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
 		fut.setException(secondException);
 
-		collector.checkThat(fut.isDone(), equalTo(true));
-		collector.checkThat(fut.isSuccessful(), equalTo(false));
-		collector.checkThat(fut.isCancelled(), equalTo(true));
-		collector.checkThat(fut.exceptionNow(), sameInstance(expect));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkSucceeds(fut::isCancelled, equalTo(true));
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(expect));
 	}
 }
