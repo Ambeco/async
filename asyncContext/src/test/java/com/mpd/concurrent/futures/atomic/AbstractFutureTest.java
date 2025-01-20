@@ -2,6 +2,7 @@ package com.mpd.concurrent.futures.atomic;
 
 import static android.util.Log.DEBUG;
 import static android.util.Log.VERBOSE;
+import static com.mpd.concurrent.executors.MoreExecutors.directExecutor;
 import static com.mpd.test.WithCauseMatcher.withCause;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -64,7 +65,7 @@ import org.robolectric.shadows.ShadowLog;
 			}
 			if (fut.getListener() == null) { // at the end of the chain, then swallow exceptions and end.
 				Log.d("atomic", fut + " doesn't have an EndListener. Adding a catch-all, and #end()");
-				fut.catching(Throwable.class, e -> null).end();
+				fut.catching(Throwable.class, e -> null, directExecutor()).end();
 			} else { // If there's an unknown  listener, then all we can do is pray :(
 				Log.w("atomic", fut + " has an unknown listener, and we can't forcibly end the chain");
 			}
