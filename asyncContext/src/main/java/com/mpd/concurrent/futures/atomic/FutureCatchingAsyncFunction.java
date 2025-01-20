@@ -33,17 +33,18 @@ public class FutureCatchingAsyncFunction<E extends Throwable, O>
 		if (parent == null || function == null) {
 			throw new RunCalledTwiceException(this + " #run appears to have been called twice");
 		}
-		Throwable exception = parent.exceptionNow();
-		if (exception == null) {
+		if (!parent.isDone()) {
 			setException(new ParentNotCompleteException(this
 					+ " running, but parent "
 					+ parent
 					+ " does not appear to be "
 					+ "complete. Failing this"));
+		}
+		Throwable exception = parent.exceptionNow();
+		if (exception == null) {
+			setResult(parent.resultNow());
 		} else if (getExceptionClass().isInstance(exception)) {
 			setResult(function.apply(getExceptionClass().cast(exception)));
-		} else if (exception == SUCCESS_EXCEPTION) {
-			setResult(parent.resultNow());
 		} else {
 			setException(exception);
 		}
