@@ -70,14 +70,15 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 
 	@SuppressWarnings("UnusedReturnValue") boolean cancel(CancellationException exception, boolean mayInterruptIfRunning);
 
-	void setListener(FutureListener<? super O> task);
+	@SuppressWarnings("UnusedReturnValue")
+	<Listener extends FutureListener<? super O>> Listener setListener(Listener task);
 
-	default void setListener(Runnable task, Executor executor) {
+	default FutureListener<?> setListener(Runnable task, Executor executor) {
 		if (task instanceof FutureListener) {
 			//noinspection unchecked
-			setListener((FutureListener<O>) task);
+			return setListener((FutureListener<O>) task);
 		} else {
-			setListener(new RunnableListener<>(task, executor));
+			return setListener(new RunnableListener<>(task, executor));
 		}
 	}
 
@@ -88,11 +89,11 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	}
 
 	default <U> Future<U> transform(Function<? super O, ? extends U> function, Executor executor) {
-		return new FutureFunction<>(this, function, executor);
+		return setListener(new FutureFunction<>(this, function, executor));
 	}
 
 	default <U> Future<U> transformAsync(AsyncFunction<? super O, U> function, Executor executor) {
-		return new FutureAsyncFunction<>(this, function, executor);
+		return setListener(new FutureAsyncFunction<>(this, function, executor));
 	}
 
 	default <E extends Throwable, FV extends O> Future<O> catching(
@@ -104,19 +105,19 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	default <E extends Throwable, FV extends O> Future<O> catching(
 			Class<E> exceptionClass, Function<? super E, FV> function, Executor executor)
 	{
-		return new FutureCatchingFunction<>(this, function, exceptionClass, executor);
+		return setListener(new FutureCatchingFunction<>(this, function, exceptionClass, executor));
 	}
 
-	default <E extends Throwable> Future<O> catchingAsync(
+	default <E extends Throwable> Future<? super O> catchingAsync(
 			Class<E> exceptionClass, AsyncFunction<? super E, O> function, Executor executor)
 	{
-		return new FutureCatchingAsyncFunction<>(exceptionClass, this, function, executor);
+		return setListener(new FutureCatchingAsyncFunction<>(exceptionClass, this, function, executor));
 	}
 
 	default Future<O> withTimeout(
 			long timeout, TimeUnit unit, @Nullable Throwable exceptionOnTimeout, boolean interruptOnTimeout)
 	{
-		return new FutureTimeout<>(this, timeout, unit, exceptionOnTimeout, interruptOnTimeout);
+		return setListener(new FutureTimeout<>(this, timeout, unit, exceptionOnTimeout, interruptOnTimeout));
 	}
 
 	default Future<O> withTimeout(long timeout, TimeUnit unit) {

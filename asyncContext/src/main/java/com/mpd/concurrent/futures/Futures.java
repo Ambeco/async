@@ -25,7 +25,11 @@ public final class Futures {
 	}
 
 	public static <O> Future<List<O>> allAsList(Collection<? extends Future<? extends O>> futures) {
-		return new FuturesAsListCombiner<>(futures, directExecutor());
+		FuturesAsListCombiner<O> r = new FuturesAsListCombiner<>(futures, directExecutor());
+		for (Future<?> fut : futures) {
+			fut.setListener(r);
+		}
+		return r;
 	}
 
 	// This only exists for backwards compatibility with Guava
@@ -66,7 +70,11 @@ public final class Futures {
 	}
 
 	public static Future<Void> whenAllComplete(Collection<? extends Future<?>> futures) {
-		return new VoidFutureCompleteCombiner<>(futures);
+		VoidFutureCompleteCombiner<?> r = new VoidFutureCompleteCombiner<>(futures);
+		for (Future<?> fut : futures) {
+			fut.setListener(r);
+		}
+		return r;
 	}
 
 	public static Future<Void> whenAllSucceeded(Future<?>... futures) {
@@ -74,7 +82,11 @@ public final class Futures {
 	}
 
 	public static Future<Void> whenAllSucceeded(Collection<? extends Future<?>> futures) {
-		return new VoidFutureSuccessCombiner<>(futures);
+		VoidFutureSuccessCombiner<?> r = new VoidFutureSuccessCombiner<>(futures);
+		for (Future<?> fut : futures) {
+			fut.setListener(r);
+		}
+		return r;
 	}
 
 	public static <O> @Nullable Throwable getFutureExceptions(Future<?>... futures) {

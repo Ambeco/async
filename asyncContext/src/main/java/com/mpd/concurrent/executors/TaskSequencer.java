@@ -43,11 +43,12 @@ public class TaskSequencer {
 	}
 
 	public <O> SubmittableFuture<O> submit(SubmittableFuture<O> task) {
-		SubmittableFuture<O> wrapped = new SingleParentImmediateListenerFuture<O, O>(task) {
+		SingleParentImmediateListenerFuture<O, O> runThenQueueNext = new SingleParentImmediateListenerFuture<O, O>(task) {
 			@Override protected void execute() {
 				afterExecute(getParent());
 			}
 		};
+		task.setListener(runThenQueueNext);
 		boolean shouldSubmit;
 		synchronized (queue) {
 			++inFlight;
@@ -55,17 +56,17 @@ public class TaskSequencer {
 				shouldSubmit = true;
 			} else {
 				shouldSubmit = false;
-				queue.add(wrapped);
+				queue.add(runThenQueueNext);
 			}
 		}
 		if (shouldSubmit) {
 			try {
-				delegate.submit(wrapped);
+				delegate.submit(runThenQueueNext);
 			} catch (RuntimeException e) {
-				wrapped.setException(e);
+				runThenQueueNext.setException(e);
 			}
 		}
-		return wrapped;
+		return runThenQueueNext;
 	}
 
 	protected void afterExecute(Future<?> task) {

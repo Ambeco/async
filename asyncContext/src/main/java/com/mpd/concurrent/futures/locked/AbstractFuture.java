@@ -263,11 +263,11 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		return getExceptionLocked();
 	}
 
-	@Override public void setListener(FutureListener<? super O> listener) {
+	@Override public <Listener extends FutureListener<? super O>> Listener setListener(Listener listener) {
 		boolean wasDone;
 		synchronized (this) {
 			if (this.listener == listener) {
-				return;
+				return listener;
 			}
 			if (this.listener != null) {
 				throw new SetListenerCalledTwiceException();
@@ -282,6 +282,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 				listener.onFutureFailed(this, exception, wasInterrupted);
 			}
 		}
+		return listener;
 	}
 
 	@Override public Future<O> withTimeout(

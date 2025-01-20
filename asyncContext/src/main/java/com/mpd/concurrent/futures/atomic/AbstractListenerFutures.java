@@ -21,7 +21,6 @@ public final class AbstractListenerFutures {
 		protected SingleParentImmediateListenerFuture(@NonNull Future<? extends I> parent) {
 			super(null, directExecutor());
 			this.parent = parent;
-			parent.setListener(this);
 		}
 
 		protected @Nullable Future<? extends I> getParent() {
@@ -73,7 +72,6 @@ public final class AbstractListenerFutures {
 		protected SingleParentTransformListenerFuture(@NonNull Future<? extends I> parent, Executor executor) {
 			super(null, executor);
 			this.parent = parent;
-			parent.setListener(this);
 		}
 
 		protected @Nullable Future<? extends I> getParent() {
@@ -134,7 +132,6 @@ public final class AbstractListenerFutures {
 			super(null, executor);
 			this.parent = parent;
 			this.exceptionClass = exceptionClass;
-			parent.setListener(this);
 		}
 
 		protected @Nullable Future<? extends O> getParent() {
@@ -207,8 +204,6 @@ public final class AbstractListenerFutures {
 			super(null, executor);
 			this.parent1 = parent1;
 			this.parent2 = parent2;
-			parent1.setListener(this);
-			parent2.setListener(this);
 		}
 
 		protected @Nullable Future<? extends I1> getParent1() {

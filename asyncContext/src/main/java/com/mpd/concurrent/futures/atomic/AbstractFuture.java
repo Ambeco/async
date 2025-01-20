@@ -333,15 +333,15 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		return setComplete(FAILED_RESULT, exception, mayInterruptIfRunning);
 	}
 
-	@CallSuper @Override public void setListener(FutureListener<? super O> listener) {
+	@CallSuper @Override public <Listener extends FutureListener<? super O>> Listener setListener(Listener listener) {
 		if (!atomicListener.compareAndSet(this, null, listener)) {
 			FutureListener<?> oldListener = atomicListener.get(this);
 			if (oldListener == listener) {
 				log.atFinest().log("%s #setListener(%s) called twice. Weird, but safe", this, listener);
-				return;
+				return listener;
 			} else if (listener instanceof EndListener) {
 				log.atFinest().log("%s #setListener(%s) unnecessarily called called multiple times.", this, listener);
-				return;
+				return listener;
 			}
 			throw new SetListenerCalledTwiceException("setListener called with \""
 					+ listener
@@ -364,6 +364,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		} else {
 			log.atFinest().log("%s #setListener(%s) succeeded. Waiting for completion", this, listener);
 		}
+		return listener;
 	}
 
 	@Override @CallSuper public void addPendingString(StringBuilder sb, int maxDepth) {
