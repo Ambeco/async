@@ -56,6 +56,12 @@ public class AsyncContext implements Cloneable {
 		return context;
 	}
 
+	public static AsyncContext forkCurrentExecutionContext(String name) {
+		AsyncContext context = getCurrentExecutionContext().clone(name);
+		currentContext.set(context);
+		return context;
+	}
+
 	public static @Nullable AsyncContext resumeExecutionContext(AsyncContext context) {
 		AsyncContext oldContext = currentContext.get();
 		if (oldContext != null) {
@@ -81,6 +87,10 @@ public class AsyncContext implements Cloneable {
 
 	@NonNull @Override public AsyncContext clone() {
 		return new AsyncContext(this);
+	}
+
+	@NonNull public AsyncContext clone(String name) {
+		return new AsyncContext(this, name);
 	}
 
 	public String getTopMostName() {

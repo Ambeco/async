@@ -44,16 +44,17 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 
 	O resultNow(); //or throws FutureNotCompleteException, or the completed RuntimeException, or AsyncCheckedException
 
+	/**
+	 * @noinspection DeprecatedIsStillUsed
+	 * @deprecated Prefer to pass an explicit CancellationException specifying why the future is cancelled.
+	 */
+	@Deprecated
 	@SuppressWarnings("UnusedReturnValue") default boolean cancel(boolean mayInterruptIfRunning) {
 		return cancel(new CancellationException("Future#cancel"), mayInterruptIfRunning);
 	}
 
-	@Override
-	boolean isDone();
-
-	@MonotonicNonNull Throwable exceptionNow(); //or throws FutureNotCompleteException
-
 	/**
+	 * @deprecated Prefer non-blocking methods
 	 * @noinspection DeprecatedIsStillUsed
 	 */
 	@Deprecated default O get() throws InterruptedException {
@@ -65,7 +66,13 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 		}
 	}
 
+	@Override
+	boolean isDone();
+
+	@MonotonicNonNull Throwable exceptionNow(); //or throws FutureNotCompleteException
+
 	/**
+	 * @deprecated Prefer non-blocking methods
 	 * @noinspection DeprecatedIsStillUsed
 	 */
 	@Deprecated O get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException;
