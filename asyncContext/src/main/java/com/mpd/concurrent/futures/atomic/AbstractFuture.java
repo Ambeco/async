@@ -195,7 +195,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			Throwable oldException = atomicException.get(this);
 			boolean didSetAsync = (oldException == null) && atomicSetAsync.compareAndSet(this, null, asyncWork);
 			Future<?> oldListener = atomicSetAsync.get(this);
-			if (oldListener == asyncWork) {
+			if (!didSetAsync && oldListener == asyncWork) {
 				log.atFinest().log("Future#setResult called twice on %s with the same %s. Weird, but ok", this, asyncWork);
 			} else if (oldException == SUCCESS_EXCEPTION) {
 				setException(new SetResultCalledAfterSuccessException("setResult tried to set the result of \""
