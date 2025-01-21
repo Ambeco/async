@@ -48,7 +48,7 @@ Current status: **Playground**, moving toward prototype.
 ## Future
 
 - [`Future<O>`](/asyncContext/src/main/java/com/mpd/concurrent/futures/Future.java) extends
-  java.util.concurrent.ScheduledFuture<O>, so it is backwards compatible, making
+  `java.util.concurrent.ScheduledFuture<O>`, so it is backwards compatible, making
   it easy to replace into existing codebases, mostly by simply changing the import. The default
   implementations use lock-free atomics for everything except actually completing a future.
 - [
