@@ -450,7 +450,7 @@ import org.robolectric.shadows.ShadowLog;
 		fut.setResult(async);
 
 		//java.util.concurrent.Future state
-		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
+		collector.checkSucceeds(fut::exceptionNow, nullValue());
 		collector.checkSucceeds(() -> fut.get(1, SECONDS), sameInstance(value));
 		collector.checkSucceeds(fut::get, sameInstance(value));
 		collector.checkSucceeds(fut::isCancelled, equalTo(false));
@@ -545,10 +545,10 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
 				" //PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: setResultWithFuture_whenPending_resultIsCancelled_isCancelled]"));
+				"[ cancelled=java.util.concurrent.CancellationException: setResultWithFuture_whenPending_resultIsCancelled_isCancelled]"));
 		collector.checkSucceeds(fut::toString, stringContainsInOrder(
 				"PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: setResultWithFuture_whenPending_resultIsCancelled_isCancelled]"));
+				"[ cancelled=java.util.concurrent.CancellationException: setResultWithFuture_whenPending_resultIsCancelled_isCancelled]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
