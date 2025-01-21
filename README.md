@@ -15,7 +15,7 @@ Current status: **Playground**, moving toward prototype.
 - [`AsyncContext`](/asyncContext/src/main/java/com/mpd/concurrent/asyncContext/AsyncContext.java) is
   effectively a `ConcurrentHashMap` of classes to data of that type.
 - Whenever the OS or a 3p library calls into your code, you should generally call
-- [
+  [
   `AsyncContext#setNewRootContext(String name)`](/asyncContext/src/main/java/com/mpd/concurrent/asyncContext/AsyncContext.java#:~:text={setNewRootContext})
   to initialize a new AsyncContext.
 - [`Executor`](/asyncContext/src/main/java/com/mpd/concurrent/executors/Executor.java) and
@@ -48,18 +48,18 @@ Current status: **Playground**, moving toward prototype.
 ## Future
 
 - [`Future<O>`](/asyncContext/src/main/java/com/mpd/concurrent/futures/Future.java) extends
-- java.util.concurrent.ScheduledFuture<O>, so it is backwards compatible, making
+  java.util.concurrent.ScheduledFuture<O>, so it is backwards compatible, making
   it easy to replace into existing codebases, mostly by simply changing the import. The default
   implementations use lock-free atomics for everything except actually completing a future.
 - [
   `Future.futureConfig`](/asyncContext/src/main/java/com/mpd/concurrent/futures/Future.java#:~:text={futureConfig})
-- is a public static global providing the default executor, and the uncaught
+  is a public static global providing the default executor, and the uncaught
   exception handler.
 - Added [
   `#resultNow`](/asyncContext/src/main/java/com/mpd/concurrent/futures/Future.java#:~:text={resultNow}),
-- [
+  [
   `#exceptionNow`](/asyncContext/src/main/java/com/mpd/concurrent/futures/Future.java#:~:text={exceptionNow})
-- methods from Java19.
+  methods from Java19.
 - `#get` is deprecated. There's plenty of non-blocking APIs for virtually every other use-case.
 - Each Future must have exactly 1 [
   `FutureListener`](/asyncContext/src/main/java/com/mpd/concurrent/futures/FutureListener.java)*,
