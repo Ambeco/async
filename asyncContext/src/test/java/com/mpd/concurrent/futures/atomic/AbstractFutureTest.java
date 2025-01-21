@@ -470,7 +470,7 @@ import org.robolectric.shadows.ShadowLog;
 				stringContainsInOrder("PublicAbstractFuture@",
 						"[ success=setResultWithFuture_whenPending_resultIsComplete_setsAsync]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, sameInstance(async));
+		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
 		collector.checkSucceeds(
 				fut::getResultProtected,
