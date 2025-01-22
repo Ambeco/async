@@ -19,6 +19,9 @@ import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
 import com.mpd.concurrent.futures.Future.FutureSucceededTwiceException;
 import com.mpd.concurrent.futures.FutureListener;
+import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledAfterFailureException;
+import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledAfterSuccessException;
+import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledTwiceException;
 import com.mpd.test.rules.AsyncContextRule;
 import com.mpd.test.rules.ErrorCollector;
 import com.mpd.test.rules.UncaughtExceptionRule;
@@ -27,6 +30,7 @@ import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
@@ -45,7 +49,7 @@ import org.robolectric.shadows.ShadowLog;
 @RunWith(RobolectricTestRunner.class) public class AbstractFutureTest {
 	@Rule(order = 0) public UncaughtExceptionRule uncaughtExceptionRule = new UncaughtExceptionRule();
 	@Rule(order = 1) public ErrorCollector collector = new ErrorCollector();
-	@Rule(order = 50) public TestRule timeoutRule = new DisableOnDebug(TimeoutRule.seconds(30));
+	@Rule(order = 50) public TestRule timeoutRule = new DisableOnDebug(TimeoutRule.seconds(10));
 	@Rule(order = 51) public AsyncContextRule asyncContextRule = new AsyncContextRule();
 
 	@Nullable PublicAbstractFuture<String> fut;
@@ -152,8 +156,7 @@ import org.robolectric.shadows.ShadowLog;
 		fut.setResult(value);
 
 		checkFutureFailedUnchecked(
-				expectedException,
-				"java.lang.ArithmeticException: setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp");
+				expectedException, "setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp");
 	}
 
 	@Test public void setResultWithSuccessValue_afterAlreadyChecked_isNoOp() {
@@ -243,8 +246,7 @@ import org.robolectric.shadows.ShadowLog;
 
 		//java.util.concurrent.Future state
 		checkFutureFailedUnchecked(
-				expectedException,
-				"java.lang.ArithmeticException: setResultWithFuture_whenAsync_resultIsUnchecked_isFailed");
+				expectedException, "setResultWithFuture_whenAsync_resultIsUnchecked_isFailed");
 	}
 
 	@Test public void setResultWithFuture_whenAsync_resultIsChecked_isFailed() {
@@ -268,6 +270,62 @@ import org.robolectric.shadows.ShadowLog;
 		async.setException(expectedException);
 
 		checkFutureCancelled(expectedException, "setResultWithFuture_whenAsync_resultIsCancelled_isCancelled");
+	}
+
+	@Test public void setResultWithFuture_whenAsync_crashes() {
+		String result = "setResultWithFuture_whenAsync_crashes";
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> async1 = new PublicAbstractFuture<>();
+		fut.setResult(async1);
+		ArithmeticException asyncException2 = new ArithmeticException("setResultWithFuture_whenAsync_crashes");
+		PublicAbstractFuture<String> async2 = new PublicAbstractFuture<>(asyncException2);
+
+		Matcher<Throwable> matcher = Matchers.allOf(Matchers.instanceOf(SetResultCalledTwiceException.class),
+				withCause(sameInstance(asyncException2)));
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(matcher);
+		fut.setResult(async2);
+
+		checkFutureFailedUnchecked(result, SetResultCalledTwiceException.class, matcher);
+		async1.cancel(/*interrupt=*/true);
+	}
+
+	@Test public void setResultWithFuture_whenSucceeded_crashes() {
+		String result = "setResultWithFuture_whenSucceeded_crashes";
+		fut = new PublicAbstractFuture<>(result);
+		ArithmeticException asyncException = new ArithmeticException("setResultWithFuture_whenSucceeded_crashes");
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(asyncException);
+
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.allOf(Matchers.instanceOf(
+				SetResultCalledAfterSuccessException.class), withCause(sameInstance(asyncException))));
+		fut.setResult(async);
+
+		checkFutureIsSuccessful(result);
+	}
+
+	@Test public void setResultWithFuture_whenFailed_asyncAlsoFailed_crashes() {
+		ArithmeticException firstException = new ArithmeticException(
+				"setResultWithFuture_whenFailed_asyncAlsoFailed_crashes");
+		fut = new PublicAbstractFuture<>(firstException);
+		ArithmeticException asyncException = new ArithmeticException(
+				"setResultWithFuture_whenFailed_asyncAlsoFailed_crashes_2");
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(asyncException);
+
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.allOf(Matchers.instanceOf(
+				SetResultCalledAfterFailureException.class), withCause(sameInstance(asyncException))));
+		fut.setResult(async);
+
+		checkFutureFailedUnchecked(firstException, "setResultWithFuture_whenFailed_asyncAlsoFailed_crashes");
+	}
+
+	@Test public void setResultWithFuture_whenFailed_asyncSucceeded_noOps() {
+		ArithmeticException firstException = new ArithmeticException("setResultWithFuture_whenFailed_asyncSucceeded_noOps");
+		fut = new PublicAbstractFuture<>(firstException);
+		String result2 = "setResultWithFuture_whenFailed_asyncSucceeded_noOps_2";
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(result2);
+
+		fut.setResult(async);
+
+		checkFutureFailedUnchecked(firstException, "setResultWithFuture_whenFailed_asyncSucceeded_noOps");
 	}
 
 	@Test public void setException_noInterrupt_unchecked_whenPending_isFailed() {
@@ -325,7 +383,9 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	private void checkFutureIsPending() {
-		//java.util.concurrent.Future state
+		//java.lang.Object
+		collector.checkSucceeds(fut::toString, stringContainsInOrder("PublicAbstractFuture@", "[]"));
+		//java.util.concurrent.Future
 		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
 		//collector.checkThrows(FutureNotCompleteException.class, fut::get);
 		//collector.checkThrows(TimeoutException.class, ()->fut.get(1, SECONDS));
@@ -341,7 +401,6 @@ import org.robolectric.shadows.ShadowLog;
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
 				"//PublicAbstractFuture@",
 				"[]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder("PublicAbstractFuture@", "[]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
@@ -356,6 +415,8 @@ import org.robolectric.shadows.ShadowLog;
 
 	private void checkFutureIsScheduled() {
 		checkNotNull(fut);
+		//java.lang.Object
+		collector.checkSucceeds(fut::toString, stringContainsInOrder("PublicAbstractFuture@", "[ scheduledNanos=", "]"));
 		//java.util.concurrent.Future state
 		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
 		//collector.checkThrows(FutureNotCompleteException.class, fut::get);
@@ -373,7 +434,6 @@ import org.robolectric.shadows.ShadowLog;
 				"//PublicAbstractFuture@",
 				"[ scheduledNanos=",
 				"]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder("PublicAbstractFuture@", "[ scheduledNanos=", "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, greaterThan(0L));
@@ -388,7 +448,10 @@ import org.robolectric.shadows.ShadowLog;
 
 	private void checkFutureIsAsync(PublicAbstractFuture<String> async) {
 		checkNotNull(fut);
-		//java.util.concurrent.Future state
+		//java.lang.Object
+		collector.checkSucceeds(fut::toString,
+				stringContainsInOrder("PublicAbstractFuture@", "[ setAsync" + "=PublicAbstractFuture@", "]"));
+		//java.util.concurrent.Future
 		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
 		//collector.checkThrows(FutureNotCompleteException.class, fut::get);
 		//collector.checkThrows(TimeoutException.class, ()->fut.get(1, SECONDS));
@@ -405,8 +468,6 @@ import org.robolectric.shadows.ShadowLog;
 				"//PublicAbstractFuture@",
 				"[ setAsync=PublicAbstractFuture@",
 				"]"));
-		collector.checkSucceeds(fut::toString,
-				stringContainsInOrder("PublicAbstractFuture@", "[ setAsync" + "=PublicAbstractFuture@", "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, sameInstance(async));
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
@@ -421,7 +482,9 @@ import org.robolectric.shadows.ShadowLog;
 
 	private void checkFutureIsSuccessful(String result) {
 		checkNotNull(fut);
-		//java.util.concurrent.Future state
+		//java.lang.Object
+		collector.checkSucceeds(fut::toString, stringContainsInOrder("PublicAbstractFuture@", "[ success=", result, "]"));
+		//java.util.concurrent.Future
 		collector.checkSucceeds(fut::exceptionNow, nullValue());
 		collector.checkSucceeds(() -> fut.get(1, SECONDS), sameInstance(result));
 		collector.checkSucceeds(fut::get, sameInstance(result));
@@ -439,7 +502,6 @@ import org.robolectric.shadows.ShadowLog;
 				"[ success=",
 				result,
 				"]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder("PublicAbstractFuture@", "[ success=", result, "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
@@ -452,15 +514,22 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
-	private void checkFutureFailedUnchecked(ArithmeticException expectedException, String testName) {
+	private <E extends Throwable> void checkFutureFailedUnchecked(
+			String testName,
+			Class<E> clazz,
+			Matcher<Throwable> matcher)
+	{
 		checkNotNull(fut);
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
-		collector.checkThrows(ArithmeticException.class, fut::get, sameInstance(expectedException));
-		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
+		//java.lang.Object
+		collector.checkSucceeds(fut::toString,
+				stringContainsInOrder("PublicAbstractFuture@", "[ failure=", clazz.getName(), ": ", testName, "]"));
+		//java.util.concurrent.Future
+		collector.checkSucceeds(fut::exceptionNow, matcher);
+		collector.checkThrows(Throwable.class, fut::get, matcher);
+		collector.checkThrows(Throwable.class, () -> fut.get(1, SECONDS), matcher);
 		collector.checkSucceeds(fut::isCancelled, equalTo(false));
 		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkThrows(ArithmeticException.class, fut::resultNow, sameInstance(expectedException));
+		collector.checkThrows(Throwable.class, fut::resultNow, matcher);
 		//java.util.concurrent.Delayed
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 		//com.mpd.concurrent.futures.Future
@@ -468,27 +537,30 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
 		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
-				" //PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: ",
+				" //PublicAbstractFuture@", "[ failure=", clazz.getName(), ": ",
 				testName,
 				"]"));
-		collector.checkSucceeds(
-				fut::toString,
-				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.lang.ArithmeticException: ", testName, "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
 		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
+		collector.checkSucceeds(fut::getExceptionProtected, matcher);
+		collector.checkSucceeds(fut::getWrappedExceptionProtected, matcher);
 		collector.checkSucceeds(fut::getInterrupt, nullValue());
 		collector.checkSucceeds(fut::getListener, nullValue());
 		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
+	private <E extends Throwable> void checkFutureFailedUnchecked(E expectedException, String testName) {
+		checkFutureFailedUnchecked(testName, expectedException.getClass(), sameInstance(expectedException));
+	}
+
 	private void checkFutureFailedChecked(IOException expectedException, String testName) {
 		checkNotNull(fut);
+		//java.lang.Object
+		collector.checkSucceeds(fut::toString,
+				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.io.IOException: ", testName, "]"));
 		//java.util.concurrent.Future state
 		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
 		collector.checkThrows(AsyncCheckedException.class, fut::get, withCause(sameInstance(expectedException)));
@@ -507,9 +579,6 @@ import org.robolectric.shadows.ShadowLog;
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
 				" //PublicAbstractFuture@", "java.io.IOException: ",
 				testName));
-		collector.checkSucceeds(
-				fut::toString,
-				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.io.IOException: ", testName, "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
@@ -524,7 +593,13 @@ import org.robolectric.shadows.ShadowLog;
 
 	private void checkFutureCancelled(CancellationException expectedException, String testName) {
 		checkNotNull(fut);
-		//java.util.concurrent.Future state
+		//java.lang.Object
+		collector.checkSucceeds(fut::toString,
+				stringContainsInOrder("PublicAbstractFuture@",
+						"[ cancelled=java.util.concurrent.CancellationException: ",
+						testName,
+						"]"));
+		//java.util.concurrent.Future
 		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
 		collector.checkThrows(CancellationException.class, fut::get, sameInstance(expectedException));
 		collector.checkThrows(CancellationException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
@@ -542,12 +617,6 @@ import org.robolectric.shadows.ShadowLog;
 				"[ cancelled=java.util.concurrent.CancellationException: ",
 				testName,
 				"]"));
-		collector.checkSucceeds(
-				fut::toString,
-				stringContainsInOrder("PublicAbstractFuture@",
-						"[ cancelled=java.util.concurrent.CancellationException: ",
-						testName,
-						"]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
