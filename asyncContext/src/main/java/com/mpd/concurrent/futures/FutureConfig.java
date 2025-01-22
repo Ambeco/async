@@ -71,7 +71,7 @@ public interface FutureConfig {
 		@Override public void onUnhandledException(Throwable exception) {
 			// it's very normal to not catch and handle Cancellation, so don't do anything dramatic for that
 			if (exception instanceof CancellationException) {
-				log.atFine().withCause(exception).log("Unhandled CancellationException %s", exception);
+				log.atFine().withCause(exception).log("Unhandled %s", exception);
 				return;
 			}
 			Thread currentThread = Thread.currentThread();

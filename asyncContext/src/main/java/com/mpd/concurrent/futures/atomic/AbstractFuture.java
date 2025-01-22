@@ -4,6 +4,7 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
+import com.mpd.concurrent.executors.MoreExecutors;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import java.util.concurrent.CancellationException;
@@ -190,60 +191,60 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@CallSuper protected boolean setResult(Future<? extends O> asyncWork) {
-		boolean didSetAsync = false;
-		boolean didSetListener = false;
-		try {
-			Throwable oldException = atomicException.get(this);
-			didSetAsync = (oldException == null) && atomicSetAsync.compareAndSet(this, null, asyncWork);
-			Future<?> oldListener = atomicSetAsync.get(this);
-			if (!didSetAsync && oldListener == asyncWork) {
-				log.atFinest().log("Future#setResult called twice on %s with the same %s. Weird, but ok", this, asyncWork);
-			} else if (oldException == SUCCESS_EXCEPTION) {
-				setException(new SetResultCalledAfterSuccessException("setResult tried to set the result of \""
-						+ this
-						+ "\" with the result of \""
-						+ asyncWork
-						+ "\" but this has already succeeded with \""
-						+ this.result
-						+ "\"", asyncWork.isDone() ? asyncWork.exceptionNow() : null));
-			} else if (oldException != null) {
-				log.atFinest().log("%s #setResult(%s) called after already failed, but sometimes that just happens during "
-						+ "cancellation, so we'll just ensure uncaught exceptions get handled", this, asyncWork);
-			} else if (!didSetAsync) {
-				setException(new SetResultCalledTwiceException("setResult tried to set the result of \""
-						+ this
-						+ " with the result of \""
-						+ asyncWork
-						+ "\" (@"
-						+ System.identityHashCode(asyncWork)
-						+ ") but this already has listener \""
-						+ oldListener
-						+ "\" (@"
-						+ System.identityHashCode(oldListener)
-						+ ")", asyncWork.isDone() ? asyncWork.exceptionNow() : null));
-			} else {
-				try {
-					log.atFinest().log("%s #setResult(%s) succeeded. Registering self as the listener", this, asyncWork);
-					asyncWork.setListener(this);
-					didSetListener = true;
-				} catch (SetListenerCalledTwiceException e) {
-					setException(e);
-					didSetAsync = false;
-				}
-			} // else this had already failed, but that's not an exceptional case
-			return didSetAsync;
-		} catch (RuntimeException e) {
+		Throwable oldException = atomicException.get(this);
+		boolean didSetAsync = (oldException == null) && atomicSetAsync.compareAndSet(this, null, asyncWork);
+		oldException = atomicException.get(this);
+		Future<?> oldListener = atomicSetAsync.get(this);
+		if (oldListener == asyncWork) {
+			log.atFinest().log("Future#setResult called twice on %s with the same %s. Weird, but ok", this, asyncWork);
+			return true;
+		} else if (oldException == SUCCESS_EXCEPTION) {
+			atomicSetAsync.compareAndSet(this, asyncWork, null);
+			SetResultCalledAfterSuccessException e = new SetResultCalledAfterSuccessException(
+					"setResult tried to set the result of \""
+							+ this
+							+ "\" with the result of \""
+							+ asyncWork
+							+ "\" but this has already succeeded with \""
+							+ this.result
+							+ "\"");
 			setException(e);
+			handleSetResultFailure(asyncWork, e);
 			return false;
-		} finally {
-			if (!didSetListener) {
-				log.atFinest().log("%s #setResult(%s) failed. telling asyncWork to report all exceptions as unhandled",
-						this,
-						asyncWork);
-				asyncWork.end();
-				if (didSetAsync) {
-					atomicSetAsync.lazySet(this, null);
-				}
+		} else if (oldException != null) {
+			atomicSetAsync.compareAndSet(this, asyncWork, null);
+			SetResultCalledAfterFailureException e = new SetResultCalledAfterFailureException(
+					"setResult tried to set the result of \""
+							+ this
+							+ "\" with the result of \""
+							+ asyncWork
+							+ "\" but this has already succeeded, so the exception went uncaught");
+			log.atFinest().withCause(asyncWork.isDone() ? asyncWork.exceptionNow() : null).log("%s #setResult(%s) called "
+					+ "after already failed, but sometimes that just happens during cancellation, so we'll just ensure uncaught"
+					+ " exceptions get handled", this, asyncWork);
+			handleSetResultFailure(asyncWork, e);
+			return false;
+		} else if (!didSetAsync) {
+			SetResultCalledTwiceException e = new SetResultCalledTwiceException("setResult tried to set the result of \""
+					+ this
+					+ " with the result of \""
+					+ asyncWork
+					+ "\" (@"
+					+ System.identityHashCode(asyncWork)
+					+ ") but this already has listener \""
+					+ oldListener
+					+ "\"", asyncWork.isDone() ? asyncWork.exceptionNow() : null);
+			setException(e);
+			handleSetResultFailure(asyncWork, e);
+			return false;
+		} else {
+			try {
+				log.atFinest().log("%s #setResult(%s) succeeded. Registering self as the listener", this, asyncWork);
+				asyncWork.setListener(this);
+				return true;
+			} catch (Throwable e) {
+				setException(e);
+				return false;
 			}
 		}
 	}
@@ -674,6 +675,22 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 
 		public SetResultCalledTwiceException(String message, @Nullable Throwable throwable) {
+			super(message, throwable);
+		}
+	}
+
+	public static class SetResultCalledAfterFailureException extends IllegalStateException {
+		public SetResultCalledAfterFailureException() {}
+
+		public SetResultCalledAfterFailureException(String message) {
+			super(message);
+		}
+
+		public SetResultCalledAfterFailureException(Throwable throwable) {
+			super(throwable);
+		}
+
+		public SetResultCalledAfterFailureException(String message, @Nullable Throwable throwable) {
 			super(message, throwable);
 		}
 	}

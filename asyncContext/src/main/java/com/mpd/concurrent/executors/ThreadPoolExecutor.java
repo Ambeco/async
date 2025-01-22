@@ -293,7 +293,7 @@ public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
 				isShutdown = true;
 				while (!threads.isEmpty()) {
 					log.atFine().log(
-							"Thread %s blocking without limit, waiting for threads %s to finish stopping",
+							"%s blocking without limit, waiting for %s to finish stopping",
 							Thread.currentThread(),
 							threads);
 					threads.wait();

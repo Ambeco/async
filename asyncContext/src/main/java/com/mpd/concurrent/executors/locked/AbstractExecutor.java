@@ -49,13 +49,13 @@ public abstract class AbstractExecutor implements AndAlsoJavaExecutor {
 			registerListener(listener);
 			if (listener.getCount() == 1) {
 				log.atFine().log(
-						"Thread %s blocking for up to %dms, waiting for Executor %s to become idle",
+						"%s blocking for up to %dms, waiting for %s to become idle",
 						Thread.currentThread(),
 						timeoutMillis,
 						this);
 				if (!listener.await(timeout, unit)) {
 					log.atFine().log(
-							"Thread %s timed out after %dms out of a maximum of %dms, waiting for Executor %s to become idle",
+							"%s timed out after %dms out of a maximum of %dms, waiting for %s to become idle",
 							Thread.currentThread(),
 							SystemClock.uptimeMillis() - startTimeMillis,
 							timeoutMillis,
@@ -65,7 +65,7 @@ public abstract class AbstractExecutor implements AndAlsoJavaExecutor {
 			}
 		} catch (InterruptedException e) {
 			log.atFine().log(
-					"Thread %s interrupted after %dms out of a maximum of %dms, waiting for Executor %s to become idle",
+					"%s interrupted after %dms out of a maximum of %dms, waiting for %s to become idle",
 					Thread.currentThread(),
 					SystemClock.uptimeMillis() - startTimeMillis,
 					timeoutMillis,
@@ -77,7 +77,7 @@ public abstract class AbstractExecutor implements AndAlsoJavaExecutor {
 	}
 
 	@Override @CallSuper public void shutdown() {
-		log.atFine().log("Thread %s telling Executor %s to safely stop async", Thread.currentThread(), this);
+		log.atFine().log("%s telling %s to safely stop async", Thread.currentThread(), this);
 		state = ExecutorState.STATE_STOPPING;
 	}
 

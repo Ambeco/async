@@ -202,7 +202,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 						long remaining = until - System.nanoTime();
 						if (remaining > 0) {
 							log.atFine().log(
-									"Thread %s blocking for up to %dns, out of a maximum of %dns, waiting for future %s to complete",
+									"%s blocking for up to %dns, out of a maximum of %dns, waiting for future %s to complete",
 									Thread.currentThread(),
 									remaining,
 									timeoutNs,
@@ -210,7 +210,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 							this.wait(remaining / NANOS_PER_MILLI, (int) (remaining % NANOS_PER_MILLI));
 						} else {
 							log.atFine().log(
-									"Thread %s timed out after %dns, out of a maximum of %dns, waiting for future %s to complete",
+									"%s timed out after %dns, out of a maximum of %dns, waiting for future %s to complete",
 									Thread.currentThread(),
 									System.nanoTime() - startTimeNanos,
 									timeoutNs,
@@ -221,7 +221,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 				}
 			} catch (InterruptedException e) {
 				log.atFine().log(
-						"Thread %s interrupted after %dns, out of a maximum of %dns, while waiting for future %s to complete",
+						"%s interrupted after %dns, out of a maximum of %dns, while waiting for future %s to complete",
 						Thread.currentThread(),
 						System.nanoTime() - startTimeNanos,
 						timeoutNs,

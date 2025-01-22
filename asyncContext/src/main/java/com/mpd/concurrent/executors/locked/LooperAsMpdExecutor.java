@@ -83,7 +83,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 					long remainingWaitMillis = maxUptimeMillis - currentUptimeMillis;
 					if (remainingWaitMillis < 0) {
 						log.atFine().log(
-								"Thread %s was blocked for %dms out of a maximum of %dms, waiting for Looper %s to become "
+								"%s was blocked for %dms out of a maximum of %dms, waiting for %s to become "
 										+ "idle, and has now timed out",
 								Thread.currentThread(),
 								currentUptimeMillis - initialUptimeMillis,
@@ -92,8 +92,8 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 						throw new TimeoutException();
 					}
 					log.atFiner().log(
-							"Thread %s has blocked for  %dms out of a maximum of %dms. It will block for at most "
-									+ "%dms more, waiting for Looper %s to become idle",
+							" %s has blocked for  %dms out of a maximum of %dms. It will block for at most "
+									+ "%dms more, waiting for %s to become idle",
 							Thread.currentThread(),
 							currentUptimeMillis - initialUptimeMillis,
 							timeoutMillis,
@@ -103,7 +103,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 					currentUptimeMillis = SystemClock.uptimeMillis();
 				}
 				log.atFine().log(
-						"Thread %s now unblocked after %dms out of a maximum of %dms, waiting for Looper %s to become idle",
+						"%S now unblocked after %dms out of a maximum of %dms, waiting for  %s to become idle",
 						Thread.currentThread(),
 						currentUptimeMillis - initialUptimeMillis,
 						timeoutMillis,
@@ -112,7 +112,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 				Thread.currentThread().interrupt();
 				currentUptimeMillis = SystemClock.uptimeMillis();
 				log.atFine().withCause(e).log(
-						"Thread %s was blocked for %dms out of a maximum of %dms, waiting for Looper %s "
+						"%S was blocked for %dms out of a maximum of %dms, waiting for %s "
 								+ "to become idle, but was interrupted",
 						Thread.currentThread(),
 						currentUptimeMillis - initialUptimeMillis,
@@ -126,7 +126,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 		if (handler.getLooper() == Looper.getMainLooper()) {
 			throw new MainThreadShouldNotShutDownException();
 		}
-		log.atFine().log("Thread %s is safely shutting down Looper %s", Thread.currentThread(), handler.getLooper());
+		log.atFine().log("%S is safely shutting down %s", Thread.currentThread(), handler.getLooper());
 		handler.post(this::terminate);
 		handler.getLooper().quitSafely();
 		state = ExecutorState.STATE_STOPPING;
@@ -162,7 +162,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 		if (handler.getLooper() == Looper.getMainLooper()) {
 			throw new MainThreadShouldNotShutDownException();
 		}
-		log.atFine().log("Thread %s is unsafely ending Looper %s", Thread.currentThread(), handler.getLooper());
+		log.atFine().log("%S is unsafely ending %s", Thread.currentThread(), handler.getLooper());
 		handler.post(this::terminate);
 		handler.getLooper().quit();
 		state = ExecutorState.STATE_STOPPING;
@@ -191,7 +191,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 				long remainingWaitMillis = maxUptimeMillis - currentUptimeMillis;
 				if (remainingWaitMillis < 0) {
 					log.atFine().log(
-							"Thread %s was blocked for %dms out of a maximum of %dms, waiting for Looper %s to terminate, and has"
+							"%S was blocked for %dms out of a maximum of %dms, waiting for %s to terminate, and has"
 									+ " now timed out",
 							Thread.currentThread(),
 							currentUptimeMillis - initialUptimeMillis,
@@ -200,8 +200,8 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 					throw new InterruptedException();
 				}
 				log.atFiner().log(
-						"Thread %s was blocked for %dms out of a maximum of %dms. It will block for at most %dms, waiting for "
-								+ "Looper %s to terminate",
+						"%S was blocked for %dms out of a maximum of %dms. It will block for at most %dms, waiting for "
+								+ "%s to terminate",
 						Thread.currentThread(),
 						currentUptimeMillis - initialUptimeMillis,
 						timeoutMillis,
@@ -212,7 +212,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 				} catch (InterruptedException e) {
 					currentUptimeMillis = SystemClock.uptimeMillis();
 					log.atFine().withCause(e).log(
-							"Thread %s was blocked for %dms out of a maximum of %dms, waiting for Looper %s "
+							"%S was blocked for %dms out of a maximum of %dms, waiting for %s "
 									+ "to terminate, but was interrupted",
 							Thread.currentThread(),
 							currentUptimeMillis - initialUptimeMillis,
@@ -223,7 +223,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 				currentUptimeMillis = SystemClock.uptimeMillis();
 			}
 			log.atFine().log(
-					"Thread %s now unblocked after %dms out of a maximum of %dms, waiting for Looper %s to terminate",
+					"%S now unblocked after %dms out of a maximum of %dms, waiting for %s to terminate",
 					Thread.currentThread(),
 					currentUptimeMillis - initialUptimeMillis,
 					timeoutMillis,
