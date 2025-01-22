@@ -232,18 +232,11 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			handleSetResultFailure(asyncWork, e);
 			return false;
 		} else if (!didSetAsync) {
-			log.atFinest().log("setResult tried to set the result of \"%s\" with the result of \"%s\" but this "
-					+ "already has "
-					+ "listener \"%s\"", this, asyncWork, oldListener);
+			log.atFinest().log("setResult tried to set the result of \"%s\" with the result of \"%s\"", this, asyncWork);
 			SetResultCalledTwiceException e = new SetResultCalledTwiceException("setResult tried to set the result of \""
 					+ this
 					+ " with the result of \""
-					+ asyncWork
-					+ "\" (@"
-					+ System.identityHashCode(asyncWork)
-					+ ") but this already has listener \""
-					+ oldListener
-					+ "\"", asyncWork.isDone() ? asyncWork.exceptionNow() : null);
+					+ asyncWork + "\"");
 			handleSetResultFailure(asyncWork, e);
 			setException(e);
 			return false;
