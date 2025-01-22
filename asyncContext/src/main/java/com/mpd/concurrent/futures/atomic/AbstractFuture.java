@@ -24,6 +24,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	protected static final long NOT_SCHEDULED = Long.MIN_VALUE;
 	protected static final RuntimeException SUCCESS_EXCEPTION = new SuccessException();
 	private static final int NANOS_PER_MILLI = 1000000;
+	private static final int NANOS_PER_SECOND = 1000000000;
 	private static final ListenerAlreadyDispatched LISTENER_ALREADY_DISPATCHED = new ListenerAlreadyDispatched();
 	/**
 	 * @noinspection unchecked
@@ -122,7 +123,11 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			Throwable oldException;
 			// This is the only real lock in the Futures. It ensures that #result, #interrupted, and #wrapped
 			// are stable after #execption is finalized. It also gives us a way to release Threads blocked by #get.
-			log.atFinest().log("completing %s with %s and %s", this, exception, result);
+			if (exception == SUCCESS_EXCEPTION) {
+				log.atFinest().log("Completing %s with success %s", this, result);
+			} else {
+				log.atFinest().log("Completing %s with exception %s (interrupt=%s)", this, exception, mayInterruptIfRunning);
+			}
 			synchronized (this) {
 				oldException = atomicException.get(this);
 				// exception is the "source of truth" for future completeness
@@ -195,7 +200,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		boolean didSetAsync = (oldException == null) && atomicSetAsync.compareAndSet(this, null, asyncWork);
 		oldException = atomicException.get(this);
 		Future<?> oldListener = atomicSetAsync.get(this);
-		if (oldListener == asyncWork) {
+		if (!didSetAsync && oldListener == asyncWork) {
 			log.atFinest().log("Future#setResult called twice on %s with the same %s. Weird, but ok", this, asyncWork);
 			return true;
 		} else if (oldException == SUCCESS_EXCEPTION) {
@@ -208,23 +213,28 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 							+ "\" but this has already succeeded with \""
 							+ this.result
 							+ "\"");
-			setException(e);
 			handleSetResultFailure(asyncWork, e);
+			setException(e);
 			return false;
 		} else if (oldException != null) {
 			atomicSetAsync.compareAndSet(this, asyncWork, null);
+			log.atFinest().log("%s #setResult(%s) called after already failed, but sometimes that just happens during "
+					+ "cancellation, so we'll just ensure uncaught exceptions get handled", this, asyncWork);
 			SetResultCalledAfterFailureException e = new SetResultCalledAfterFailureException(
 					"setResult tried to set the result of \""
 							+ this
 							+ "\" with the result of \""
 							+ asyncWork
 							+ "\" but this has already succeeded, so the exception went uncaught");
-			log.atFinest().withCause(asyncWork.isDone() ? asyncWork.exceptionNow() : null).log("%s #setResult(%s) called "
+			log.atFinest().log("%s #setResult(%s) called "
 					+ "after already failed, but sometimes that just happens during cancellation, so we'll just ensure uncaught"
 					+ " exceptions get handled", this, asyncWork);
 			handleSetResultFailure(asyncWork, e);
 			return false;
 		} else if (!didSetAsync) {
+			log.atFinest().log("setResult tried to set the result of \"%s\" with the result of \"%s\" but this "
+					+ "already has "
+					+ "listener \"%s\"", this, asyncWork, oldListener);
 			SetResultCalledTwiceException e = new SetResultCalledTwiceException("setResult tried to set the result of \""
 					+ this
 					+ " with the result of \""
@@ -234,8 +244,8 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 					+ ") but this already has listener \""
 					+ oldListener
 					+ "\"", asyncWork.isDone() ? asyncWork.exceptionNow() : null);
-			setException(e);
 			handleSetResultFailure(asyncWork, e);
+			setException(e);
 			return false;
 		} else {
 			try {
@@ -318,10 +328,12 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 					long remainingNs = untilNs - System.nanoTime();
 					if (remainingNs > 0) {
 						log.atFine().log(
-								"%s blocking for up to %dns, out of a maximum of %dns, waiting for %s to complete",
+								"%s blocking for up to %d.%ds, out of a maximum of %d.%ds, waiting for %s to complete",
 								Thread.currentThread(),
-								remainingNs,
-								timeoutNs,
+								remainingNs / NANOS_PER_SECOND,
+								remainingNs % NANOS_PER_SECOND,
+								timeoutNs / NANOS_PER_SECOND,
+								timeoutNs % NANOS_PER_SECOND,
 								this);
 						this.wait(remainingNs / NANOS_PER_MILLI, (int) (remainingNs % NANOS_PER_MILLI));
 					} else {
@@ -339,11 +351,14 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 				}
 			}
 		} catch (InterruptedException e) {
+			long remainingNanos = System.nanoTime() - startTimeNanos;
 			log.atFine().log(
-					"%s interrupted after %dns out of a maximum of %dns, while waiting for %s to complete",
+					"%s interrupted after %d.%ds out of a maximum of %d.%dns, while waiting for %s to complete",
 					Thread.currentThread(),
-					System.nanoTime() - startTimeNanos,
-					timeoutNs,
+					remainingNanos / NANOS_PER_SECOND,
+					remainingNanos % NANOS_PER_SECOND,
+					timeoutNs / NANOS_PER_SECOND,
+					timeoutNs % NANOS_PER_SECOND,
 					this);
 			Thread.currentThread().interrupt();
 			throw new AsyncCheckedException(e);
