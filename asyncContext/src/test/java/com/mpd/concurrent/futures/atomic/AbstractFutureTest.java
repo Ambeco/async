@@ -2,13 +2,13 @@ package com.mpd.concurrent.futures.atomic;
 
 import static android.util.Log.DEBUG;
 import static android.util.Log.VERBOSE;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.mpd.concurrent.executors.MoreExecutors.directExecutor;
 import static com.mpd.test.matchers.WithCauseMatcher.withCause;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -26,7 +26,6 @@ import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -85,6 +84,224 @@ import org.robolectric.shadows.ShadowLog;
 	@Test public void constructor_default_stateIsPending() {
 		fut = new PublicAbstractFuture<>();
 
+		checkFutureIsPending();
+	}
+
+	@Test public void constructor_scheduled_stateIsScheduled() {
+		fut = new PublicAbstractFuture<>(3, SECONDS);
+
+		checkFutureIsScheduled();
+	}
+
+	@Test public void constructor_immediateSuccess_stateIsSuccessful() {
+		String value = "constructor_immediateSuccess_stateIsSuccessful";
+		fut = new PublicAbstractFuture<>(value);
+
+		checkFutureIsSuccessful(value);
+	}
+
+	@Test public void constructor_immediateUnchecked_stateIsFailed() {
+		ArithmeticException expectedException = new ArithmeticException("constructor_immediateUnchecked_stateIsFailed");
+		fut = new PublicAbstractFuture<>(expectedException);
+
+		checkFutureHasUncheckedException(expectedException, "constructor_immediateUnchecked_stateIsFailed");
+	}
+
+	@Test public void constructor_immediateChecked_stateIsFailed() {
+		IOException expectedException = new IOException("constructor_immediateChecked_stateIsFailed");
+		fut = new PublicAbstractFuture<>(expectedException);
+
+		//java.util.concurrent.Future state
+		checkFutureFailedWithCheckedException(expectedException,
+				"java.io.IOException: constructor_immediateChecked_stateIsFailed");
+	}
+
+	@Test public void constructor_immediateCancelled_stateIsCancelled() {
+		CancellationException expectedException = new CancellationException(
+				"constructor_immediateCancelled_stateIsCancelled");
+		fut = new PublicAbstractFuture<>(expectedException);
+
+		//java.util.concurrent.Future state
+		checkFutureCancelled(expectedException, "constructor_immediateCancelled_stateIsCancelled");
+	}
+
+	@Test public void setResultWithSuccessValue_whenPending_isSuccess() {
+		fut = new PublicAbstractFuture<>();
+
+		String value = "setResultWithSuccessValue_whenPending_isSuccess";
+		fut.setResult(value);
+
+		checkFutureIsSuccessful(value);
+	}
+
+	@Test public void setResultWithSuccessValue_afterAlreadySucceeded_crashes() {
+		String value = "setResultWithSuccessValue_afterAlreadySucceeded_crashes";
+		fut = new PublicAbstractFuture<>(value);
+
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.instanceOf(FutureSucceededTwiceException.class));
+		fut.setResult(value);
+
+		checkFutureIsSuccessful(value);
+	}
+
+	@Test public void setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp() {
+		ArithmeticException expectedException = new ArithmeticException(
+				"setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp");
+		fut = new PublicAbstractFuture<>(expectedException);
+
+		String value = "setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp";
+		fut.setResult(value);
+
+		checkFutureHasUncheckedException(expectedException,
+				"java.lang.ArithmeticException: setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp");
+	}
+
+	@Test public void setResultWithSuccessValue_afterAlreadyChecked_isNoOp() {
+		IOException expectedException = new IOException("setResultWithSuccessValue_afterAlreadyChecked_isNoOp");
+		fut = new PublicAbstractFuture<>(expectedException);
+
+		String value = "setResultWithSuccessValue_afterAlreadyChecked_isNoOp";
+		fut.setResult(value);
+
+		//java.util.concurrent.Future state
+		checkFutureFailedWithCheckedException(expectedException,
+				"java.io.IOException: setResultWithSuccessValue_afterAlreadyChecked_isNoOp");
+	}
+
+	@Test public void setResultWithFuture_whenPending_resultIsPending_setsAsync() {
+		fut = new PublicAbstractFuture<>();
+
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
+		fut.setResult(async);
+
+		checkFutureIsAsync(async);
+	}
+
+	@Test public void setResultWithFuture_whenPending_resultIsSucceeded_isSucceeded() {
+		fut = new PublicAbstractFuture<>();
+
+		String value = "setResultWithFuture_whenPending_resultIsComplete_setsAsync";
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(value);
+		fut.setResult(async);
+
+		checkFutureIsSuccessful(value);
+	}
+
+	@Test public void setResultWithFuture_whenPending_resultIsUnchecked_isFailed() {
+		fut = new PublicAbstractFuture<>();
+
+		ArithmeticException expectedException = new ArithmeticException(
+				"setResultWithFuture_whenPending_resultIsUnchecked_isFailed");
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(expectedException);
+		fut.setResult(async);
+
+		//java.util.concurrent.Future state
+		checkFutureHasUncheckedException(expectedException, "setResultWithFuture_whenPending_resultIsUnchecked_isFailed");
+	}
+
+	@Test public void setResultWithFuture_whenPending_resultIsChecked_isFailed() {
+		fut = new PublicAbstractFuture<>();
+
+		IOException expectedException = new IOException("setResultWithFuture_whenPending_resultIsChecked_isFailed");
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(expectedException);
+		fut.setResult(async);
+
+		checkFutureFailedWithCheckedException(expectedException,
+				"setResultWithFuture_whenPending_resultIsChecked_isFailed");
+	}
+
+	@Test public void setResultWithFuture_whenPending_resultIsCancelled_isCancelled() {
+		fut = new PublicAbstractFuture<>();
+
+		CancellationException expectedException = new CancellationException(
+				"setResultWithFuture_whenPending_resultIsCancelled_isCancelled");
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(expectedException);
+		fut.setResult(async);
+
+		checkFutureCancelled(expectedException, "setResultWithFuture_whenPending_resultIsCancelled_isCancelled");
+	}
+
+	@Test public void setResultWithFuture_whenAsync_resultIsSucceeded_isSucceeded() {
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
+		fut.setResult(async);
+
+		String value = "setResultWithFuture_whenAsync_resultIsSucceeded_isSucceeded";
+		async.setResult(value);
+
+		checkFutureIsSuccessful(value);
+	}
+
+	@Test public void setResultWithFuture_whenAsync_resultIsUnchecked_isFailed() {
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
+		fut.setResult(async);
+
+		ArithmeticException expectedException = new ArithmeticException(
+				"setResultWithFuture_whenAsync_resultIsUnchecked_isFailed");
+		async.setException(expectedException);
+
+		//java.util.concurrent.Future state
+		checkFutureHasUncheckedException(expectedException,
+				"java.lang.ArithmeticException: setResultWithFuture_whenAsync_resultIsUnchecked_isFailed");
+	}
+
+	@Test public void setResultWithFuture_whenAsync_resultIsChecked_isFailed() {
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
+		fut.setResult(async);
+
+		IOException expectedException = new IOException("setResultWithFuture_whenAsync_resultIsChecked_isFailed");
+		async.setException(expectedException);
+
+		checkFutureFailedWithCheckedException(expectedException,
+				"java.io.IOException: setResultWithFuture_whenAsync_resultIsChecked_isFailed");
+	}
+
+	@Test public void setResultWithFuture_whenAsync_resultIsCancelled_isCancelled() {
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
+		fut.setResult(async);
+
+		CancellationException expectedException = new CancellationException(
+				"setResultWithFuture_whenAsync_resultIsCancelled_isCancelled");
+		async.setException(expectedException);
+
+		checkFutureCancelled(expectedException, "setResultWithFuture_whenAsync_resultIsCancelled_isCancelled");
+	}
+
+	// TODO: test setException(Throwable)
+	// TODO: test setException(Throwable, mayInterruptIfRunning)
+	// TODO: test cancel
+	// TODO: test onFutureSucceeded
+	// TODO: test onFutureFailed
+	// TODO: test getPendingString
+	// TODO: test toString
+	// TODO: test compareTo
+
+	@Test public void toString_recursiveFuture_limitedDepth() {
+		fut = new PublicAbstractFuture<>();
+		Future<String> fut2 = fut.transform(s -> s);
+		fut.setResult(fut2);
+
+		collector.checkSucceeds(
+				fut::toString,
+				stringContainsInOrder("PublicAbstractFuture@",
+						"[ setAsync=FutureFunction<AbstractFutureTest$$Lambda$",
+						"/0x",
+						">]"));
+		StringBuilder sb = new StringBuilder();
+		fut.addPendingString(sb, 4);
+		collector.checkThat(sb.toString(), stringContainsInOrder(
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) //PublicAbstractFuture@",
+				"\n  at AbstractFutureTest$$Lambda$",
+				".apply(AbstractFutureTest:0) //FutureFunction<AbstractFutureTest$$Lambda$",
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) //PublicAbstractFuture@",
+				"\n  at AbstractFutureTest$$Lambda$",
+				".apply(AbstractFutureTest:0) //FutureFunction<AbstractFutureTest$$Lambda$"));
+	}
+
+	private void checkFutureIsPending() {
 		//java.util.concurrent.Future state
 		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
 		//collector.checkThrows(FutureNotCompleteException.class, fut::get);
@@ -114,9 +331,8 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
-	@Test public void constructor_scheduled_stateIsPending() {
-		fut = new PublicAbstractFuture<>(3, SECONDS);
-
+	private void checkFutureIsScheduled() {
+		checkNotNull(fut);
 		//java.util.concurrent.Future state
 		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
 		//collector.checkThrows(FutureNotCompleteException.class, fut::get);
@@ -147,306 +363,8 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
-	@Test public void constructor_immediateSuccess_stateIsSuccessful() {
-		String value = "constructor_immediateSuccess_stateIsSuccessful";
-		fut = new PublicAbstractFuture<>(value);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, nullValue());
-		collector.checkSucceeds(() -> fut.get(1, SECONDS), equalTo(value));
-		collector.checkSucceeds(fut::get, equalTo(value));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkSucceeds(fut::resultNow, equalTo(value));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(true));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
-				"//PublicAbstractFuture@",
-				"[ success=constructor_immediateSuccess_stateIsSuccessful]"));
-		collector.checkThat(
-				fut.toString(),
-				stringContainsInOrder("PublicAbstractFuture@", "[ success=constructor_immediateSuccess_stateIsSuccessful]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, sameInstance(value));
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void constructor_immediateUnchecked_stateIsFailed() {
-		ArithmeticException expectedException = new ArithmeticException("constructor_immediateUnchecked_stateIsFailed");
-		fut = new PublicAbstractFuture<>(expectedException);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
-		collector.checkThrows(ArithmeticException.class, fut::get, sameInstance(expectedException));
-		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkThrows(ArithmeticException.class, fut::resultNow, sameInstance(expectedException));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
-				" //PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: constructor_immediateUnchecked_stateIsFailed]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: constructor_immediateUnchecked_stateIsFailed]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void constructor_immediateChecked_stateIsFailed() {
-		IOException expectedException = new IOException("constructor_immediateChecked_stateIsFailed");
-		fut = new PublicAbstractFuture<>(expectedException);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
-		collector.checkThrows(AsyncCheckedException.class, fut::get, withCause(sameInstance(expectedException)));
-		collector.checkThrows(AsyncCheckedException.class, () -> fut.get(1, SECONDS),
-				withCause(sameInstance(expectedException)));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkThrows(AsyncCheckedException.class, fut::resultNow, withCause(sameInstance(expectedException)));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
-				" //PublicAbstractFuture@", "[ failure=java.io.IOException: constructor_immediateChecked_stateIsFailed]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@", "[ failure=java.io.IOException: constructor_immediateChecked_stateIsFailed]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, withCause(sameInstance(expectedException)));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void constructor_immediateCancelled_stateIsCancelled() {
-		CancellationException expectedException = new CancellationException(
-				"constructor_immediateCancelled_stateIsCancelled");
-		fut = new PublicAbstractFuture<>(expectedException);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
-		collector.checkThrows(CancellationException.class, fut::get, sameInstance(expectedException));
-		collector.checkThrows(CancellationException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
-		collector.checkSucceeds(fut::isCancelled, equalTo(true));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkThrows(CancellationException.class, fut::resultNow, sameInstance(expectedException));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture",
-				"(PublicAbstractFuture:0) //PublicAbstractFuture@",
-				"[ cancelled=java.util.concurrent.CancellationException: constructor_immediateCancelled_stateIsCancelled]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ cancelled=java.util.concurrent.CancellationException: constructor_immediateCancelled_stateIsCancelled]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void setResultWithSuccessValue_whenPending_isSuccess() {
-		fut = new PublicAbstractFuture<>();
-
-		String value = "setResultWithSuccessValue_whenPending_isSuccess";
-		fut.setResult(value);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, nullValue());
-		collector.checkSucceeds(() -> fut.get(1, SECONDS), sameInstance(value));
-		collector.checkSucceeds(fut::get, sameInstance(value));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkSucceeds(fut::resultNow, equalTo(value));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(true));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
-				"//PublicAbstractFuture@",
-				"[ success=setResultWithSuccessValue_whenPending_isSuccess]"));
-		collector.checkThat(
-				fut.toString(),
-				stringContainsInOrder("PublicAbstractFuture@", "[ success=setResultWithSuccessValue_whenPending_isSuccess]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, sameInstance(value));
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void setResultWithSuccessValue_afterAlreadySucceeded_crashes() {
-		String value = "setResultWithSuccessValue_afterAlreadySucceeded_crashes";
-		fut = new PublicAbstractFuture<>(value);
-
-		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.instanceOf(FutureSucceededTwiceException.class));
-		fut.setResult(value);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, nullValue());
-		collector.checkSucceeds(() -> fut.get(1, SECONDS), equalTo(value));
-		collector.checkSucceeds(fut::get, equalTo(value));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkSucceeds(fut::resultNow, equalTo(value));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(true));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
-				"//PublicAbstractFuture@",
-				"[ success=setResultWithSuccessValue_afterAlreadySucceeded_crashes]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-						"[ success=setResultWithSuccessValue_afterAlreadySucceeded_crashes]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, sameInstance(value));
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp() {
-		ArithmeticException expectedException = new ArithmeticException(
-				"setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp");
-		fut = new PublicAbstractFuture<>(expectedException);
-
-		String value = "setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp";
-		fut.setResult(value);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
-		collector.checkThrows(ArithmeticException.class, fut::get, sameInstance(expectedException));
-		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkThrows(ArithmeticException.class, fut::resultNow, sameInstance(expectedException));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
-				" //PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void setResultWithSuccessValue_afterAlreadyChecked_isNoOp() {
-		IOException expectedException = new IOException("setResultWithSuccessValue_afterAlreadyChecked_isNoOp");
-		fut = new PublicAbstractFuture<>(expectedException);
-
-		String value = "setResultWithSuccessValue_afterAlreadyChecked_isNoOp";
-		fut.setResult(value);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
-		collector.checkThrows(AsyncCheckedException.class, fut::get, withCause(sameInstance(expectedException)));
-		collector.checkThrows(
-				AsyncCheckedException.class,
-				() -> fut.get(1, SECONDS),
-				withCause(sameInstance(expectedException)));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkThrows(AsyncCheckedException.class, fut::resultNow, withCause(sameInstance(expectedException)));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
-				" //PublicAbstractFuture@",
-				"[ failure=java.io.IOException: setResultWithSuccessValue_afterAlreadyChecked_isNoOp]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder("PublicAbstractFuture@",
-				"[ failure=java.io.IOException: setResultWithSuccessValue_afterAlreadyChecked_isNoOp]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, withCause(sameInstance(expectedException)));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void setResultWithFuture_whenPending_resultIsPending_setsAsync() {
-		fut = new PublicAbstractFuture<>();
-
-		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
-		fut.setResult(async);
-
+	private void checkFutureIsAsync(PublicAbstractFuture<String> async) {
+		checkNotNull(fut);
 		//java.util.concurrent.Future state
 		collector.checkThrows(FutureNotCompleteException.class, fut::exceptionNow);
 		//collector.checkThrows(FutureNotCompleteException.class, fut::get);
@@ -464,8 +382,7 @@ import org.robolectric.shadows.ShadowLog;
 				"//PublicAbstractFuture@",
 				"[ setAsync=PublicAbstractFuture@",
 				"]"));
-		collector.checkSucceeds(
-				fut::toString,
+		collector.checkSucceeds(fut::toString,
 				stringContainsInOrder("PublicAbstractFuture@", "[ setAsync" + "=PublicAbstractFuture@", "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, sameInstance(async));
@@ -479,20 +396,15 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
-	@Test public void setResultWithFuture_whenPending_resultIsSucceeded_isSucceeded() {
-		fut = new PublicAbstractFuture<>();
-
-		String value = "setResultWithFuture_whenPending_resultIsComplete_setsAsync";
-		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(value);
-		fut.setResult(async);
-
+	private void checkFutureIsSuccessful(String result) {
+		checkNotNull(fut);
 		//java.util.concurrent.Future state
 		collector.checkSucceeds(fut::exceptionNow, nullValue());
-		collector.checkSucceeds(() -> fut.get(1, SECONDS), sameInstance(value));
-		collector.checkSucceeds(fut::get, sameInstance(value));
+		collector.checkSucceeds(() -> fut.get(1, SECONDS), sameInstance(result));
+		collector.checkSucceeds(fut::get, sameInstance(result));
 		collector.checkSucceeds(fut::isCancelled, equalTo(false));
 		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkSucceeds(fut::resultNow, sameInstance(value));
+		collector.checkSucceeds(fut::resultNow, sameInstance(result));
 		//java.util.concurrent.Delayed
 		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
 		//com.mpd.concurrent.futures.Future
@@ -501,17 +413,14 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
 				"//PublicAbstractFuture@",
-				"[ success=setResultWithFuture_whenPending_resultIsComplete_setsAsync]"));
-		collector.checkSucceeds(
-				fut::toString,
-				stringContainsInOrder("PublicAbstractFuture@",
-						"[ success=setResultWithFuture_whenPending_resultIsComplete_setsAsync]"));
+				"[ success=",
+				result,
+				"]"));
+		collector.checkSucceeds(fut::toString, stringContainsInOrder("PublicAbstractFuture@", "[ success=", result, "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(
-				fut::getResultProtected,
-				equalTo("setResultWithFuture_whenPending_resultIsComplete_setsAsync"));
+		collector.checkSucceeds(fut::getResultProtected, sameInstance(result));
 		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
 		collector.checkSucceeds(fut::getInterrupt, nullValue());
@@ -520,14 +429,8 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
-	@Test public void setResultWithFuture_whenPending_resultIsUnchecked_isFailed() {
-		fut = new PublicAbstractFuture<>();
-
-		ArithmeticException expectedException = new ArithmeticException(
-				"setResultWithFuture_whenPending_resultIsUnchecked_isFailed");
-		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(expectedException);
-		fut.setResult(async);
-
+	private void checkFutureHasUncheckedException(ArithmeticException expectedException, String testName) {
+		checkNotNull(fut);
 		//java.util.concurrent.Future state
 		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
 		collector.checkThrows(ArithmeticException.class, fut::get, sameInstance(expectedException));
@@ -543,10 +446,12 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
 				" //PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: setResultWithFuture_whenPending_resultIsUnchecked_isFailed]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: setResultWithFuture_whenPending_resultIsUnchecked_isFailed]"));
+				"[ failure=java.lang.ArithmeticException: ",
+				testName,
+				"]"));
+		collector.checkSucceeds(
+				fut::toString,
+				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.lang.ArithmeticException: ", testName, "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
@@ -559,18 +464,12 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
-	@Test public void setResultWithFuture_whenPending_resultIsChecked_isFailed() {
-		fut = new PublicAbstractFuture<>();
-
-		IOException expectedException = new IOException("setResultWithFuture_whenPending_resultIsChecked_isFailed");
-		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(expectedException);
-		fut.setResult(async);
-
+	private void checkFutureFailedWithCheckedException(IOException expectedException, String testName) {
+		checkNotNull(fut);
 		//java.util.concurrent.Future state
 		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
 		collector.checkThrows(AsyncCheckedException.class, fut::get, withCause(sameInstance(expectedException)));
-		collector.checkThrows(
-				AsyncCheckedException.class,
+		collector.checkThrows(AsyncCheckedException.class,
 				() -> fut.get(1, SECONDS),
 				withCause(sameInstance(expectedException)));
 		collector.checkSucceeds(fut::isCancelled, equalTo(false));
@@ -584,10 +483,10 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
 				" //PublicAbstractFuture@",
-				"[ failure=java.io.IOException: setResultWithFuture_whenPending_resultIsChecked_isFailed]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ failure=java.io.IOException: setResultWithFuture_whenPending_resultIsChecked_isFailed]"));
+				testName));
+		collector.checkSucceeds(
+				fut::toString,
+				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.io" + ".IOException: ", testName, "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
@@ -600,14 +499,8 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
-	@Test public void setResultWithFuture_whenPending_resultIsCancelled_isCancelled() {
-		fut = new PublicAbstractFuture<>();
-
-		CancellationException expectedException = new CancellationException(
-				"setResultWithFuture_whenPending_resultIsCancelled_isCancelled");
-		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(expectedException);
-		fut.setResult(async);
-
+	private void checkFutureCancelled(CancellationException expectedException, String testName) {
+		checkNotNull(fut);
 		//java.util.concurrent.Future state
 		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
 		collector.checkThrows(CancellationException.class, fut::get, sameInstance(expectedException));
@@ -623,217 +516,25 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
 				" //PublicAbstractFuture@",
-				"[ cancelled=java.util.concurrent.CancellationException: setResultWithFuture_whenPending_resultIsCancelled_isCancelled]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ cancelled=java.util.concurrent.CancellationException: setResultWithFuture_whenPending_resultIsCancelled_isCancelled]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void setResultWithFuture_whenAsync_resultIsSucceeded_isSucceeded() {
-		fut = new PublicAbstractFuture<>();
-		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
-		fut.setResult(async);
-
-		String value = "setResultWithFuture_whenAsync_resultIsSucceeded_isSucceeded";
-		async.setResult(value);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, nullValue());
-		collector.checkSucceeds(() -> fut.get(1, SECONDS), sameInstance(value));
-		collector.checkSucceeds(fut::get, sameInstance(value));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkSucceeds(fut::resultNow, sameInstance(value));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(true));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
-				"//PublicAbstractFuture@",
-				"[ success=setResultWithFuture_whenAsync_resultIsSucceeded_isSucceeded]"));
-		collector.checkSucceeds(fut::toString,
-				stringContainsInOrder("PublicAbstractFuture@",
-						"[ success=setResultWithFuture_whenAsync_resultIsSucceeded_isSucceeded]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected,
-				equalTo("setResultWithFuture_whenAsync_resultIsSucceeded_isSucceeded"));
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(AbstractFuture.SUCCESS_EXCEPTION));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void setResultWithFuture_whenAsync_resultIsUnchecked_isFailed() {
-		fut = new PublicAbstractFuture<>();
-		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
-		fut.setResult(async);
-
-		ArithmeticException expectedException = new ArithmeticException(
-				"setResultWithFuture_whenAsync_resultIsUnchecked_isFailed");
-		async.setException(expectedException);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
-		collector.checkThrows(ArithmeticException.class, fut::get, sameInstance(expectedException));
-		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkThrows(ArithmeticException.class, fut::resultNow, sameInstance(expectedException));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
-				" //PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: setResultWithFuture_whenAsync_resultIsUnchecked_isFailed]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ failure=java.lang.ArithmeticException: setResultWithFuture_whenAsync_resultIsUnchecked_isFailed]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void setResultWithFuture_whenAsync_resultIsChecked_isFailed() {
-		fut = new PublicAbstractFuture<>();
-		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
-		fut.setResult(async);
-
-		IOException expectedException = new IOException("setResultWithFuture_whenAsync_resultIsChecked_isFailed");
-		async.setException(expectedException);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
-		collector.checkThrows(AsyncCheckedException.class, fut::get, withCause(sameInstance(expectedException)));
-		collector.checkThrows(
-				AsyncCheckedException.class,
-				() -> fut.get(1, SECONDS),
-				withCause(sameInstance(expectedException)));
-		collector.checkSucceeds(fut::isCancelled, equalTo(false));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkThrows(AsyncCheckedException.class, fut::resultNow, withCause(sameInstance(expectedException)));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
-				" //PublicAbstractFuture@",
-				"[ failure=java.io.IOException: setResultWithFuture_whenAsync_resultIsChecked_isFailed]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ failure=java.io.IOException: setResultWithFuture_whenAsync_resultIsChecked_isFailed]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, withCause(sameInstance(expectedException)));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	@Test public void setResultWithFuture_whenAsync_resultIsCancelled_isCancelled() {
-		fut = new PublicAbstractFuture<>();
-		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
-		fut.setResult(async);
-
-		CancellationException expectedException = new CancellationException(
-				"setResultWithFuture_whenAsync_resultIsCancelled_isCancelled");
-		async.setException(expectedException);
-
-		//java.util.concurrent.Future state
-		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
-		collector.checkThrows(CancellationException.class, fut::get, sameInstance(expectedException));
-		collector.checkThrows(CancellationException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
-		collector.checkSucceeds(fut::isCancelled, equalTo(true));
-		collector.checkSucceeds(fut::isDone, equalTo(true));
-		collector.checkThrows(CancellationException.class, fut::resultNow, sameInstance(expectedException));
-		//java.util.concurrent.Delayed
-		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
-		//com.mpd.concurrent.futures.Future
-		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
-		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
-		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
-				" //PublicAbstractFuture@",
-				"[ cancelled=java.util.concurrent.CancellationException: setResultWithFuture_whenAsync_resultIsCancelled_isCancelled]"));
-		collector.checkSucceeds(fut::toString, stringContainsInOrder(
-				"PublicAbstractFuture@",
-				"[ cancelled=java.util.concurrent.CancellationException: setResultWithFuture_whenAsync_resultIsCancelled_isCancelled]"));
-		//com.mpd.concurrent.futures.impl.AbstractFuture
-		collector.checkSucceeds(fut::getSetAsync, nullValue());
-		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
-		collector.checkSucceeds(fut::getResultProtected, nullValue());
-		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
-		collector.checkSucceeds(fut::getListener, nullValue());
-		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
-		collector.checkSucceeds(fut::sourceMethodName, nullValue());
-	}
-
-	// TODO: test setException(Throwable)
-	// TODO: test setException(Throwable, mayInterruptIfRunning)
-	// TODO: test cancel
-	// TODO: test onFutureSucceeded
-	// TODO: test onFutureFailed
-	// TODO: test getPendingString
-	// TODO: test toString
-	// TODO: test compareTo
-
-	@Test public void toString_recursiveFuture_limitedDepth() {
-		fut = new PublicAbstractFuture<>();
-		Future<String> fut2 = fut.transform(s -> s);
-
-		fut.setResult(fut2);
-
+				"[ cancelled=java.util.concurrent.CancellationException: ",
+				testName,
+				"]"));
 		collector.checkSucceeds(
 				fut::toString,
 				stringContainsInOrder("PublicAbstractFuture@",
-						"[ setAsync=FutureFunction<AbstractFutureTest$$Lambda$",
-						"/0x",
-						">]"));
-		StringBuilder sb = new StringBuilder();
-		fut.addPendingString(sb, 4);
-		collector.checkThat(sb.toString(), matchesPattern(Pattern.compile(".+", Pattern.DOTALL)));
-
-
-		collector.checkThat(sb.toString(), stringContainsInOrder(
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) //PublicAbstractFuture@",
-				"\n  at AbstractFutureTest$$Lambda$",
-				".apply(AbstractFutureTest:0) //FutureFunction<AbstractFutureTest$$Lambda$",
-				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) //PublicAbstractFuture@",
-				"\n  at AbstractFutureTest$$Lambda$",
-				".apply(AbstractFutureTest:0) //FutureFunction<AbstractFutureTest$$Lambda$"));
+						"[ cancelled=java.util.concurrent.CancellationException: ",
+						testName,
+						"]"));
+		//com.mpd.concurrent.futures.impl.AbstractFuture
+		collector.checkSucceeds(fut::getSetAsync, nullValue());
+		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
+		collector.checkSucceeds(fut::getResultProtected, nullValue());
+		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
+		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
+		collector.checkSucceeds(fut::getInterrupt, nullValue());
+		collector.checkSucceeds(fut::getListener, nullValue());
+		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
+		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
 	/**
