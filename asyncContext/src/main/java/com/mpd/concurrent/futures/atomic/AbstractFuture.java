@@ -190,10 +190,11 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@CallSuper protected boolean setResult(Future<? extends O> asyncWork) {
+		boolean didSetAsync = false;
 		boolean didSetListener = false;
 		try {
 			Throwable oldException = atomicException.get(this);
-			boolean didSetAsync = (oldException == null) && atomicSetAsync.compareAndSet(this, null, asyncWork);
+			didSetAsync = (oldException == null) && atomicSetAsync.compareAndSet(this, null, asyncWork);
 			Future<?> oldListener = atomicSetAsync.get(this);
 			if (!didSetAsync && oldListener == asyncWork) {
 				log.atFinest().log("Future#setResult called twice on %s with the same %s. Weird, but ok", this, asyncWork);
@@ -205,7 +206,10 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 						+ "\" but this has already succeeded with \""
 						+ this.result
 						+ "\"", asyncWork.isDone() ? asyncWork.exceptionNow() : null));
-			} else if (oldException == null && !didSetAsync) {
+			} else if (oldException != null) {
+				log.atFinest().log("%s #setResult(%s) called after already failed, but sometimes that just happens during "
+						+ "cancellation, so we'll just ensure uncaught exceptions get handled", this, asyncWork);
+			} else if (!didSetAsync) {
 				setException(new SetResultCalledTwiceException("setResult tried to set the result of \""
 						+ this
 						+ " with the result of \""
@@ -217,7 +221,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 						+ "\" (@"
 						+ System.identityHashCode(oldListener)
 						+ ")", asyncWork.isDone() ? asyncWork.exceptionNow() : null));
-			} else if (didSetAsync) {
+			} else {
 				try {
 					log.atFinest().log("%s #setResult(%s) succeeded. Registering self as the listener", this, asyncWork);
 					asyncWork.setListener(this);
@@ -237,6 +241,9 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 						this,
 						asyncWork);
 				asyncWork.end();
+				if (didSetAsync) {
+					atomicSetAsync.lazySet(this, null);
+				}
 			}
 		}
 	}
