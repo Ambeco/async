@@ -290,9 +290,7 @@ import org.robolectric.shadows.ShadowLog;
 						"[ setAsync=FutureFunction<AbstractFutureTest$$Lambda$",
 						"/0x",
 						">]"));
-		StringBuilder sb = new StringBuilder();
-		fut.addPendingString(sb, 4);
-		collector.checkThat(sb.toString(), stringContainsInOrder(
+		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) //PublicAbstractFuture@",
 				"\n  at AbstractFutureTest$$Lambda$",
 				".apply(AbstractFutureTest:0) //FutureFunction<AbstractFutureTest$$Lambda$",
