@@ -104,7 +104,7 @@ import org.robolectric.shadows.ShadowLog;
 		ArithmeticException expectedException = new ArithmeticException("constructor_immediateUnchecked_stateIsFailed");
 		fut = new PublicAbstractFuture<>(expectedException);
 
-		checkFutureHasUncheckedException(expectedException, "constructor_immediateUnchecked_stateIsFailed");
+		checkFutureFailedUnchecked(expectedException, "constructor_immediateUnchecked_stateIsFailed");
 	}
 
 	@Test public void constructor_immediateChecked_stateIsFailed() {
@@ -112,8 +112,7 @@ import org.robolectric.shadows.ShadowLog;
 		fut = new PublicAbstractFuture<>(expectedException);
 
 		//java.util.concurrent.Future state
-		checkFutureFailedWithCheckedException(expectedException,
-				"java.io.IOException: constructor_immediateChecked_stateIsFailed");
+		checkFutureFailedChecked(expectedException, "constructor_immediateChecked_stateIsFailed");
 	}
 
 	@Test public void constructor_immediateCancelled_stateIsCancelled() {
@@ -152,7 +151,8 @@ import org.robolectric.shadows.ShadowLog;
 		String value = "setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp";
 		fut.setResult(value);
 
-		checkFutureHasUncheckedException(expectedException,
+		checkFutureFailedUnchecked(
+				expectedException,
 				"java.lang.ArithmeticException: setResultWithSuccessValue_afterAlreadyUnchecked_isNoOp");
 	}
 
@@ -164,8 +164,7 @@ import org.robolectric.shadows.ShadowLog;
 		fut.setResult(value);
 
 		//java.util.concurrent.Future state
-		checkFutureFailedWithCheckedException(expectedException,
-				"java.io.IOException: setResultWithSuccessValue_afterAlreadyChecked_isNoOp");
+		checkFutureFailedChecked(expectedException, "setResultWithSuccessValue_afterAlreadyChecked_isNoOp");
 	}
 
 	@Test public void setResultWithFuture_whenPending_resultIsPending_setsAsync() {
@@ -196,7 +195,7 @@ import org.robolectric.shadows.ShadowLog;
 		fut.setResult(async);
 
 		//java.util.concurrent.Future state
-		checkFutureHasUncheckedException(expectedException, "setResultWithFuture_whenPending_resultIsUnchecked_isFailed");
+		checkFutureFailedUnchecked(expectedException, "setResultWithFuture_whenPending_resultIsUnchecked_isFailed");
 	}
 
 	@Test public void setResultWithFuture_whenPending_resultIsChecked_isFailed() {
@@ -206,7 +205,8 @@ import org.robolectric.shadows.ShadowLog;
 		PublicAbstractFuture<String> async = new PublicAbstractFuture<>(expectedException);
 		fut.setResult(async);
 
-		checkFutureFailedWithCheckedException(expectedException,
+		checkFutureFailedChecked(
+				expectedException,
 				"setResultWithFuture_whenPending_resultIsChecked_isFailed");
 	}
 
@@ -242,7 +242,8 @@ import org.robolectric.shadows.ShadowLog;
 		async.setException(expectedException);
 
 		//java.util.concurrent.Future state
-		checkFutureHasUncheckedException(expectedException,
+		checkFutureFailedUnchecked(
+				expectedException,
 				"java.lang.ArithmeticException: setResultWithFuture_whenAsync_resultIsUnchecked_isFailed");
 	}
 
@@ -254,8 +255,7 @@ import org.robolectric.shadows.ShadowLog;
 		IOException expectedException = new IOException("setResultWithFuture_whenAsync_resultIsChecked_isFailed");
 		async.setException(expectedException);
 
-		checkFutureFailedWithCheckedException(expectedException,
-				"java.io.IOException: setResultWithFuture_whenAsync_resultIsChecked_isFailed");
+		checkFutureFailedChecked(expectedException, "setResultWithFuture_whenAsync_resultIsChecked_isFailed");
 	}
 
 	@Test public void setResultWithFuture_whenAsync_resultIsCancelled_isCancelled() {
@@ -268,6 +268,31 @@ import org.robolectric.shadows.ShadowLog;
 		async.setException(expectedException);
 
 		checkFutureCancelled(expectedException, "setResultWithFuture_whenAsync_resultIsCancelled_isCancelled");
+	}
+
+	@Test public void setException_noInterrupt_unchecked_whenPending_isFailed() {
+		ArithmeticException expectedException = new ArithmeticException(
+				"setException_noInterrupt_unchecked_whenPending_isFailed");
+		fut = new PublicAbstractFuture<>(expectedException);
+
+		checkFutureFailedUnchecked(expectedException, "setException_noInterrupt_unchecked_whenPending_isFailed");
+	}
+
+	@Test public void setException_noInterrupt_checked_whenPending_isFailed() {
+		IOException expectedException = new IOException("setException_noInterrupt_checked_whenPending_isFailed");
+		fut = new PublicAbstractFuture<>(expectedException);
+
+		//java.util.concurrent.Future state
+		checkFutureFailedChecked(expectedException, "setException_noInterrupt_checked_whenPending_isFailed");
+	}
+
+	@Test public void setException_noInterrupt_cancelled_whenPending_isFailed() {
+		CancellationException expectedException = new CancellationException(
+				"setException_noInterrupt_cancelled_whenPending_isFailed");
+		fut = new PublicAbstractFuture<>(expectedException);
+
+		//java.util.concurrent.Future state
+		checkFutureCancelled(expectedException, "setException_noInterrupt_cancelled_whenPending_isFailed");
 	}
 
 	// TODO: test setException(Throwable)
@@ -427,7 +452,7 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
-	private void checkFutureHasUncheckedException(ArithmeticException expectedException, String testName) {
+	private void checkFutureFailedUnchecked(ArithmeticException expectedException, String testName) {
 		checkNotNull(fut);
 		//java.util.concurrent.Future state
 		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
@@ -462,7 +487,7 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
-	private void checkFutureFailedWithCheckedException(IOException expectedException, String testName) {
+	private void checkFutureFailedChecked(IOException expectedException, String testName) {
 		checkNotNull(fut);
 		//java.util.concurrent.Future state
 		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
@@ -480,11 +505,11 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
 		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
-				" //PublicAbstractFuture@",
+				" //PublicAbstractFuture@", "java.io.IOException: ",
 				testName));
 		collector.checkSucceeds(
 				fut::toString,
-				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.io" + ".IOException: ", testName, "]"));
+				stringContainsInOrder("PublicAbstractFuture@", "[ failure=java.io.IOException: ", testName, "]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
 		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
