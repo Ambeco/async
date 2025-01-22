@@ -249,6 +249,17 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 	}
 
+	/**
+	 * Ensures that exceptions thrown from asyncWork are passed to the uncaughtExceptionHandler, but wrapped in an outer
+	 * exception that explains why setResult failed at all.
+	 */
+	private void handleSetResultFailure(Future<? extends O> asyncWork, IllegalStateException e) {
+		asyncWork.catchingAsync(Throwable.class, e2 -> {
+			e.initCause(e2);
+			throw e;
+		}, MoreExecutors.directExecutor()).end();
+	}
+
 	protected @Nullable Future<? extends O> getSetAsync() {
 		//noinspection unchecked
 		return (@Nullable Future<? extends O>) atomicSetAsync.get(this);
