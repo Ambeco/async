@@ -7,6 +7,7 @@ import com.google.common.flogger.StackSize;
 import com.mpd.concurrent.executors.MoreExecutors;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
+import com.mpd.concurrent.futures.atomic.AbstractListenerFuture.SucceededBeforeParentException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -159,11 +160,16 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 									+ ")"));
 				} //else was already failed: silently drop result
 			} else if (!(exception instanceof CancellationException)) { // if already failed, new exception gets handled
-				Future.futureConfig.onUnhandledException(exception);
+				Future.futureConfig.onUnhandledException(new SetExceptionCalledAfterCompleteException(
+						"setComplete tried to fail with \"" + exception + " but future \"" + this + "\" had already succeeded",
+						exception));
 			} // CancellationException can be silently dropped
 			return false;
 
 		} catch (RuntimeException e) { // if anything goes wrong: it's an unhandled exception
+			if (exception != SUCCESS_EXCEPTION) {
+				e.addSuppressed(exception);
+			}
 			Future.futureConfig.onUnhandledException(e);
 			return false;
 		}
@@ -214,7 +220,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 							+ this.result
 							+ "\"");
 			handleSetResultFailure(asyncWork, e);
-			setException(e);
+			Future.futureConfig.onUnhandledException(e);
 			return false;
 		} else if (oldException != null) {
 			atomicSetAsync.compareAndSet(this, asyncWork, null);
@@ -481,7 +487,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		Throwable oldThrowable = getExceptionProtected();
 		Future<?> setAsync = getSetAsync();
 		if (oldThrowable == SUCCESS_EXCEPTION) { // STATE_SUCCESS
-			setException(new AbstractListenerFuture.SucceededBeforeParentException("ListenerFuture \""
+			Future.futureConfig.onUnhandledException(new SucceededBeforeParentException("ListenerFuture \""
 					+ this
 					+ "\" already succeeded with \""
 					+ getResultProtected()
@@ -710,6 +716,22 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 
 		public SetResultCalledAfterFailureException(String message, @Nullable Throwable throwable) {
+			super(message, throwable);
+		}
+	}
+
+	public static class SetExceptionCalledAfterCompleteException extends IllegalStateException {
+		public SetExceptionCalledAfterCompleteException() {}
+
+		public SetExceptionCalledAfterCompleteException(String message) {
+			super(message);
+		}
+
+		public SetExceptionCalledAfterCompleteException(Throwable throwable) {
+			super(throwable);
+		}
+
+		public SetExceptionCalledAfterCompleteException(String message, @Nullable Throwable throwable) {
 			super(message, throwable);
 		}
 	}
