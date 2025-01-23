@@ -27,9 +27,12 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	boolean TO_STRING_WITH_STATE = true;
 	boolean TO_STRING_NO_STATE = false;
 
-	@Override
-	default boolean isCancelled() {
-		return isDone() && exceptionNow() instanceof CancellationException;
+	/**
+	 * @noinspection DeprecatedIsStillUsed
+	 * @deprecated Prefer to pass an explicit CancellationException specifying why the future is cancelled.
+	 */
+	@Deprecated @SuppressWarnings("UnusedReturnValue") default boolean cancel(boolean mayInterruptIfRunning) {
+		return cancel(new CancellationException("Future#cancel"), mayInterruptIfRunning);
 	}
 
 	default boolean isSuccessful() {
@@ -44,18 +47,15 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 
 	O resultNow(); //or throws FutureNotCompleteException, or the completed RuntimeException, or AsyncCheckedException
 
-	/**
-	 * @noinspection DeprecatedIsStillUsed
-	 * @deprecated Prefer to pass an explicit CancellationException specifying why the future is cancelled.
-	 */
-	@Deprecated
-	@SuppressWarnings("UnusedReturnValue") default boolean cancel(boolean mayInterruptIfRunning) {
-		return cancel(new CancellationException("Future#cancel"), mayInterruptIfRunning);
+	@Override default boolean isCancelled() {
+		return isDone() && exceptionNow() instanceof CancellationException;
 	}
 
+	@Override boolean isDone();
+
 	/**
-	 * @deprecated Prefer non-blocking methods
 	 * @noinspection DeprecatedIsStillUsed
+	 * @deprecated Prefer non-blocking methods
 	 */
 	@Deprecated default O get() throws InterruptedException {
 		try {
@@ -66,14 +66,11 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 		}
 	}
 
-	@Override
-	boolean isDone();
-
 	@MonotonicNonNull Throwable exceptionNow(); //or throws FutureNotCompleteException
 
 	/**
-	 * @deprecated Prefer non-blocking methods
 	 * @noinspection DeprecatedIsStillUsed
+	 * @deprecated Prefer non-blocking methods
 	 */
 	@Deprecated O get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException;
 

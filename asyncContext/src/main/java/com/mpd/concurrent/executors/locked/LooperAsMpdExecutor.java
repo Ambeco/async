@@ -112,8 +112,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 				Thread.currentThread().interrupt();
 				currentUptimeMillis = SystemClock.uptimeMillis();
 				log.atFine().withCause(e).log(
-						"%S was blocked for %dms out of a maximum of %dms, waiting for %s "
-								+ "to become idle, but was interrupted",
+						"%S was blocked for %dms out of a maximum of %dms, waiting for %s " + "to become idle, but was interrupted",
 						Thread.currentThread(),
 						currentUptimeMillis - initialUptimeMillis,
 						timeoutMillis,
@@ -212,8 +211,7 @@ public class LooperAsMpdExecutor implements AndAlsoJavaExecutor, IdleHandler {
 				} catch (InterruptedException e) {
 					currentUptimeMillis = SystemClock.uptimeMillis();
 					log.atFine().withCause(e).log(
-							"%S was blocked for %dms out of a maximum of %dms, waiting for %s "
-									+ "to terminate, but was interrupted",
+							"%S was blocked for %dms out of a maximum of %dms, waiting for %s " + "to terminate, but was interrupted",
 							Thread.currentThread(),
 							currentUptimeMillis - initialUptimeMillis,
 							timeoutMillis,

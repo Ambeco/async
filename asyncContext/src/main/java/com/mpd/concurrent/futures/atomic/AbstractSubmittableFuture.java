@@ -143,10 +143,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 		if (oldException != null) { // STATE_SUCCESS || STATE_FAILED
 			return super.setResult(asyncWork);
 		} else if (atomicThread.get(this) == null) { // STATE_LISTENING || STATE_SCHEDULED || STATE_SUBMITTED || STATE_ASYNC
-			log.atFinest().log(
-					"%s setResult(%s) called on %s before this started running",
-					this,
-					atomicThread.get(this));
+			log.atFinest().log("%s setResult(%s) called on %s before this started running", this, atomicThread.get(this));
 			setException(new SetResultCalledBeforeRunException("setResult("
 					+ asyncWork
 					+ " called on SubmittableFuture \""
