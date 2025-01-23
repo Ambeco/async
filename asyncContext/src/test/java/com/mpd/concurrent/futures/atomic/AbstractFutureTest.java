@@ -331,25 +331,29 @@ import org.robolectric.shadows.ShadowLog;
 	@Test public void setException_noInterrupt_unchecked_whenPending_isFailed() {
 		ArithmeticException expectedException = new ArithmeticException(
 				"setException_noInterrupt_unchecked_whenPending_isFailed");
-		fut = new PublicAbstractFuture<>(expectedException);
+		fut = new PublicAbstractFuture<>();
+
+		fut.setException(expectedException);
 
 		checkFutureFailedUnchecked(expectedException, "setException_noInterrupt_unchecked_whenPending_isFailed");
 	}
 
 	@Test public void setException_noInterrupt_checked_whenPending_isFailed() {
 		IOException expectedException = new IOException("setException_noInterrupt_checked_whenPending_isFailed");
-		fut = new PublicAbstractFuture<>(expectedException);
+		fut = new PublicAbstractFuture<>();
 
-		//java.util.concurrent.Future state
+		fut.setException(expectedException);
+
 		checkFutureFailedChecked(expectedException, "setException_noInterrupt_checked_whenPending_isFailed");
 	}
 
 	@Test public void setException_noInterrupt_cancelled_whenPending_isFailed() {
 		CancellationException expectedException = new CancellationException(
 				"setException_noInterrupt_cancelled_whenPending_isFailed");
-		fut = new PublicAbstractFuture<>(expectedException);
+		fut = new PublicAbstractFuture<>();
 
-		//java.util.concurrent.Future state
+		fut.setException(expectedException);
+
 		checkFutureCancelled(expectedException, "setException_noInterrupt_cancelled_whenPending_isFailed");
 	}
 
