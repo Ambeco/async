@@ -4,6 +4,7 @@ import static android.util.Log.DEBUG;
 import static android.util.Log.VERBOSE;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.mpd.concurrent.executors.MoreExecutors.directExecutor;
+import static com.mpd.concurrent.futures.Future.MAY_INTERRUPT;
 import static com.mpd.test.matchers.WithCauseMatcher.withCause;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -19,6 +20,7 @@ import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
 import com.mpd.concurrent.futures.Future.FutureSucceededTwiceException;
 import com.mpd.concurrent.futures.FutureListener;
+import com.mpd.concurrent.futures.atomic.AbstractFuture.SetExceptionCalledAfterCompleteException;
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledAfterFailureException;
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledAfterSuccessException;
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledTwiceException;
@@ -63,7 +65,7 @@ import org.robolectric.shadows.ShadowLog;
 	public static void ensureFutureComplete(AbstractFuture<?> fut) {
 		if (fut != null) {
 			Log.d("atomic", "Cancelling " + fut);
-			fut.cancel(Future.MAY_INTERRUPT); // cancel and interrupt anything in progress
+			fut.cancel(MAY_INTERRUPT); // cancel and interrupt anything in progress
 			for (int i = 0; i < 10 && fut.getListener() instanceof AbstractFuture; i++) {
 				fut = (AbstractFuture<?>) fut.getListener();  // traverse down chain up to a depth of 10 to find the end
 			}
@@ -328,36 +330,134 @@ import org.robolectric.shadows.ShadowLog;
 		checkFutureFailedUnchecked(firstException, "setResultWithFuture_whenFailed_asyncSucceeded_noOps");
 	}
 
-	@Test public void setException_noInterrupt_unchecked_whenPending_isFailed() {
-		ArithmeticException expectedException = new ArithmeticException(
-				"setException_noInterrupt_unchecked_whenPending_isFailed");
+	@Test public void setException_unchecked_whenPending_isFailed() {
+		ArithmeticException expectedException = new ArithmeticException("setException_unchecked_whenPending_isFailed");
 		fut = new PublicAbstractFuture<>();
 
 		fut.setException(expectedException);
 
-		checkFutureFailedUnchecked(expectedException, "setException_noInterrupt_unchecked_whenPending_isFailed");
+		checkFutureFailedUnchecked(expectedException, "setException_unchecked_whenPending_isFailed");
 	}
 
-	@Test public void setException_noInterrupt_checked_whenPending_isFailed() {
-		IOException expectedException = new IOException("setException_noInterrupt_checked_whenPending_isFailed");
+	@Test public void setException_checked_whenPending_isFailed() {
+		IOException expectedException = new IOException("setException_checked_whenPending_isFailed");
 		fut = new PublicAbstractFuture<>();
 
 		fut.setException(expectedException);
 
-		checkFutureFailedChecked(expectedException, "setException_noInterrupt_checked_whenPending_isFailed");
+		checkFutureFailedChecked(expectedException, "setException_checked_whenPending_isFailed");
 	}
 
-	@Test public void setException_noInterrupt_cancelled_whenPending_isFailed() {
-		CancellationException expectedException = new CancellationException(
-				"setException_noInterrupt_cancelled_whenPending_isFailed");
+	@Test public void setException_cancelled_whenPending_isFailed() {
+		CancellationException expectedException = new CancellationException("setException_cancelled_whenPending_isFailed");
 		fut = new PublicAbstractFuture<>();
 
 		fut.setException(expectedException);
 
-		checkFutureCancelled(expectedException, "setException_noInterrupt_cancelled_whenPending_isFailed");
+		checkFutureCancelled(expectedException, "setException_cancelled_whenPending_isFailed");
 	}
 
-	// TODO: test setException(Throwable)
+	@Test public void setException_unchecked_whenAsync_isFailed() {
+		ArithmeticException expectedException = new ArithmeticException("setException_unchecked_whenPending_isFailed");
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
+		fut.setResult(async);
+
+		fut.setException(expectedException);
+
+		checkFutureFailedUnchecked(expectedException, "setException_unchecked_whenPending_isFailed");
+		async.cancel(MAY_INTERRUPT);
+	}
+
+	@Test public void setException_checked_whenAsync_isFailed() {
+		IOException expectedException = new IOException("setException_checked_whenPending_isFailed");
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
+		fut.setResult(async);
+
+		fut.setException(expectedException);
+
+		checkFutureFailedChecked(expectedException, "setException_checked_whenPending_isFailed");
+		async.cancel(MAY_INTERRUPT);
+	}
+
+	@Test public void setException_cancelled_whenAsync_isFailed() {
+		CancellationException expectedException = new CancellationException("setException_cancelled_whenPending_isFailed");
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
+		fut.setResult(async);
+
+		fut.setException(expectedException);
+
+		checkFutureCancelled(expectedException, "setException_cancelled_whenPending_isFailed");
+		async.cancel(MAY_INTERRUPT);
+	}
+
+	@Test public void setException_unchecked_whenSucceeded_crashes() {
+		fut = new PublicAbstractFuture<>("setException_unchecked_whenSucceeded_crashes");
+
+		ArithmeticException expectedException = new ArithmeticException("setException_unchecked_whenSucceeded_crashes");
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.allOf(Matchers.instanceOf(
+				SetExceptionCalledAfterCompleteException.class), withCause(sameInstance(expectedException))));
+		fut.setException(expectedException);
+
+		checkFutureIsSuccessful("setException_unchecked_whenSucceeded_crashes");
+	}
+
+	@Test public void setException_checked_whenSucceeded_crashes() {
+		fut = new PublicAbstractFuture<>("setException_checked_whenSucceeded_crashes");
+
+		IOException expectedException = new IOException("setException_checked_whenSucceeded_crashes");
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.allOf(Matchers.instanceOf(
+				SetExceptionCalledAfterCompleteException.class), withCause(sameInstance(expectedException))));
+		fut.setException(expectedException);
+
+		checkFutureIsSuccessful("setException_checked_whenSucceeded_crashes");
+	}
+
+	@Test public void setException_cancelled_whenSucceeded_NoOps() {
+		fut = new PublicAbstractFuture<>("setException_cancelled_whenSucceeded_NoOps");
+
+		CancellationException expectedException = new CancellationException("setException_cancelled_whenSucceeded_NoOps_2");
+		fut.setException(expectedException);
+
+		checkFutureIsSuccessful("setException_cancelled_whenSucceeded_NoOps");
+	}
+
+	@Test public void setException_unchecked_whenFailed_crashes() {
+		ArithmeticException e = new ArithmeticException("setException_unchecked_whenFailed_crashes");
+		fut = new PublicAbstractFuture<>(e);
+
+		ArithmeticException secondException = new ArithmeticException("setException_unchecked_whenFailed_crashes_2");
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.allOf(Matchers.instanceOf(
+				SetExceptionCalledAfterCompleteException.class), withCause(sameInstance(secondException))));
+		fut.setException(secondException);
+
+		checkFutureFailedUnchecked(e, "setException_unchecked_whenFailed_crashes");
+	}
+
+	@Test public void setException_checked_whenFailed_crashes() {
+		ArithmeticException e = new ArithmeticException("setException_checked_whenFailed_crashes");
+		fut = new PublicAbstractFuture<>(e);
+
+		IOException secondException = new IOException("setException_checked_whenFailed_crashes_2");
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(Matchers.allOf(Matchers.instanceOf(
+				SetExceptionCalledAfterCompleteException.class), withCause(sameInstance(secondException))));
+		fut.setException(secondException);
+
+		checkFutureFailedUnchecked(e, "setException_checked_whenFailed_crashes");
+	}
+
+	@Test public void setException_cancelled_whenFailed_NoOps() {
+		ArithmeticException e = new ArithmeticException("setException_cancelled_whenFailed_NoOps");
+		fut = new PublicAbstractFuture<>(e);
+
+		CancellationException secondException = new CancellationException("setException_cancelled_whenFailed_NoOps_2");
+		fut.setException(secondException);
+
+		checkFutureFailedUnchecked(e, "setException_cancelled_whenFailed_NoOps");
+	}
+
 	// TODO: test setException(Throwable, mayInterruptIfRunning)
 	// TODO: test cancel
 	// TODO: test onFutureSucceeded
