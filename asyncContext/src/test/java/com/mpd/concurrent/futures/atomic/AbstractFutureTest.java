@@ -456,10 +456,10 @@ import org.robolectric.shadows.ShadowLog;
 
 	// TODO: test setException(Throwable, mayInterruptIfRunning)
 	// TODO: test cancel
-	// TODO: test onFutureSucceeded
-	// TODO: test onFutureFailed
 	// TODO: test onCancelled
 	// TODO: test interruptTask
+	// TODO: test onFutureSucceeded
+	// TODO: test onFutureFailed
 	// TODO: test getPendingString
 	// TODO: test toString
 	// TODO: test compareTo
