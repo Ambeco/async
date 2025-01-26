@@ -8,6 +8,10 @@ import static com.mpd.concurrent.futures.Future.MAY_INTERRUPT;
 import static com.mpd.test.matchers.WithCauseMatcher.withCause;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.Matchers.any;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.nullValue;
@@ -24,11 +28,15 @@ import com.mpd.concurrent.futures.atomic.AbstractFuture.SetExceptionCalledAfterC
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledAfterFailureException;
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledAfterSuccessException;
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledTwiceException;
+import com.mpd.test.MockedCall;
+import com.mpd.test.matchers.MockedCallMatcher;
 import com.mpd.test.rules.AsyncContextRule;
 import com.mpd.test.rules.ErrorCollector;
 import com.mpd.test.rules.UncaughtExceptionRule;
 import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -71,9 +79,9 @@ import org.robolectric.shadows.ShadowLog;
 			}
 			if (fut.getListener() instanceof EndListener) { // if it's an end listener, then we don't need to do anything
 				Log.d("atomic", fut + " already has an EndListener, so is \"safe\" to leak");
-				return;
-			}
-			if (fut.getListener() == null) { // at the end of the chain, then swallow exceptions and end.
+			} else if (fut.getListener() instanceof AbstractFuture.ListenerAlreadyDispatched) {
+				Log.d("atomic", fut + " already dispatched to listener. Hopefully the listener was ended?");
+			} else if (fut.getListener() == null) { // at the end of the chain, then swallow exceptions and end.
 				Log.d("atomic", fut + " doesn't have an EndListener. Adding a catch-all, and #end()");
 				fut.catching(Throwable.class, e -> null, directExecutor()).end();
 			} else { // If there's an unknown  listener, then all we can do is pray :(
@@ -454,7 +462,120 @@ import org.robolectric.shadows.ShadowLog;
 		checkFutureFailedUnchecked(e, "setException_cancelled_whenFailed_NoOps");
 	}
 
-	// TODO: test setException(Throwable, mayInterruptIfRunning)
+	@Test public void setException_withInterrupt_whenPending_callsInterruptTask() {
+		ArithmeticException expectedException = new ArithmeticException(
+				"setException_withInterrupt_whenPending_callsInterruptTask");
+		fut = new PublicAbstractFuture<>();
+
+		fut.setException(expectedException, MAY_INTERRUPT);
+
+		collector.checkThat(fut.mockedCalls,
+				contains(new MockedCallMatcher<>(fut,
+						PublicAbstractFuture.interruptTaskMethod,
+						any(Void.class),
+						sameInstance(expectedException))));
+	}
+
+	@Test public void setException_withCancellation_andInterrupt_whenAsync_interruptsAsync() {
+		CancellationException expectedException = new CancellationException(
+				"setException_withCancellation_andInterrupt_whenAsync_interruptsAsync");
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> failedListener = new PublicAbstractFuture<>();
+		failedListener.end();
+		failedListener.setResult(fut);
+
+		failedListener.setException(expectedException, MAY_INTERRUPT);
+
+		collector.checkThat(fut.mockedCalls,
+				hasItem(new MockedCallMatcher<>(fut,
+						PublicAbstractFuture.onCancelledMethod,
+						any(Void.class),
+						sameInstance(expectedException),
+						equalTo(true))));
+		collector.checkThat(fut.mockedCalls,
+				hasItem(new MockedCallMatcher<>(fut,
+						PublicAbstractFuture.interruptTaskMethod,
+						any(Void.class),
+						sameInstance(expectedException))));
+		//java.lang.Object
+		collector.checkSucceeds(fut::toString, stringContainsInOrder(
+				"PublicAbstractFuture@",
+				"[ cancelled=java.util.concurrent.CancellationException: setException_withCancellation_andInterrupt_whenAsync_interruptsAsync"));
+		//java.util.concurrent.Future
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
+		collector.checkThrows(CancellationException.class, fut::get, sameInstance(expectedException));
+		collector.checkThrows(CancellationException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
+		collector.checkSucceeds(fut::isCancelled, equalTo(true));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkThrows(CancellationException.class, fut::resultNow, sameInstance(expectedException));
+		//java.util.concurrent.Delayed
+		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
+		//com.mpd.concurrent.futures.Future
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
+		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
+				" //PublicAbstractFuture@",
+				"[ cancelled=java.util.concurrent.CancellationException: setException_withCancellation_andInterrupt_whenAsync_interruptsAsync]"));
+		//com.mpd.concurrent.futures.impl.AbstractFuture
+		collector.checkSucceeds(fut::getSetAsync, nullValue());
+		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
+		collector.checkSucceeds(fut::getResultProtected, nullValue());
+		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
+		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
+		collector.checkSucceeds(fut::getInterrupt, sameInstance(expectedException));
+		collector.checkSucceeds(fut::getListener, instanceOf(AbstractFuture.ListenerAlreadyDispatched.class));
+		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
+		collector.checkSucceeds(fut::sourceMethodName, nullValue());
+	}
+
+	@Test public void setException_withUnchecked_andInterrupt_whenAsync_interruptsAsync() {
+		ArithmeticException expectedException = new ArithmeticException(
+				"setException_withUnchecked_andInterrupt_whenAsync_interruptsAsync");
+		fut = new PublicAbstractFuture<>();
+		PublicAbstractFuture<String> failedListener = new PublicAbstractFuture<>();
+		failedListener.catching(ArithmeticException.class, e -> null).end();
+		failedListener.setResult(fut);
+
+		failedListener.setException(expectedException, MAY_INTERRUPT);
+
+		collector.checkThat(fut.mockedCalls,
+				hasItem(new MockedCallMatcher<>(fut,
+						PublicAbstractFuture.interruptTaskMethod,
+						any(Void.class),
+						sameInstance(expectedException))));
+		//java.lang.Object
+		collector.checkSucceeds(fut::toString, stringContainsInOrder(
+				"PublicAbstractFuture@",
+				"[ failure=java.lang.ArithmeticException: setException_withUnchecked_andInterrupt_whenAsync_interruptsAsync]"));
+		//java.util.concurrent.Future
+		collector.checkSucceeds(fut::exceptionNow, sameInstance(expectedException));
+		collector.checkThrows(ArithmeticException.class, fut::get, sameInstance(expectedException));
+		collector.checkThrows(ArithmeticException.class, () -> fut.get(1, SECONDS), sameInstance(expectedException));
+		collector.checkSucceeds(fut::isCancelled, equalTo(false));
+		collector.checkSucceeds(fut::isDone, equalTo(true));
+		collector.checkThrows(ArithmeticException.class, fut::resultNow, sameInstance(expectedException));
+		//java.util.concurrent.Delayed
+		collector.checkThrows(UnsupportedOperationException.class, () -> fut.getDelay(MILLISECONDS));
+		//com.mpd.concurrent.futures.Future
+		collector.checkSucceeds(fut::isSuccessful, equalTo(false));
+		collector.checkThrows(UnsupportedOperationException.class, fut::getScheduledTimeNanos);
+		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
+				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0)",
+				" //PublicAbstractFuture@",
+				"[ failure=java.lang.ArithmeticException: setException_withUnchecked_andInterrupt_whenAsync_interruptsAsync]"));
+		//com.mpd.concurrent.futures.impl.AbstractFuture
+		collector.checkSucceeds(fut::getSetAsync, nullValue());
+		collector.checkSucceeds(fut::getScheduledTimeNanosProtected, equalTo(Long.MIN_VALUE));
+		collector.checkSucceeds(fut::getResultProtected, nullValue());
+		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
+		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
+		collector.checkSucceeds(fut::getInterrupt, sameInstance(expectedException));
+		collector.checkSucceeds(fut::getListener, instanceOf(AbstractFuture.ListenerAlreadyDispatched.class));
+		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
+		collector.checkSucceeds(fut::sourceMethodName, nullValue());
+	}
+
 	// TODO: test cancel
 	// TODO: test onCancelled
 	// TODO: test interruptTask
@@ -616,8 +737,15 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
 	}
 
+
 	private <E extends Throwable> void checkFutureFailedUnchecked(
 			String testName, Class<E> clazz, Matcher<Throwable> matcher)
+	{
+		checkFutureFailedUnchecked(testName, clazz, matcher, nullValue());
+	}
+
+	private <E extends Throwable> void checkFutureFailedUnchecked(
+			String testName, Class<E> clazz, Matcher<Throwable> matcher, Matcher<? super Throwable> interrupted)
 	{
 		checkNotNull(fut);
 		//java.lang.Object
@@ -649,7 +777,7 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::getResultProtected, nullValue());
 		collector.checkSucceeds(fut::getExceptionProtected, matcher);
 		collector.checkSucceeds(fut::getWrappedExceptionProtected, matcher);
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
+		collector.checkSucceeds(fut::getInterrupt, interrupted);
 		collector.checkSucceeds(fut::getListener, nullValue());
 		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
@@ -696,6 +824,14 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	private void checkFutureCancelled(CancellationException expectedException, String testName) {
+		checkFutureCancelled(expectedException, testName, nullValue());
+	}
+
+	private void checkFutureCancelled(
+			CancellationException expectedException,
+			String testName,
+			Matcher<? super Throwable> interrupted)
+	{
 		checkNotNull(fut);
 		//java.lang.Object
 		collector.checkSucceeds(fut::toString,
@@ -727,7 +863,7 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::getResultProtected, nullValue());
 		collector.checkSucceeds(fut::getExceptionProtected, sameInstance(expectedException));
 		collector.checkSucceeds(fut::getWrappedExceptionProtected, sameInstance(expectedException));
-		collector.checkSucceeds(fut::getInterrupt, nullValue());
+		collector.checkSucceeds(fut::getInterrupt, interrupted);
 		collector.checkSucceeds(fut::getListener, nullValue());
 		collector.checkSucceeds(fut::sourceClass, equalTo(PublicAbstractFuture.class));
 		collector.checkSucceeds(fut::sourceMethodName, nullValue());
@@ -737,6 +873,10 @@ import org.robolectric.shadows.ShadowLog;
 	 * AbstractFuture where all methods are public, so we can mess with them in test
 	 */
 	private static class PublicAbstractFuture<O> extends AbstractFuture<O> {
+		static final Method onCancelledMethod = getMethod("onCancelled", CancellationException.class, boolean.class);
+		static final Method interruptTaskMethod = getMethod("interruptTask", Throwable.class);
+
+		public final ArrayList<MockedCall<PublicAbstractFuture<O>>> mockedCalls = new ArrayList<>();
 
 		public PublicAbstractFuture() {
 			super();
@@ -778,8 +918,17 @@ import org.robolectric.shadows.ShadowLog;
 			return super.getInterrupt();
 		}
 
-		@Override public void interruptTask(Throwable exception) {
-			super.interruptTask(exception);
+		private static Method getMethod(String name, Class<?>... parameterTypes) {
+			try {
+				return PublicAbstractFuture.class.getMethod(name, parameterTypes);
+			} catch (NoSuchMethodException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		@Override public void onCancelled(CancellationException exception, boolean mayInterruptIfRunning) {
+			super.onCancelled(exception, mayInterruptIfRunning);
+			mockedCalls.add(new MockedCall<>(this, onCancelledMethod, null, exception, mayInterruptIfRunning));
 		}
 
 		@Override public @Nullable FutureListener<? super O> getListener() {
@@ -792,6 +941,11 @@ import org.robolectric.shadows.ShadowLog;
 
 		@Override public @Nullable String sourceMethodName() {
 			return super.sourceMethodName();
+		}
+
+		@Override public void interruptTask(Throwable exception) {
+			super.interruptTask(exception);
+			mockedCalls.add(new MockedCall<>(this, interruptTaskMethod, null, exception));
 		}
 	}
 }
