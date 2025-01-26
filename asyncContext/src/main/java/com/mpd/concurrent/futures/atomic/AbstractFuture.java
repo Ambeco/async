@@ -124,15 +124,20 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 			Throwable oldException;
 			// This is the only real lock in the Futures. It ensures that #result, #interrupted, and #wrapped
 			// are stable after #execption is finalized. It also gives us a way to release Threads blocked by #get.
-			if (exception == SUCCESS_EXCEPTION) {
-				log.atFinest().log("Completing %s with success %s", this, result);
-			} else {
-				log.atFinest().log("Completing %s with exception %s (interrupt=%s)", this, exception, mayInterruptIfRunning);
-			}
+
 			synchronized (this) {
 				oldException = atomicException.get(this);
 				// exception is the "source of truth" for future completeness
 				if (oldException == null) {
+					if (exception == SUCCESS_EXCEPTION) {
+						log.atFinest().log("Completing %s with success %s", this, result);
+					} else {
+						log.atFinest().log(
+								"Completing %s with exception %s (interrupt=%s)",
+								this,
+								exception,
+								mayInterruptIfRunning);
+					}
 					onCompletingLocked(result, exception, mayInterruptIfRunning);
 					atomicException.set(this, exception);
 					this.notifyAll();
@@ -143,6 +148,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 				afterDone(result, exception, mayInterruptIfRunning, getListener());
 				return true;
 			}
+
 			// this future was already completed:
 			if (exception == SUCCESS_EXCEPTION) {
 				if (oldException == SUCCESS_EXCEPTION) { // if already succeeded, throw FutureSucceededTwiceException
@@ -159,6 +165,8 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 									+ System.identityHashCode(result)
 									+ ")"));
 				} //else was already failed: silently drop result
+			} else if (exception == oldException) {
+				log.atFinest().log("%s interrupted with same exception twice. Ignored.", this);
 			} else if (!(exception instanceof CancellationException)) { // if already failed, new exception gets handled
 				Future.futureConfig.onUnhandledException(new SetExceptionCalledAfterCompleteException(
 						"setComplete tried to fail with \"" + exception + " but future \"" + this + "\" had already succeeded",
@@ -594,6 +602,10 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 					+ realException
 					+ "\".\nIf caller was attempting to interrupt a future, "
 					+ "then it should call #cancel or #setException or #setComplete instead of #interruptTask.", exception));
+		}
+		Future<?> setAsync = atomicSetAsync.get(this);
+		if (setAsync != null) {
+			setAsync.setException(exception, MAY_INTERRUPT);
 		}
 	}
 
