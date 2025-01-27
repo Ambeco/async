@@ -45,6 +45,7 @@ dependencies {
     implementation libs.guava
     implementation libs.checker.qual
     implementation libs.flogger
+    implementation libs.runner
     runtimeOnly project(':floggerandroidbackend')
     testImplementation project(':floggerandroidbackend')
     testImplementation libs.flogger.system.backend

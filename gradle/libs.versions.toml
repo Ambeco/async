@@ -13,6 +13,7 @@ material = "1.12.0"
 espressoIdlingResource = "3.6.1"
 mockitoCore = "3.12.4"
 robolectric = "4.14"
+runner = "1.6.2"
 
 [libraries]
 flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
@@ -29,6 +30,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 espresso-idling-resource = { group = "androidx.test.espresso", name = "espresso-idling-resource", version.ref = "espressoIdlingResource" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
