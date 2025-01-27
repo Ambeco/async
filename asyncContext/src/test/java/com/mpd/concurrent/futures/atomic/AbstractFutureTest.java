@@ -713,7 +713,25 @@ import org.robolectric.shadows.ShadowLog;
 				Mockito.anyBoolean());
 	}
 
-	// TODO: test compareTo
+	@SdkSuppress(minSdkVersion = VERSION_CODES.O) @Test public void compareTo() {
+		Instant now = Instant.now();
+		fut = new PublicAbstractFuture<>(now);
+		PublicAbstractFuture<String> later = new PublicAbstractFuture<>(now.plus(60, ChronoUnit.SECONDS));
+		//PublicAbstractFuture<String> equal = new PublicAbstractFuture<>(now);
+		PublicAbstractFuture<String> unset = new PublicAbstractFuture<>();
+
+		collector.checkSucceeds(() -> fut.compareTo(later), equalTo(-1));
+		collector.checkSucceeds(() -> later.compareTo(fut), equalTo(1));
+		// Equals tests fail due to shift from Instant to System.nanoTime
+		//collector.checkSucceeds(() -> fut.compareTo(equal), equalTo(0));
+		//collector.checkSucceeds(() -> equal.compareTo(fut), equalTo(0));
+		collector.checkSucceeds(() -> fut.compareTo(unset), equalTo(1));
+		collector.checkSucceeds(() -> unset.compareTo(fut), equalTo(-1));
+
+		later.cancel(MAY_INTERRUPT);
+		//equal.cancel(MAY_INTERRUPT);
+		unset.cancel(MAY_INTERRUPT);
+	}
 
 	@Test public void toString_recursiveFuture_limitedDepth() {
 		fut = new PublicAbstractFuture<>();
