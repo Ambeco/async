@@ -2,8 +2,10 @@ package com.mpd.concurrent.executors;
 
 import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionContext;
 
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.mpd.concurrent.AsyncCallable;
@@ -23,6 +25,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.ref.WeakReference;
+import java.time.Instant;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
@@ -133,8 +136,19 @@ public interface Executor extends AutoCloseable {
 		return task;
 	}
 
+	@RequiresApi(api = VERSION_CODES.O) default Future<?> schedule(Runnable task, Instant time) {
+		return schedule(new FutureRunnable<>(null, task, null, time));
+	}
+
 	default Future<?> schedule(Runnable task, long delay, TimeUnit unit) {
 		return schedule(new FutureRunnable<>(null, task, null, delay, unit));
+	}
+
+	@RequiresApi(api = VERSION_CODES.O)
+	default Future<?> schedule(Runnable task, Instant time, RunnablePriority priority) {
+		AsyncContext context = getCurrentExecutionContext().clone();
+		context.put(RunnablePriority.class, priority);
+		return schedule(new FutureRunnable<>(context, task, null, time));
 	}
 
 	default Future<?> schedule(Runnable task, long delay, TimeUnit unit, RunnablePriority priority) {
@@ -143,8 +157,19 @@ public interface Executor extends AutoCloseable {
 		return schedule(new FutureRunnable<>(context, task, null, delay, unit));
 	}
 
+	@RequiresApi(api = VERSION_CODES.O) default <O> Future<O> schedule(Callable<O> task, Instant time) {
+		return schedule(new FutureCallable<>(null, task, time));
+	}
+
 	default <O> Future<O> schedule(Callable<O> task, long delay, TimeUnit unit) {
 		return schedule(new FutureCallable<>(null, task, delay, unit));
+	}
+
+	@RequiresApi(api = VERSION_CODES.O)
+	default <O> Future<O> schedule(Callable<O> task, Instant time, RunnablePriority priority) {
+		AsyncContext context = getCurrentExecutionContext().clone();
+		context.put(RunnablePriority.class, priority);
+		return schedule(new FutureCallable<>(context, task, time));
 	}
 
 	default <O> Future<O> schedule(Callable<O> task, long delay, TimeUnit unit, RunnablePriority priority) {
@@ -153,8 +178,19 @@ public interface Executor extends AutoCloseable {
 		return schedule(new FutureCallable<>(context, task, delay, unit));
 	}
 
+	@RequiresApi(api = VERSION_CODES.O) default <O> Future<O> scheduleAsync(AsyncCallable<O> task, Instant time) {
+		return schedule(new FutureAsyncCallable<>(null, task, time));
+	}
+
 	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, long delay, TimeUnit unit) {
 		return schedule(new FutureAsyncCallable<>(null, task, delay, unit));
+	}
+
+	@RequiresApi(api = VERSION_CODES.O)
+	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, Instant time, RunnablePriority priority) {
+		AsyncContext context = getCurrentExecutionContext().clone();
+		context.put(RunnablePriority.class, priority);
+		return schedule(new FutureAsyncCallable<>(context, task, time));
 	}
 
 	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, long delay, TimeUnit unit, RunnablePriority priority) {

@@ -1,9 +1,12 @@
 package com.mpd.concurrent.futures.atomic;
 
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.CallSuper;
+import androidx.annotation.RequiresApi;
 import com.mpd.concurrent.AsyncCallable;
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.futures.FutureListener;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -15,6 +18,14 @@ public class FutureAsyncCallable<O> extends AbstractSubmittableFuture<O> {
 
 	public FutureAsyncCallable(@Nullable AsyncContext context, @NonNull AsyncCallable<? extends O> function) {
 		super(context);
+		this.function = function;
+		functionClass = function.getClass();
+	}
+
+	@RequiresApi(api = VERSION_CODES.O) public FutureAsyncCallable(
+			@Nullable AsyncContext context, @NonNull AsyncCallable<? extends O> function, Instant time)
+	{
+		super(context, time);
 		this.function = function;
 		functionClass = function.getClass();
 	}

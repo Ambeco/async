@@ -1,13 +1,17 @@
 package com.mpd.concurrent.futures.atomic;
 
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
 import com.mpd.concurrent.executors.MoreExecutors;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.atomic.AbstractListenerFuture.SucceededBeforeParentException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +60,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	@SuppressWarnings("ConstantConditions") protected final @Nullable O FAILED_RESULT = null; //pseudo-static
 
 	// TODO listener + setAsync to use stubs instead of Nullable?
-	private final long scheduledNanos;
+	private final long scheduledSystemNanoTime;
 	private final @MonotonicNonNull RuntimeException futureConstructionLocation;
 	private volatile @Nullable Future<? extends O> setAsync = null; // TODO: atomicSetAsync
 	private volatile @MonotonicNonNull Throwable exception = null; // TODO: atomicExeption
@@ -66,12 +70,18 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	private volatile @MonotonicNonNull FutureListener<? super O> listener = null; // TODO: atomicListener
 
 	protected AbstractFuture() {
-		scheduledNanos = NOT_SCHEDULED;
+		scheduledSystemNanoTime = NOT_SCHEDULED;
+		futureConstructionLocation = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
+	}
+
+	@RequiresApi(api = VERSION_CODES.O) protected AbstractFuture(Instant time) {
+		long offsetNanos = Duration.between(Instant.now(), time).toNanos();
+		scheduledSystemNanoTime = offsetNanos + System.nanoTime(); //ensure System.nanoTime() is last for most accuracy.
 		futureConstructionLocation = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
 	}
 
 	protected AbstractFuture(long delay, TimeUnit delayUnit) {
-		scheduledNanos = System.nanoTime() + delayUnit.toNanos(delay);
+		scheduledSystemNanoTime = System.nanoTime() + delayUnit.toNanos(delay);
 		futureConstructionLocation = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
 	}
 
@@ -79,7 +89,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		this.exception = SUCCESS_EXCEPTION;
 		this.wrappedException = SUCCESS_EXCEPTION;
 		this.result = result;
-		scheduledNanos = NOT_SCHEDULED;
+		scheduledSystemNanoTime = NOT_SCHEDULED;
 		futureConstructionLocation = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
 	}
 
@@ -89,7 +99,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 				(exception instanceof RuntimeException)
 						? ((RuntimeException) exception)
 						: (new AsyncCheckedException(exception));
-		scheduledNanos = NOT_SCHEDULED;
+		scheduledSystemNanoTime = NOT_SCHEDULED;
 		futureConstructionLocation = DEBUG_LEAKED_FUTURES ? new LeakedFutureException("Future created here") : null;
 	}
 
@@ -538,11 +548,11 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		return (FutureListener<? super O>) atomicListener.get(this);
 	}
 
-	@Override public long getScheduledTimeNanos() {
-		if (scheduledNanos == NOT_SCHEDULED) {
+	@Override public long getSystemNanoTime() {
+		if (scheduledSystemNanoTime == NOT_SCHEDULED) {
 			throw new UnsupportedOperationException(this + " is not a scheduled future");
 		}
-		return scheduledNanos;
+		return scheduledSystemNanoTime;
 	}
 
 	@CallSuper @Override public void onFutureSucceeded(Future<?> future, Object result) {
@@ -566,8 +576,8 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 	}
 
-	protected long getScheduledTimeNanosProtected() {
-		return scheduledNanos;
+	protected long getSystemNanoTimeProtected() {
+		return scheduledSystemNanoTime;
 	}
 
 	@CallSuper @Override
@@ -610,17 +620,17 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 	}
 
 	@Override public long getDelay(TimeUnit timeUnit) {
-		if (scheduledNanos == NOT_SCHEDULED) {
+		if (scheduledSystemNanoTime == NOT_SCHEDULED) {
 			throw new UnsupportedOperationException(this + " is not a scheduled future");
 		}
-		return timeUnit.convert(scheduledNanos - System.nanoTime(), TimeUnit.NANOSECONDS);
+		return timeUnit.convert(scheduledSystemNanoTime - System.nanoTime(), TimeUnit.NANOSECONDS);
 	}
 
 	@Override public int compareTo(Delayed delayed) {
 		if (delayed instanceof AbstractFuture) {
-			return Long.compare(scheduledNanos, ((AbstractFuture<?>) delayed).scheduledNanos);
+			return Long.compare(scheduledSystemNanoTime, ((AbstractFuture<?>) delayed).scheduledSystemNanoTime);
 		} else {
-			long selfRemain = scheduledNanos - System.nanoTime();
+			long selfRemain = scheduledSystemNanoTime - System.nanoTime();
 			long delayedRemain = delayed.getDelay(TimeUnit.NANOSECONDS);
 			return Long.compare(selfRemain, delayedRemain);
 		}
@@ -649,8 +659,8 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		} else if (setAsync != null) {
 			sb.append(" setAsync=");
 			setAsync.toString(sb, TO_STRING_NO_STATE);
-		} else if (scheduledNanos > NOT_SCHEDULED) {
-			sb.append(" scheduledNanos=").append(scheduledNanos);
+		} else if (scheduledSystemNanoTime > NOT_SCHEDULED) {
+			sb.append(" scheduledSystemNanoTime=").append(scheduledSystemNanoTime);
 		}
 	}
 

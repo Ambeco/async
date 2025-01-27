@@ -1,9 +1,12 @@
 package com.mpd.concurrent.futures.atomic;
 
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.CallSuper;
+import androidx.annotation.RequiresApi;
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.RunnableFuture;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -29,6 +32,15 @@ public class FutureRunnable<O> extends AbstractSubmittableFuture<O> implements R
 			@Nullable AsyncContext context, @NonNull Runnable function, long delay, TimeUnit delayUnit)
 	{
 		this(context, function, null, delay, delayUnit);
+	}
+
+	@RequiresApi(api = VERSION_CODES.O) public FutureRunnable(
+			@Nullable AsyncContext context, @NonNull Runnable function, @Nullable O result, Instant time)
+	{
+		super(context, time);
+		this.function = function;
+		this.futureResult = result;
+		functionClass = function.getClass();
 	}
 
 	public FutureRunnable(

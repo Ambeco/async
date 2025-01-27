@@ -1,12 +1,15 @@
 package com.mpd.concurrent.executors.locked;
 
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.IntDef;
+import androidx.annotation.RequiresApi;
 import com.mpd.concurrent.AsyncCallable;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -41,12 +44,25 @@ public interface AndAlsoJavaExecutor extends Executor, java.util.concurrent.Sche
 		Executor.super.execute(task);
 	}
 
+	@RequiresApi(api = VERSION_CODES.O) @Override default Future<?> schedule(Runnable task, Instant time) {
+		return Executor.super.schedule(task, time);
+	}
+
 	@Override default Future<?> schedule(Runnable task, long delay, TimeUnit unit) {
 		return Executor.super.schedule(task, delay, unit);
 	}
 
+	@RequiresApi(api = VERSION_CODES.O) @Override default <O> Future<O> schedule(Callable<O> task, Instant time) {
+		return Executor.super.schedule(task, time);
+	}
+
 	@Override default <O> Future<O> schedule(Callable<O> task, long delay, TimeUnit unit) {
 		return Executor.super.schedule(task, delay, unit);
+	}
+
+	@RequiresApi(api = VERSION_CODES.O) @Override
+	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, Instant time) {
+		return Executor.super.scheduleAsync(task, time);
 	}
 
 	@Override default <O> Future<O> scheduleAsync(AsyncCallable<O> task, long delay, TimeUnit unit) {

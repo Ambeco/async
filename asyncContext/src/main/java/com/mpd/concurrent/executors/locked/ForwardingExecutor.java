@@ -1,11 +1,14 @@
 package com.mpd.concurrent.executors.locked;
 
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.mpd.concurrent.AsyncCallable;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -78,12 +81,25 @@ public abstract class ForwardingExecutor implements AndAlsoJavaExecutor {
 		delegate.execute(task);
 	}
 
+	@RequiresApi(api = VERSION_CODES.O) @Override public Future<?> schedule(Runnable task, Instant time) {
+		return delegate.schedule(task, time);
+	}
+
 	@Override public Future<?> schedule(Runnable task, long delay, TimeUnit unit) {
 		return delegate.schedule(task, delay, unit);
 	}
 
+	@RequiresApi(api = VERSION_CODES.O) @Override public <O> Future<O> schedule(Callable<O> task, Instant time) {
+		return delegate.schedule(task, time);
+	}
+
 	@Override public <O> Future<O> schedule(Callable<O> task, long delay, TimeUnit unit) {
 		return delegate.schedule(task, delay, unit);
+	}
+
+	@RequiresApi(api = VERSION_CODES.O) @Override
+	public <O> Future<O> scheduleAsync(AsyncCallable<O> task, Instant time) {
+		return delegate.scheduleAsync(task, time);
 	}
 
 	@Override public <O> Future<O> scheduleAsync(AsyncCallable<O> task, long delay, TimeUnit unit) {

@@ -2,7 +2,9 @@ package com.mpd.concurrent.futures.atomic;
 
 import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionContext;
 
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.CallSuper;
+import androidx.annotation.RequiresApi;
 import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.executors.Executor.RunnablePriority;
@@ -10,6 +12,7 @@ import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.SchedulableFuture;
 import com.mpd.concurrent.futures.SubmittableFuture;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -44,6 +47,13 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 	protected AbstractSubmittableFuture(
 			@Nullable AsyncContext context)
 	{
+		this.context = (context == null) ? getCurrentExecutionContext() : context;
+	}
+
+	@RequiresApi(api = VERSION_CODES.O) protected AbstractSubmittableFuture(
+			@Nullable AsyncContext context, Instant time)
+	{
+		super(time);
 		this.context = (context == null) ? getCurrentExecutionContext() : context;
 	}
 

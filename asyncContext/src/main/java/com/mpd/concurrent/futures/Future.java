@@ -88,7 +88,7 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 		}
 	}
 
-	long getScheduledTimeNanos();
+	long getSystemNanoTime();
 
 	default <U, FU extends U> Future<U> transform(Function<? super O, FU> function) {
 		return transform(function, futureConfig.getDefaultExecutor());

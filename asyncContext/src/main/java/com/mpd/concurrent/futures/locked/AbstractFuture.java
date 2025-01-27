@@ -291,7 +291,7 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		return new FutureTimeout<>(this, timeout, unit, exceptionOnTimeout, interruptOnTimeout);
 	}
 
-	@Override public long getScheduledTimeNanos() {
+	@Override public long getSystemNanoTime() {
 		throw new UnsupportedOperationException();
 	}
 
