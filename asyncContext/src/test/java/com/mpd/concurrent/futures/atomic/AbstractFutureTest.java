@@ -17,6 +17,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.mockito.Mockito.mock;
 
 import android.util.Log;
 import com.mpd.concurrent.futures.Future;
@@ -49,6 +50,7 @@ import org.junit.Test;
 import org.junit.rules.DisableOnDebug;
 import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.junit.rules.TimeoutRule;
 import org.robolectric.shadows.ShadowLog;
@@ -635,8 +637,53 @@ import org.robolectric.shadows.ShadowLog;
 		checkFutureFailedUnchecked(expectedException, "cancel_whenFailed_staysFailed");
 	}
 
-	// TODO: test onFutureSucceeded
-	// TODO: test onFutureFailed
+	@Test public void onFutureFailed_whenAlreadyFailed_isCalled() {
+		ArithmeticException expectedException = new ArithmeticException("onFutureFailed_whenAlreadyFailed_isCalled");
+		fut = new PublicAbstractFuture<>(expectedException);
+		FutureListener<String> mockListener = mock(FutureListener.class);
+
+		fut.setListener(mockListener);
+
+		Mockito.verify(mockListener).onFutureFailed(fut, expectedException, false);
+	}
+
+	@Test public void onFutureFailed_whenBecomeFailed_isCalled() {
+		fut = new PublicAbstractFuture<>();
+		FutureListener<String> mockListener = mock(FutureListener.class);
+		fut.setListener(mockListener);
+
+		ArithmeticException expectedException = new ArithmeticException("onFutureFailed_whenBecomeFailed_isCalled");
+		fut.setException(expectedException);
+
+		Mockito.verify(mockListener).onFutureFailed(fut, expectedException, false);
+	}
+
+	@Test public void onFutureFailed_whenPending_notCalled() {
+		fut = new PublicAbstractFuture<>();
+		FutureListener<String> mockListener = mock(FutureListener.class);
+
+		fut.setListener(mockListener);
+
+		Mockito.verify(mockListener, Mockito.never()).onFutureSucceeded(Mockito.any(Future.class), Mockito.anyString());
+		Mockito.verify(mockListener, Mockito.never()).onFutureFailed(Mockito.any(Future.class),
+				Mockito.any(Throwable.class),
+				Mockito.anyBoolean());
+	}
+
+	@Test public void onFutureFailed_whenAsync_notCalled() {
+		fut = new PublicAbstractFuture<>();
+		FutureListener<String> mockListener = mock(FutureListener.class);
+		fut.setListener(mockListener);
+
+		PublicAbstractFuture<String> async = new PublicAbstractFuture<>();
+		fut.setResult(async);
+
+		Mockito.verify(mockListener, Mockito.never()).onFutureSucceeded(Mockito.any(Future.class), Mockito.anyString());
+		Mockito.verify(mockListener, Mockito.never()).onFutureFailed(Mockito.any(Future.class),
+				Mockito.any(Throwable.class),
+				Mockito.anyBoolean());
+	}
+
 	// TODO: test compareTo
 
 	@Test public void toString_recursiveFuture_limitedDepth() {
@@ -882,9 +929,7 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	private void checkFutureCancelled(
-			CancellationException expectedException,
-			String testName,
-			Matcher<? super Throwable> interrupted)
+			CancellationException expectedException, String testName, Matcher<? super Throwable> interrupted)
 	{
 		checkNotNull(fut);
 		//java.lang.Object
