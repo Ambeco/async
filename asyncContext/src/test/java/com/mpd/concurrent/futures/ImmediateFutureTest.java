@@ -13,6 +13,7 @@ import static org.junit.Assert.assertThrows;
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.atomic.AbstractFuture;
 import com.mpd.concurrent.futures.atomic.AbstractFutureTest;
+import com.mpd.test.matchers.WithCauseMatcher;
 import com.mpd.test.rules.AsyncContextRule;
 import com.mpd.test.rules.ErrorCollector;
 import com.mpd.test.rules.UncaughtExceptionRule;
@@ -96,7 +97,7 @@ import org.robolectric.shadows.ShadowLog;
 		fut = Futures.immediateFuture("forString_setException_crashes_imm");
 
 		ArithmeticException secondException = new ArithmeticException("forString_setException_crashes_exc");
-		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(new WithCauseMatcher<>(sameInstance(secondException)));
 		fut.setException(secondException);
 
 		collector.checkSucceeds(fut::isDone, equalTo(true));
@@ -157,7 +158,7 @@ import org.robolectric.shadows.ShadowLog;
 		fut = Futures.immediateFailedFuture(expect);
 
 		IOException secondException = new IOException("forUnchecked_setException_crashes_second");
-		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(new WithCauseMatcher<>(sameInstance(secondException)));
 		fut.setException(secondException);
 
 		collector.checkSucceeds(fut::isDone, equalTo(true));
@@ -220,7 +221,7 @@ import org.robolectric.shadows.ShadowLog;
 		fut = Futures.immediateFailedFuture(expect);
 
 		IOException secondException = new IOException("forChecked_setException_crashes_second");
-		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(new WithCauseMatcher<>(sameInstance(secondException)));
 		fut.setException(secondException);
 
 		collector.checkSucceeds(fut::isDone, equalTo(true));
@@ -286,7 +287,7 @@ import org.robolectric.shadows.ShadowLog;
 		fut = Futures.immediateFailedFuture(expect);
 
 		IOException secondException = new IOException("forCancellation_setException_crashes_second");
-		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(secondException);
+		uncaughtExceptionRule.expectUncaughtExceptionInThisThread(new WithCauseMatcher<>(sameInstance(secondException)));
 		fut.setException(secondException);
 
 		collector.checkSucceeds(fut::isDone, equalTo(true));
