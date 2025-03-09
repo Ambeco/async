@@ -258,7 +258,10 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		} else if (!didSetAsync) {
 			log.atFinest().log("setResult tried to set the result of \"%s\" with the result of \"%s\"", this, asyncWork);
 			SetResultCalledTwiceException e = new SetResultCalledTwiceException("setResult tried to set the result of \""
-					+ this + " with the result of \"" + asyncWork + "\"");
+					+ this
+					+ " with the result of \""
+					+ asyncWork
+					+ "\"");
 			handleSetResultFailure(asyncWork, e);
 			setException(e);
 			return false;

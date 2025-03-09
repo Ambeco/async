@@ -804,7 +804,8 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(fut::getSystemNanoTime, greaterThan(0L));
 		collector.checkSucceeds(() -> fut.getPendingString(4), stringContainsInOrder(
 				"\n  at com.mpd.concurrent.futures.atomic.AbstractFutureTest.PublicAbstractFuture(PublicAbstractFuture:0) ",
-				"//PublicAbstractFuture@", "[ scheduledSystemNanoTime=",
+				"//PublicAbstractFuture@",
+				"[ scheduledSystemNanoTime=",
 				"]"));
 		//com.mpd.concurrent.futures.impl.AbstractFuture
 		collector.checkSucceeds(fut::getSetAsync, nullValue());
