@@ -30,7 +30,6 @@ public class SequentialExecutor implements AndAlsoJavaExecutor, Executor.Executo
 		this.delegate = delegate;
 		this.width = width;
 		this.queue = queue;
-		Executor.addExecutor(this);
 	}
 
 	// Factory methods

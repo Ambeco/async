@@ -3,7 +3,6 @@ package com.mpd.concurrent.executors.locked;
 import android.os.SystemClock;
 import androidx.annotation.CallSuper;
 import com.google.common.flogger.FluentLogger;
-import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
 import java.util.concurrent.BlockingQueue;
@@ -26,7 +25,6 @@ public abstract class AbstractExecutor implements AndAlsoJavaExecutor {
 	protected AbstractExecutor(int state, BlockingQueue<SubmittableFuture<?>> queue) {
 		this.state = state;
 		this.queue = queue;
-		Executor.addExecutor(this);
 	}
 
 	protected BlockingQueue<SubmittableFuture<?>> getQueue() {

@@ -32,6 +32,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public interface Executor extends AutoCloseable {
 	static <O> O callCallable(Callable<O> task) {
@@ -309,20 +310,9 @@ public interface Executor extends AutoCloseable {
 		}
 	}
 
-	CopyOnWriteArraySet<WeakReference<Executor>> allExecutors = new CopyOnWriteArraySet<>();
-	CopyOnWriteArraySet<WeakReference<AllExecutorListListener>> allExecutorListeners = new CopyOnWriteArraySet<>();
-
-	static void addExecutor(Executor e) {
-		allExecutors.add(new WeakReference<>(e));
-		for (WeakReference<AllExecutorListListener> ref : allExecutorListeners) {
-			AllExecutorListListener listener = ref.get();
-			if (listener != null) {
-				listener.onNewExecutor(e);
-			}
-		}
-	}
-
-	interface AllExecutorListListener {
-		void onNewExecutor(Executor e);
+	AtomicInteger nonIdleExecutorCount = new AtomicInteger(0);
+	CopyOnWriteArraySet<WeakReference<AllExecutorsIdleListener>> allExecutorsIdleListeners = new CopyOnWriteArraySet<>();
+	interface AllExecutorsIdleListener {
+		void onIdle();
 	}
 }

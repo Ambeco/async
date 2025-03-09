@@ -23,7 +23,7 @@ public interface FutureConfig {
 
 
 	class DefaultFutureConfig implements FutureConfig {
-		static final FluentLogger log = FluentLogger.forEnclosingClass();
+		private static final FluentLogger log = FluentLogger.forEnclosingClass();
 		static final JavaAsMpdExecutor defaultExecutor = new JavaAsMpdExecutor(
 				AsyncTask.THREAD_POOL_EXECUTOR,
 				Runtime.getRuntime().availableProcessors());

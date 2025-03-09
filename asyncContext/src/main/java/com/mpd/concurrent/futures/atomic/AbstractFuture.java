@@ -179,7 +179,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 				log.atFinest().log("%s interrupted with same exception twice. Ignored.", this);
 			} else if (!(exception instanceof CancellationException)) { // if already failed, new exception gets handled
 				Future.futureConfig.onUnhandledException(new SetExceptionCalledAfterCompleteException(
-						"setComplete tried to fail with \"" + exception + " but future \"" + this + "\" had already succeeded",
+						"setComplete tried to fail with \"" + exception + " but future \"" + this + "\" had already completed",
 						exception));
 			} // CancellationException can be silently dropped
 			return false;

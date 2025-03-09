@@ -2,19 +2,14 @@ package com.mpd.concurrent.executors.test;
 
 import androidx.test.espresso.IdlingResource;
 import com.mpd.concurrent.executors.Executor;
-import com.mpd.concurrent.executors.Executor.AllExecutorListListener;
-import com.mpd.concurrent.executors.Executor.ExecutorListener;
-import com.mpd.concurrent.futures.SubmittableFuture;
+import com.mpd.concurrent.executors.Executor.AllExecutorsIdleListener;
 import java.lang.ref.WeakReference;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class ExecutorsIdlingResource implements IdlingResource, AllExecutorListListener, ExecutorListener {
-	private final AtomicInteger idleCheckId = new AtomicInteger(0);
-
+public class ExecutorsIdlingResource implements IdlingResource, AllExecutorsIdleListener {
 	private volatile ResourceCallback callback;
 
 	public ExecutorsIdlingResource() {
-		Executor.allExecutorListeners.add(new WeakReference<>(this));
+		Executor.allExecutorsIdleListeners.add(new WeakReference<>(this));
 	}
 
 	@Override public String getName() {
@@ -22,17 +17,7 @@ public class ExecutorsIdlingResource implements IdlingResource, AllExecutorListL
 	}
 
 	@Override public boolean isIdleNow() {
-		int idleCheckId;
-		do {
-			idleCheckId = this.idleCheckId.incrementAndGet();
-			for (WeakReference<Executor> weak : Executor.allExecutors) {
-				Executor ex = weak.get();
-				if (ex != null && !ex.isIdleNow()) {
-					return false;
-				}
-			}
-		} while (idleCheckId == this.idleCheckId.get());
-		return true;
+		return Executor.nonIdleExecutorCount.get() == 0;
 	}
 
 	@Override public void registerIdleTransitionCallback(ResourceCallback callback) {
@@ -40,18 +25,6 @@ public class ExecutorsIdlingResource implements IdlingResource, AllExecutorListL
 		if (isIdleNow()) {
 			this.callback.onTransitionToIdle();
 		}
-	}
-
-	@Override public void onNewExecutor(Executor e) {
-		e.registerListener(this);
-		if (!e.isIdleNow()) {
-			idleCheckId.incrementAndGet();
-		}
-	}
-
-	@Override public void beforeExecute(SubmittableFuture<?> r) {
-		ExecutorListener.super.beforeExecute(r);
-		idleCheckId.incrementAndGet();
 	}
 
 	@Override public void onIdle() {

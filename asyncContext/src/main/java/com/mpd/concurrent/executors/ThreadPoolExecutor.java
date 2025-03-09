@@ -92,7 +92,6 @@ public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
 		}
 		int initialPoolSize = Math.min(Math.max(DEFAULT_POOL_SIZE, corePoolSize), maximumPoolSize);
 		threads = new ArrayList<>(initialPoolSize);
-		Executor.addExecutor(this);
 	}
 
 	// Factory methods
@@ -318,17 +317,17 @@ public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
 
 	private @Nullable SubmittableFuture<?> threadGetNextRunnable() {
 		try {
-			long ideleTimeoutMs;
+			long idleTimeoutMs;
 			synchronized (threads) {
 				if (isShutdown) {
-					ideleTimeoutMs = 0;
+					idleTimeoutMs = 0;
 				} else if (threads.size() <= corePoolSize) {
-					ideleTimeoutMs = Long.MAX_VALUE;
+					idleTimeoutMs = Long.MAX_VALUE;
 				} else {
-					ideleTimeoutMs = SystemClock.uptimeMillis() - lastIdleTimeout;
+					idleTimeoutMs = SystemClock.uptimeMillis() - lastIdleTimeout;
 				}
 			}
-			return (ideleTimeoutMs < Long.MAX_VALUE) ? queue.poll(ideleTimeoutMs, TimeUnit.MILLISECONDS) : queue.poll();
+			return (idleTimeoutMs < Long.MAX_VALUE) ? queue.poll(idleTimeoutMs, TimeUnit.MILLISECONDS) : queue.poll();
 		} catch (InterruptedException e) {
 			synchronized (threads) {
 				if (threads.size() > corePoolSize) {
@@ -351,7 +350,7 @@ public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
 			try {
 				SubmittableFuture<?> runnable = threadGetNextRunnable();
 				if (runnable == TIMEOUT_PILL_RUNNABLE) {
-					return;
+					break;
 				}
 				if (runnable == null) {
 					continue;

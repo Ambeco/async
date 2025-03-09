@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.mpd.concurrent.AsyncCallable;
-import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.SubmittableFuture;
 import java.time.Instant;
@@ -22,7 +21,6 @@ public abstract class ForwardingExecutor implements AndAlsoJavaExecutor {
 
 	protected ForwardingExecutor(ForwardingExecutor delegate) {
 		this.delegate = delegate;
-		Executor.addExecutor(this);
 	}
 
 	public ForwardingExecutor getDelegate() {
