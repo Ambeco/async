@@ -46,7 +46,7 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 			@Nullable DeferredContextScope scope, Instant time)
 	{
 		super(scope, time);
-		this.executor = executor;
+		this.executor = null;
 	}
 
 	protected AbstractListenerFuture(
