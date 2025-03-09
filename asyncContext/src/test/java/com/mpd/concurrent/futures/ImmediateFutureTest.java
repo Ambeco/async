@@ -2,6 +2,7 @@ package com.mpd.concurrent.futures;
 
 import static android.util.Log.DEBUG;
 import static android.util.Log.VERBOSE;
+import static com.mpd.concurrent.futures.atomic.AbstractFutureHelper.ensureTestComplete;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.Matchers.equalTo;
@@ -11,33 +12,19 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThrows;
 
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
-import com.mpd.concurrent.futures.atomic.AbstractFuture;
-import com.mpd.concurrent.futures.atomic.AbstractFutureTest;
 import com.mpd.test.matchers.WithCauseMatcher;
-import com.mpd.test.rules.AsyncContextRule;
-import com.mpd.test.rules.ErrorCollector;
-import com.mpd.test.rules.UncaughtExceptionRule;
 import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.DisableOnDebug;
-import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.junit.rules.TimeoutRule;
 import org.robolectric.shadows.ShadowLog;
 
-@RunWith(RobolectricTestRunner.class) public class ImmediateFutureTest {
-	@Rule(order = 0) public UncaughtExceptionRule uncaughtExceptionRule = new UncaughtExceptionRule();
-	@Rule(order = 1) public ErrorCollector collector = new ErrorCollector();
-	@Rule(order = 50) public TestRule timeoutRule = new DisableOnDebug(TimeoutRule.seconds(30));
-	@Rule(order = 51) public AsyncContextRule asyncContextRule = new AsyncContextRule();
-
+@RunWith(RobolectricTestRunner.class) public class ImmediateFutureTest extends TestWithStandardRules {
 	@Nullable Future<String> fut;
 
 	@Before public void enableDebugLogging() {
@@ -47,7 +34,7 @@ import org.robolectric.shadows.ShadowLog;
 	}
 
 	@After public void ensureFutureComplete() {
-		AbstractFutureTest.ensureFutureComplete((AbstractFuture<?>) fut);
+		ensureTestComplete(fut);
 		this.fut = null;
 	}
 

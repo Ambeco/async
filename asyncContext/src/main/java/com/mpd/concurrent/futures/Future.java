@@ -88,6 +88,8 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 		}
 	}
 
+	@Deprecated @MonotonicNonNull FutureListener<? super O> getListener();
+
 	long getSystemNanoTime();
 
 	default <U, FU extends U> Future<U> transform(Function<? super O, FU> function) {

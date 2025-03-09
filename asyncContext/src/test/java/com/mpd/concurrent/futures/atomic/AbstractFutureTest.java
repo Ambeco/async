@@ -1,10 +1,8 @@
 package com.mpd.concurrent.futures.atomic;
 
-import static android.util.Log.DEBUG;
-import static android.util.Log.VERBOSE;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.mpd.concurrent.executors.MoreExecutors.directExecutor;
 import static com.mpd.concurrent.futures.Future.MAY_INTERRUPT;
+import static com.mpd.concurrent.futures.atomic.AbstractFutureHelper.ensureTestComplete;
 import static com.mpd.test.matchers.WithCauseMatcher.withCause;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -22,7 +20,6 @@ import static org.mockito.Mockito.mock;
 
 import android.annotation.SuppressLint;
 import android.os.Build.VERSION_CODES;
-import android.util.Log;
 import androidx.annotation.RequiresApi;
 import androidx.test.filters.SdkSuppress;
 import com.mpd.concurrent.futures.Future;
@@ -30,16 +27,13 @@ import com.mpd.concurrent.futures.Future.AsyncCheckedException;
 import com.mpd.concurrent.futures.Future.FutureNotCompleteException;
 import com.mpd.concurrent.futures.Future.FutureSucceededTwiceException;
 import com.mpd.concurrent.futures.FutureListener;
+import com.mpd.concurrent.futures.TestWithStandardRules;
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetExceptionCalledAfterCompleteException;
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledAfterFailureException;
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledAfterSuccessException;
 import com.mpd.concurrent.futures.atomic.AbstractFuture.SetResultCalledTwiceException;
 import com.mpd.test.MockedCall;
 import com.mpd.test.matchers.MockedCallMatcher;
-import com.mpd.test.rules.AsyncContextRule;
-import com.mpd.test.rules.ErrorCollector;
-import com.mpd.test.rules.UncaughtExceptionRule;
-import com.tbohne.android.flogger.backend.AndroidBackend;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -47,61 +41,24 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.DisableOnDebug;
-import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.junit.rules.TimeoutRule;
-import org.robolectric.shadows.ShadowLog;
 
 /**
  * @noinspection deprecation
  */
-@RunWith(RobolectricTestRunner.class) public class AbstractFutureTest {
-
-	@Rule(order = 0) public UncaughtExceptionRule uncaughtExceptionRule = new UncaughtExceptionRule();
-	@Rule(order = 1) public ErrorCollector collector = new ErrorCollector();
-	@Rule(order = 50) public TestRule timeoutRule = new DisableOnDebug(TimeoutRule.seconds(10));
-	@Rule(order = 51) public AsyncContextRule asyncContextRule = new AsyncContextRule();
-
+@RunWith(RobolectricTestRunner.class) public class AbstractFutureTest extends TestWithStandardRules {
 	@Nullable PublicAbstractFuture<String> fut;
 
-	@Before public void enableDebugLogging() {
-		AndroidBackend.setLogLevelOverride(DEBUG);
-		ShadowLog.setLoggable("atomic", VERBOSE);
-		ShadowLog.setLoggable("futures", VERBOSE);
-	}
-
-	public static void ensureFutureComplete(AbstractFuture<?> fut) {
-		if (fut != null) {
-			Log.d("atomic", "Cancelling " + fut);
-			fut.cancel(MAY_INTERRUPT); // cancel and interrupt anything in progress
-			for (int i = 0; i < 10 && fut.getListener() instanceof AbstractFuture; i++) {
-				fut = (AbstractFuture<?>) fut.getListener();  // traverse down chain up to a depth of 10 to find the end
-			}
-			if (fut.getListener() instanceof EndListener) { // if it's an end listener, then we don't need to do anything
-				Log.d("atomic", fut + " already has an EndListener, so is \"safe\" to leak");
-			} else if (fut.getListener() instanceof AbstractFuture.ListenerAlreadyDispatched) {
-				Log.d("atomic", fut + " already dispatched to listener. Hopefully the listener was ended?");
-			} else if (fut.getListener() == null) { // at the end of the chain, then swallow exceptions and end.
-				Log.d("atomic", fut + " doesn't have an EndListener. Adding a catch-all, and #end()");
-				fut.catching(Throwable.class, e -> null, directExecutor()).end();
-			} else { // If there's an unknown  listener, then all we can do is pray :(
-				Log.w("atomic", fut + " has an unknown listener, and we can't forcibly end the chain");
-			}
-		}
-	}
-
 	@After public void ensureFutureComplete() {
-		ensureFutureComplete(fut);
+		ensureTestComplete(fut);
 		this.fut = null;
 	}
 
@@ -729,8 +686,10 @@ import org.robolectric.shadows.ShadowLog;
 		collector.checkSucceeds(() -> unset.compareTo(fut), equalTo(-1));
 
 		later.cancel(MAY_INTERRUPT);
+		AbstractFutureHelper.ensureTestComplete(later);
 		//equal.cancel(MAY_INTERRUPT);
 		unset.cancel(MAY_INTERRUPT);
+		AbstractFutureHelper.ensureTestComplete(unset);
 	}
 
 	@Test public void toString_recursiveFuture_limitedDepth() {
@@ -1054,19 +1013,19 @@ import org.robolectric.shadows.ShadowLog;
 			return super.getSystemNanoTimeProtected();
 		}
 
-		@Override public @Nullable O getResultProtected() {
+		@Override public @MonotonicNonNull O getResultProtected() {
 			return super.getResultProtected();
 		}
 
-		@Override public @Nullable Throwable getExceptionProtected() {
+		@Override public @MonotonicNonNull Throwable getExceptionProtected() {
 			return super.getExceptionProtected();
 		}
 
-		@Override public @Nullable RuntimeException getWrappedExceptionProtected() {
+		@Override public @MonotonicNonNull RuntimeException getWrappedExceptionProtected() {
 			return super.getWrappedExceptionProtected();
 		}
 
-		@Override public @Nullable Throwable getInterrupt() {
+		@Override public @MonotonicNonNull Throwable getInterrupt() {
 			return super.getInterrupt();
 		}
 
@@ -1083,7 +1042,7 @@ import org.robolectric.shadows.ShadowLog;
 			mockedCalls.add(new MockedCall<>(this, onCancelledMethod, null, exception, mayInterruptIfRunning));
 		}
 
-		@Override public @Nullable FutureListener<? super O> getListener() {
+		@Override public @MonotonicNonNull FutureListener<? super O> getListener() {
 			return super.getListener();
 		}
 
@@ -1091,7 +1050,7 @@ import org.robolectric.shadows.ShadowLog;
 			return super.sourceClass();
 		}
 
-		@Override public @Nullable String sourceMethodName() {
+		@Override public @MonotonicNonNull String sourceMethodName() {
 			return super.sourceMethodName();
 		}
 

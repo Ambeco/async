@@ -309,7 +309,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 	}
 
-	@Override public @Nullable Throwable exceptionNow() {
+	@Override public @MonotonicNonNull Throwable exceptionNow() {
 		Throwable exception = atomicException.get(this);
 		if (exception == null) {
 			throw new FutureNotCompleteException("exceptionNow called on incomplete future " + this);
@@ -546,7 +546,7 @@ public abstract class AbstractFuture<O> implements Future<O>, FutureListener<Obj
 		}
 	}
 
-	protected @Nullable FutureListener<? super O> getListener() {
+	@Override public @MonotonicNonNull FutureListener<? super O> getListener() {
 		//noinspection unchecked
 		return (FutureListener<? super O>) atomicListener.get(this);
 	}

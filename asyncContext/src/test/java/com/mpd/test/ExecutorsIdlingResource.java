@@ -1,4 +1,4 @@
-package com.mpd.concurrent.executors.test;
+package com.mpd.test;
 
 import androidx.test.espresso.IdlingResource;
 import com.mpd.concurrent.executors.Executor;

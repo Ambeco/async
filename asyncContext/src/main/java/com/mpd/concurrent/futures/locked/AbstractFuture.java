@@ -68,6 +68,10 @@ public abstract class AbstractFuture<O> implements Future<O> {
 		}
 	}
 
+	@Override public synchronized @MonotonicNonNull FutureListener<? super O> getListener() {
+		return listener;
+	}
+
 	protected FutureListener<? super O> getListenerLocked() {
 		return listener;
 	}
