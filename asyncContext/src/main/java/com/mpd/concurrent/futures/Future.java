@@ -95,11 +95,21 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	}
 
 	default <U> Future<U> transform(Function<? super O, ? extends U> function, Executor executor) {
-		return setListener(new FutureFunction<>(this, function, executor));
+		if (function instanceof FutureFunction) {
+			//noinspection unchecked
+			return setListener((FutureFunction) function);
+		} else {
+			return setListener(new FutureFunction<>(this, function, executor));
+		}
 	}
 
 	default <U> Future<U> transformAsync(AsyncFunction<? super O, U> function, Executor executor) {
-		return setListener(new FutureAsyncFunction<>(this, function, executor));
+		if (function instanceof FutureAsyncFunction) {
+			//noinspection unchecked
+			return setListener((FutureAsyncFunction) function);
+		} else {
+			return setListener(new FutureAsyncFunction<>(this, function, executor));
+		}
 	}
 
 	default <E extends Throwable, FV extends O> Future<O> catching(
@@ -111,13 +121,23 @@ public interface Future<O> extends java.util.concurrent.ScheduledFuture<O> {
 	default <E extends Throwable, FV extends O> Future<O> catching(
 			Class<E> exceptionClass, Function<? super E, FV> function, Executor executor)
 	{
-		return setListener(new FutureCatchingFunction<>(this, function, exceptionClass, executor));
+		if (function instanceof FutureCatchingFunction) {
+			//noinspection unchecked
+			return setListener((FutureCatchingFunction) function);
+		} else {
+			return setListener(new FutureCatchingFunction<>(this, function, exceptionClass, executor));
+		}
 	}
 
 	default <E extends Throwable> Future<? super O> catchingAsync(
 			Class<E> exceptionClass, AsyncFunction<? super E, O> function, Executor executor)
 	{
-		return setListener(new FutureCatchingAsyncFunction<>(exceptionClass, this, function, executor));
+		if (function instanceof FutureCatchingAsyncFunction) {
+			//noinspection unchecked
+			return setListener((FutureCatchingAsyncFunction) function);
+		} else {
+			return setListener(new FutureCatchingAsyncFunction<>(exceptionClass, this, function, executor));
+		}
 	}
 
 	default Future<O> withTimeout(
