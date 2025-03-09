@@ -1,12 +1,14 @@
 package com.mpd.concurrent.futures.atomic;
 
-import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionContext;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import android.os.Build.VERSION_CODES;
 import androidx.annotation.CallSuper;
 import androidx.annotation.RequiresApi;
 import com.google.common.flogger.FluentLogger;
 import com.mpd.concurrent.asyncContext.AsyncContext;
+import com.mpd.concurrent.asyncContext.AsyncContextScope;
+import com.mpd.concurrent.asyncContext.AsyncContextScope.DeferredContextScope;
 import com.mpd.concurrent.executors.Executor.RunnablePriority;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
@@ -40,32 +42,32 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 					Thread.class,
 					"thread");
 
-	// TODO context + thread to use stubs instead of Nullable?
-	private volatile @Nullable AsyncContext context;
+	// TODO scope + thread to use stubs instead of Nullable?
+	private volatile @Nullable DeferredContextScope scope;
 	private volatile @Nullable Thread thread; // TODO: atomicThread
 
 	protected AbstractSubmittableFuture(
-			@Nullable AsyncContext context)
+			@Nullable DeferredContextScope scope)
 	{
-		this.context = (context == null) ? getCurrentExecutionContext() : context;
+		this.scope = (scope == null) ? AsyncContextScope.newDeferredScope(sourceClass()) : scope;
 	}
 
 	@RequiresApi(api = VERSION_CODES.O) protected AbstractSubmittableFuture(
-			@Nullable AsyncContext context, Instant time)
+			@Nullable DeferredContextScope scope, Instant time)
 	{
 		super(time);
-		this.context = (context == null) ? getCurrentExecutionContext() : context;
+		this.scope = (scope == null) ? AsyncContextScope.newDeferredScope(sourceClass()) : scope;
 	}
 
 	protected AbstractSubmittableFuture(
-			@Nullable AsyncContext context, long delay, TimeUnit delayUnit)
+			@Nullable DeferredContextScope scope, long delay, TimeUnit delayUnit)
 	{
 		super(delay, delayUnit);
-		this.context = (context == null) ? getCurrentExecutionContext() : context;
+		this.scope = (scope == null) ? AsyncContextScope.newDeferredScope(sourceClass()) : scope;
 	}
 
 	@Override public RunnablePriority getRunnablePriority() {
-		AsyncContext context = this.context;
+		AsyncContext context = this.scope.getAsyncContext();
 		if (context == null) {
 			return RunnablePriority.PRIORITY_NA;
 		}
@@ -120,20 +122,16 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 	}
 
 	@Override public final void run() {
-		AsyncContext selfContext = context;
-		AsyncContext oldContext = null;
-		try {
-			oldContext = AsyncContext.resumeExecutionContext(selfContext);
-
-			if (startRunning()) { // if changed to STATE_RUNNING
-				execute();
+		try (AsyncContextScope ignored = checkNotNull(scope).resumeAsyncContext()) {
+			try {
+				if (startRunning()) { // if changed to STATE_RUNNING
+					execute();
+				}
+				endRunning(); // cleanup
+			} catch (Throwable e) {
+				log.atFinest().log("%s run threw %s", this, e);
+				setException(e);
 			}
-			endRunning(); // cleanup
-		} catch (Throwable e) {
-			log.atFinest().log("%s run threw %s", this, e);
-			setException(e);
-		} finally {
-			AsyncContext.pauseExecutionContext(selfContext, oldContext);
 		}
 	}
 
@@ -144,7 +142,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 			FutureListener<? super O> listener)
 	{
 		super.afterDone(result, exception, mayInterruptIfRunning, listener);
-		context = null;
+		scope = null;
 		atomicThread.lazySet(this, null);
 	}
 

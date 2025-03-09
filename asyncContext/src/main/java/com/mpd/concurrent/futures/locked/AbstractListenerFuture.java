@@ -1,11 +1,12 @@
 package com.mpd.concurrent.futures.locked;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionContext;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.IntDef;
 import com.mpd.concurrent.asyncContext.AsyncContext;
+import com.mpd.concurrent.asyncContext.AsyncContextScope;
+import com.mpd.concurrent.asyncContext.AsyncContextScope.DeferredContextScope;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.executors.Executor.RunnablePriority;
 import com.mpd.concurrent.futures.Future;
@@ -25,46 +26,46 @@ public abstract class AbstractListenerFuture<O> extends AbstractFuture<O>
 {
 	protected static final boolean SHOULD_QUEUE_WORK = true;
 	protected static final boolean DO_NOT_QUEUE_WORK = true;
-	private @Nullable AsyncContext context;
+	private @Nullable DeferredContextScope scope;
 	private @ListenerFutureState int state;
 	private @Nullable Executor executor;
 	private @Nullable Future<? extends O> asyncWork = null;
 	private @Nullable Thread thread;
 
-	protected AbstractListenerFuture(@Nullable AsyncContext context, @ListenerFutureState int state) {
-		this(context, null, state);
+	protected AbstractListenerFuture(@Nullable DeferredContextScope scope, @ListenerFutureState int state) {
+		this(scope, null, state);
 	}
 
 	protected AbstractListenerFuture(
-			@Nullable AsyncContext context, @Nullable Executor executor, @ListenerFutureState int state)
+			@Nullable DeferredContextScope scope, @Nullable Executor executor, @ListenerFutureState int state)
 	{
-		this.context = (context == null) ? getCurrentExecutionContext() : context;
+		this.scope = (scope == null) ? AsyncContextScope.newDeferredScope(toStringSource()) : scope;
 		this.state = state;
 		this.executor = executor;
 	}
 
 	protected AbstractListenerFuture(
-			@Nullable AsyncContext context, long delay, TimeUnit delayUnit, @Nullable Executor executor)
+			@Nullable DeferredContextScope scope, long delay, TimeUnit delayUnit, @Nullable Executor executor)
 	{
 		super(delay, delayUnit);
-		this.context = (context == null) ? getCurrentExecutionContext() : context;
+		this.scope = (scope == null) ? AsyncContextScope.newDeferredScope(toStringSource()) : scope;
 		state = ListenerFutureState.STATE_SCHEDULED;
 		this.executor = executor;
 	}
 
 	@Override public RunnablePriority getRunnablePriority() {
-		AsyncContext context = this.context;
-		if (context == null) {
+		AsyncContext scope = this.scope.getAsyncContext();
+		if (scope == null) {
 			return RunnablePriority.PRIORITY_DEFAULT;
 		}
-		return context.getOrDefault(RunnablePriority.class, RunnablePriority.PRIORITY_DEFAULT);
+		return scope.getOrDefault(RunnablePriority.class, RunnablePriority.PRIORITY_DEFAULT);
 	}
 
 	@CallSuper @Override protected void onCompletedLocked(@Nullable Throwable e) {
 		super.onCompletedLocked(e);
 		executor = null;
 		asyncWork = null;
-		context = null;
+		scope = null;
 		state = ListenerFutureState.STATE_COMPLETE;
 	}
 
@@ -263,70 +264,68 @@ public abstract class AbstractListenerFuture<O> extends AbstractFuture<O>
 	protected abstract void execute() throws Exception;
 
 	@Override public final void run() {
-		AsyncContext oldContext = null;
-		try {
-			oldContext = AsyncContext.resumeExecutionContext(context);
-			boolean wasDone;
-			boolean nowDone;
-			FutureListener<? super O> listener;
-			Throwable exception = null;
-			// validate state and extract values
-			synchronized (this) {
-				thread = Thread.currentThread();
-				wasDone = isDoneLocked();
-				listener = getListenerLocked();
-				if (wasDone && getExceptionLocked() != null) {
-					return; // already failed. abort;
-				} else if (isDone()) {
-					onCompletingLocked(FAILED_RESULT, new RunCalledTwiceException(), NO_INTERRUPT);
-					state = ListenerFutureState.STATE_COMPLETE;
-				} else if (state != ListenerFutureState.STATE_RUN_QUEUED) {
-					onCompletingLocked(FAILED_RESULT, new RunCalledTwiceException(), NO_INTERRUPT);
-					state = ListenerFutureState.STATE_COMPLETE;
-				} else {
-					state = ListenerFutureState.STATE_ASYNC;
+		try (AsyncContextScope ignored = scope.resumeAsyncContext()) {
+			try {
+				boolean wasDone;
+				boolean nowDone;
+				FutureListener<? super O> listener;
+				Throwable exception = null;
+				// validate state and extract values
+				synchronized (this) {
+					thread = Thread.currentThread();
+					wasDone = isDoneLocked();
+					listener = getListenerLocked();
+					if (wasDone && getExceptionLocked() != null) {
+						return; // already failed. abort;
+					} else if (isDone()) {
+						onCompletingLocked(FAILED_RESULT, new RunCalledTwiceException(), NO_INTERRUPT);
+						state = ListenerFutureState.STATE_COMPLETE;
+					} else if (state != ListenerFutureState.STATE_RUN_QUEUED) {
+						onCompletingLocked(FAILED_RESULT, new RunCalledTwiceException(), NO_INTERRUPT);
+						state = ListenerFutureState.STATE_COMPLETE;
+					} else {
+						state = ListenerFutureState.STATE_ASYNC;
+					}
+					nowDone = isDoneLocked();
+					if (nowDone) {
+						exception = getExceptionLocked();
+					}
 				}
-				nowDone = isDoneLocked();
-				if (nowDone) {
-					exception = getExceptionLocked();
+				if (!wasDone && nowDone) {
+					afterDone(FAILED_RESULT, exception, NO_INTERRUPT, listener);
+					return;
+				} else if (state != ListenerFutureState.STATE_ASYNC) {
+					return;
 				}
-			}
-			if (!wasDone && nowDone) {
-				afterDone(FAILED_RESULT, exception, NO_INTERRUPT, listener);
-				return;
-			} else if (state != ListenerFutureState.STATE_ASYNC) {
-				return;
-			}
 
-			// outside of the lock, do the work
-			execute();
+				// outside of the lock, do the work
+				execute();
 
-			// relock, and double-check the state
-			synchronized (this) {
+				// relock, and double-check the state
+				synchronized (this) {
+					thread = null;
+					wasDone = isDoneLocked();
+					if (wasDone) {
+						state = ListenerFutureState.STATE_COMPLETE;
+					} else if (asyncWork != null) {
+						state = ListenerFutureState.STATE_ASYNC;
+					} else {
+						onCompletingLocked(FAILED_RESULT, new ImplementationDidNotCompleteOrAsyncException(), NO_INTERRUPT);
+						state = ListenerFutureState.STATE_COMPLETE;
+					}
+					nowDone = isDoneLocked();
+					if (nowDone) {
+						exception = getExceptionLocked();
+					}
+				}
+				if (!wasDone && nowDone) {
+					afterDone(FAILED_RESULT, exception, NO_INTERRUPT, listener);
+				}
+			} catch (Throwable e) {
 				thread = null;
-				wasDone = isDoneLocked();
-				if (wasDone) {
-					state = ListenerFutureState.STATE_COMPLETE;
-				} else if (asyncWork != null) {
-					state = ListenerFutureState.STATE_ASYNC;
-				} else {
-					onCompletingLocked(FAILED_RESULT, new ImplementationDidNotCompleteOrAsyncException(), NO_INTERRUPT);
-					state = ListenerFutureState.STATE_COMPLETE;
-				}
-				nowDone = isDoneLocked();
-				if (nowDone) {
-					exception = getExceptionLocked();
-				}
+				setException(new AsyncCheckedException(e));
+				state = ListenerFutureState.STATE_COMPLETE;
 			}
-			if (!wasDone && nowDone) {
-				afterDone(FAILED_RESULT, exception, NO_INTERRUPT, listener);
-			}
-		} catch (Throwable e) {
-			thread = null;
-			setException(new AsyncCheckedException(e));
-			state = ListenerFutureState.STATE_COMPLETE;
-		} finally {
-			AsyncContext.pauseExecutionContext(context, oldContext);
 		}
 	}
 

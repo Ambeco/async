@@ -5,7 +5,7 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.RequiresApi;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
-import com.mpd.concurrent.asyncContext.AsyncContext;
+import com.mpd.concurrent.asyncContext.AsyncContextScope.DeferredContextScope;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
@@ -36,23 +36,23 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 	private volatile @Nullable Executor executor; // TODO: atomicExecutor
 
 	protected AbstractListenerFuture(
-			@Nullable AsyncContext context, @NonNull Executor executor)
+			@Nullable DeferredContextScope scope, @NonNull Executor executor)
 	{
-		super(context);
+		super(scope);
 		this.executor = executor;
 	}
 
 	@RequiresApi(api = VERSION_CODES.O) protected AbstractListenerFuture(
-			@Nullable AsyncContext context, Instant time)
+			@Nullable DeferredContextScope scope, Instant time)
 	{
-		super(context, time);
+		super(scope, time);
 		this.executor = executor;
 	}
 
 	protected AbstractListenerFuture(
-			@Nullable AsyncContext context, @NonNull Executor executor, long delay, TimeUnit delayUnit)
+			@Nullable DeferredContextScope scope, @NonNull Executor executor, long delay, TimeUnit delayUnit)
 	{
-		super(context, delay, delayUnit);
+		super(scope, delay, delayUnit);
 		this.executor = executor;
 	}
 

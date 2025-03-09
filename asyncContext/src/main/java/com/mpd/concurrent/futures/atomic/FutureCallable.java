@@ -3,7 +3,7 @@ package com.mpd.concurrent.futures.atomic;
 import android.os.Build.VERSION_CODES;
 import androidx.annotation.CallSuper;
 import androidx.annotation.RequiresApi;
-import com.mpd.concurrent.asyncContext.AsyncContext;
+import com.mpd.concurrent.asyncContext.AsyncContextScope.DeferredContextScope;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.RunnableFuture;
 import java.time.Instant;
@@ -17,24 +17,24 @@ public class FutureCallable<O> extends AbstractSubmittableFuture<O> implements R
 	private final Class<? extends Callable> functionClass;
 	private volatile @Nullable Callable<? extends O> function;
 
-	public FutureCallable(@Nullable AsyncContext context, @NonNull Callable<? extends O> function) {
-		super(context);
+	public FutureCallable(@Nullable DeferredContextScope scope, @NonNull Callable<? extends O> function) {
+		super(scope);
 		this.function = function;
 		functionClass = function.getClass();
 	}
 
 	@RequiresApi(api = VERSION_CODES.O) public FutureCallable(
-			@Nullable AsyncContext context, @NonNull Callable<? extends O> function, Instant delayUnit)
+			@Nullable DeferredContextScope scope, @NonNull Callable<? extends O> function, Instant delayUnit)
 	{
-		super(context, delayUnit);
+		super(scope, delayUnit);
 		this.function = function;
 		functionClass = function.getClass();
 	}
 
 	public FutureCallable(
-			@Nullable AsyncContext context, @NonNull Callable<? extends O> function, long delay, TimeUnit delayUnit)
+			@Nullable DeferredContextScope scope, @NonNull Callable<? extends O> function, long delay, TimeUnit delayUnit)
 	{
-		super(context, delay, delayUnit);
+		super(scope, delay, delayUnit);
 		this.function = function;
 		functionClass = function.getClass();
 	}

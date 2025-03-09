@@ -1,7 +1,5 @@
 package com.mpd.concurrent.executors;
 
-import static com.mpd.concurrent.asyncContext.AsyncContext.getCurrentExecutionContext;
-
 import android.os.Build.VERSION_CODES;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -9,7 +7,8 @@ import androidx.annotation.RequiresApi;
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.mpd.concurrent.AsyncCallable;
-import com.mpd.concurrent.asyncContext.AsyncContext;
+import com.mpd.concurrent.asyncContext.AsyncContextScope;
+import com.mpd.concurrent.asyncContext.AsyncContextScope.DeferredContextScope;
 import com.mpd.concurrent.executors.locked.MpdAsJavaExecutor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.Future.AsyncCheckedException;
@@ -62,9 +61,9 @@ public interface Executor extends AutoCloseable {
 	}
 
 	default Future<?> submit(Runnable task, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return execute(new FutureRunnable<Void>(context, task));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return execute(new FutureRunnable<Void>(scope, task));
 	}
 
 	default <O> Future<O> submit(Runnable task, O result) {
@@ -72,9 +71,9 @@ public interface Executor extends AutoCloseable {
 	}
 
 	default <O> Future<O> submit(Runnable task, O result, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return execute(new FutureRunnable<O>(context, task, result));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return execute(new FutureRunnable<O>(scope, task, result));
 	}
 
 	default <O> Future<O> submit(Callable<O> task) {
@@ -82,9 +81,9 @@ public interface Executor extends AutoCloseable {
 	}
 
 	default <O> Future<O> submit(Callable<O> task, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return execute(new FutureCallable<>(context, task));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return execute(new FutureCallable<>(scope, task));
 	}
 
 	default <O> Future<O> submitAsync(AsyncCallable<O> task) {
@@ -92,9 +91,9 @@ public interface Executor extends AutoCloseable {
 	}
 
 	default <O> Future<O> submitAsync(AsyncCallable<O> task, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return execute(new FutureAsyncCallable<>(context, task));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return execute(new FutureAsyncCallable<>(scope, task));
 	}
 
 	@Deprecated default void execute(Runnable task) {
@@ -109,9 +108,9 @@ public interface Executor extends AutoCloseable {
 		if (task instanceof SubmittableFuture<?>) {
 			execute((SubmittableFuture<?>) task);
 		} else {
-			AsyncContext context = getCurrentExecutionContext().clone();
-			context.put(RunnablePriority.class, priority);
-			execute(new FutureRunnable<Void>(context, task));
+			DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+			scope.getAsyncContext().put(RunnablePriority.class, priority);
+			execute(new FutureRunnable<Void>(scope, task));
 		}
 	}
 
@@ -147,15 +146,15 @@ public interface Executor extends AutoCloseable {
 
 	@RequiresApi(api = VERSION_CODES.O)
 	default Future<?> schedule(Runnable task, Instant time, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return schedule(new FutureRunnable<>(context, task, null, time));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(new FutureRunnable<>(scope, task, null, time));
 	}
 
 	default Future<?> schedule(Runnable task, long delay, TimeUnit unit, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return schedule(new FutureRunnable<>(context, task, null, delay, unit));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(new FutureRunnable<>(scope, task, null, delay, unit));
 	}
 
 	@RequiresApi(api = VERSION_CODES.O) default <O> Future<O> schedule(Callable<O> task, Instant time) {
@@ -168,15 +167,15 @@ public interface Executor extends AutoCloseable {
 
 	@RequiresApi(api = VERSION_CODES.O)
 	default <O> Future<O> schedule(Callable<O> task, Instant time, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return schedule(new FutureCallable<>(context, task, time));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(new FutureCallable<>(scope, task, time));
 	}
 
 	default <O> Future<O> schedule(Callable<O> task, long delay, TimeUnit unit, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return schedule(new FutureCallable<>(context, task, delay, unit));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(new FutureCallable<>(scope, task, delay, unit));
 	}
 
 	@RequiresApi(api = VERSION_CODES.O) default <O> Future<O> scheduleAsync(AsyncCallable<O> task, Instant time) {
@@ -189,15 +188,15 @@ public interface Executor extends AutoCloseable {
 
 	@RequiresApi(api = VERSION_CODES.O)
 	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, Instant time, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return schedule(new FutureAsyncCallable<>(context, task, time));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(new FutureAsyncCallable<>(scope, task, time));
 	}
 
 	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, long delay, TimeUnit unit, RunnablePriority priority) {
-		AsyncContext context = getCurrentExecutionContext().clone();
-		context.put(RunnablePriority.class, priority);
-		return schedule(new FutureAsyncCallable<>(context, task, delay, unit));
+		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
+		scope.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(new FutureAsyncCallable<>(scope, task, delay, unit));
 	}
 
 	@ThreadInExecutorEnum int ownsThread(Thread thread);
@@ -312,6 +311,7 @@ public interface Executor extends AutoCloseable {
 
 	AtomicInteger nonIdleExecutorCount = new AtomicInteger(0);
 	CopyOnWriteArraySet<WeakReference<AllExecutorsIdleListener>> allExecutorsIdleListeners = new CopyOnWriteArraySet<>();
+
 	interface AllExecutorsIdleListener {
 		void onIdle();
 	}

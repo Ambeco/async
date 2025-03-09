@@ -1,7 +1,7 @@
 package com.mpd.concurrent.futures.locked;
 
 import androidx.annotation.CallSuper;
-import com.mpd.concurrent.asyncContext.AsyncContext;
+import com.mpd.concurrent.asyncContext.AsyncContextScope.DeferredContextScope;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.RunnableFuture;
@@ -14,49 +14,49 @@ public class FutureRunnable<O> extends SubmittableListenerFuture<O> implements R
 	private @Nullable Runnable function;
 	private @Nullable O result;
 
-	public FutureRunnable(@Nullable AsyncContext context, @NonNull Runnable function) {
-		this(context, null, function, null);
+	public FutureRunnable(@Nullable DeferredContextScope scope, @NonNull Runnable function) {
+		this(scope, null, function, null);
 	}
 
-	public FutureRunnable(@Nullable AsyncContext context, @NonNull Runnable function, @Nullable O result) {
-		super(context);
+	public FutureRunnable(@Nullable DeferredContextScope scope, @NonNull Runnable function, @Nullable O result) {
+		super(scope);
 		this.function = function;
 		this.result = result;
 	}
 
 	public FutureRunnable(
-			@Nullable AsyncContext context, @Nullable Future<?> parent, @NonNull Runnable function, Executor executor)
+			@Nullable DeferredContextScope scope, @Nullable Future<?> parent, @NonNull Runnable function, Executor executor)
 	{
-		this(context, parent, function, null, executor);
+		this(scope, parent, function, null, executor);
 	}
 
 	public FutureRunnable(
-			@Nullable AsyncContext context,
+			@Nullable DeferredContextScope scope,
 			@Nullable Future<?> parent,
 			@NonNull Runnable function,
 			@Nullable O result,
 			Executor executor)
 	{
-		super(context, parent, executor);
+		super(scope, parent, executor);
 		this.function = function;
 		this.result = result;
 	}
 
 	public FutureRunnable(
-			@Nullable AsyncContext context,
+			@Nullable DeferredContextScope scope,
 			@Nullable Future<?> parent,
 			@NonNull Runnable function,
 			long delay,
 			TimeUnit delayUnit,
 			Executor executor)
 	{
-		super(context, parent, delay, delayUnit, executor);
+		super(scope, parent, delay, delayUnit, executor);
 		this.function = function;
 		this.result = null;
 	}
 
 	public FutureRunnable(
-			@Nullable AsyncContext context,
+			@Nullable DeferredContextScope scope,
 			@Nullable Future<?> parent,
 			@NonNull Runnable function,
 			@Nullable O result,
@@ -64,7 +64,7 @@ public class FutureRunnable<O> extends SubmittableListenerFuture<O> implements R
 			TimeUnit delayUnit,
 			Executor executor)
 	{
-		super(context, parent, delay, delayUnit, executor);
+		super(scope, parent, delay, delayUnit, executor);
 		this.function = function;
 		this.result = result;
 	}

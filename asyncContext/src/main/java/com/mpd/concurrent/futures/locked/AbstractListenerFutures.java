@@ -4,7 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.mpd.concurrent.executors.MoreExecutors.directExecutor;
 
 import androidx.annotation.CallSuper;
-import com.mpd.concurrent.asyncContext.AsyncContext;
+import com.mpd.concurrent.asyncContext.AsyncContextScope.DeferredContextScope;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import java.util.concurrent.CancellationException;
@@ -309,31 +309,31 @@ public final class AbstractListenerFutures {
 	public abstract static class SubmittableListenerFuture<O> extends AbstractListenerFuture<O> {
 		private @Nullable Future<?> parent;
 
-		protected SubmittableListenerFuture(@Nullable AsyncContext context) {
-			super(context, ListenerFutureState.STATE_RUN_QUEUED);
+		protected SubmittableListenerFuture(@Nullable DeferredContextScope scope) {
+			super(scope, ListenerFutureState.STATE_RUN_QUEUED);
 			this.parent = null;
 		}
 
-		protected SubmittableListenerFuture(@Nullable AsyncContext context, @NonNull Future<?> parent) {
-			super(context, ListenerFutureState.STATE_LISTENING);
+		protected SubmittableListenerFuture(@Nullable DeferredContextScope scope, @NonNull Future<?> parent) {
+			super(scope, ListenerFutureState.STATE_LISTENING);
 			this.parent = parent;
 		}
 
 		protected SubmittableListenerFuture(
-				@Nullable AsyncContext context, @NonNull Future<?> parent, @Nullable Executor executor)
+				@Nullable DeferredContextScope scope, @NonNull Future<?> parent, @Nullable Executor executor)
 		{
-			super(context, executor, ListenerFutureState.STATE_RUN_QUEUED);
+			super(scope, executor, ListenerFutureState.STATE_RUN_QUEUED);
 			this.parent = parent;
 		}
 
 		protected SubmittableListenerFuture(
-				@Nullable AsyncContext context,
+				@Nullable DeferredContextScope scope,
 				@Nullable Future<?> parent,
 				long delay,
 				TimeUnit delayUnit,
 				@Nullable Executor executor)
 		{
-			super(context, delay, delayUnit, executor);
+			super(scope, delay, delayUnit, executor);
 			this.parent = parent;
 		}
 
