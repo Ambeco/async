@@ -83,7 +83,7 @@ public interface AsyncContextScope extends AutoCloseable {
 	 */
 	void appendContextStack(StringBuilder sb, int maxDepth);
 
-	@MonotonicNonNull AsyncContextScope getParent();
+	@MonotonicNonNull AsyncContextScope getParentScope();
 
 	void toString(StringBuilder sb);
 

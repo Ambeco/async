@@ -22,7 +22,7 @@ public class FutureTimeout<O> extends AbstractListenerFuture<O> {
 			@Nullable Throwable exceptionOnTimeout,
 			boolean interruptOnTimeout)
 	{
-		super(null, Future.futureConfig.getDelegateScheduledExecutor(), delay, delayUnit);
+		super(Future.futureConfig.getDelegateScheduledExecutor(), delay, delayUnit);
 		this.parent = parent;
 		this.exceptionOnTimeout = exceptionOnTimeout != null ? exceptionOnTimeout : new TimeoutException(parent
 				+ " timed"

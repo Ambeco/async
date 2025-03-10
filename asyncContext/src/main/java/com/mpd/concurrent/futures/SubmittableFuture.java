@@ -1,9 +1,12 @@
 package com.mpd.concurrent.futures;
 
+import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.executors.Executor.RunnablePriority;
 
 // a Runnable that can be submitted to a executor and is its own Future
 public interface SubmittableFuture<O> extends Future<O>, Runnable {
+
+	AsyncContext getAsyncContext();
 
 	RunnablePriority getRunnablePriority();
 

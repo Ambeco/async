@@ -19,7 +19,7 @@ public final class AbstractListenerFutures {
 		private volatile @Nullable Future<? extends I> parent;
 
 		protected SingleParentImmediateListenerFuture(@NonNull Future<? extends I> parent) {
-			super(null, directExecutor());
+			super(directExecutor());
 			this.parent = parent;
 		}
 
@@ -82,7 +82,7 @@ public final class AbstractListenerFutures {
 		private volatile @Nullable Future<? extends I> parent;
 
 		protected SingleParentTransformListenerFuture(@NonNull Future<? extends I> parent, Executor executor) {
-			super(null, executor);
+			super(executor);
 			this.parent = parent;
 		}
 
@@ -152,7 +152,7 @@ public final class AbstractListenerFutures {
 		protected SingleParentCatchingAbstractListenerFuture(
 				Class<E> exceptionClass, @NonNull Future<? extends O> parent, Executor executor)
 		{
-			super(null, executor);
+			super(executor);
 			this.parent = parent;
 			this.exceptionClass = exceptionClass;
 		}
@@ -237,7 +237,7 @@ public final class AbstractListenerFutures {
 		protected TwoParentAbstractListenerFuture(
 				@NonNull Future<? extends I1> parent1, @NonNull Future<? extends I2> parent2, Executor executor)
 		{
-			super(null, executor);
+			super(executor);
 			this.parent1 = parent1;
 			this.parent2 = parent2;
 		}

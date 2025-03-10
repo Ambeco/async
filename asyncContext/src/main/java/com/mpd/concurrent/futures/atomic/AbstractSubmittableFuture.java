@@ -1,15 +1,10 @@
 package com.mpd.concurrent.futures.atomic;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import android.os.Build.VERSION_CODES;
 import androidx.annotation.CallSuper;
 import androidx.annotation.RequiresApi;
 import com.google.common.flogger.FluentLogger;
-import com.mpd.concurrent.asyncContext.AsyncContext;
 import com.mpd.concurrent.asyncContext.AsyncContextScope;
-import com.mpd.concurrent.asyncContext.AsyncContextScope.DeferredContextScope;
-import com.mpd.concurrent.executors.Executor.RunnablePriority;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
 import com.mpd.concurrent.futures.SchedulableFuture;
@@ -20,7 +15,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 // A Future that can be submitted to an Executor, which may complete synchronously or asynchronously.
-public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
+public abstract class AbstractSubmittableFuture<O> extends AsyncContextScopeFuture<O>
 		implements SubmittableFuture<O>, FutureListener<@Nullable Object>, SchedulableFuture<O>
 {
 	private static final FluentLogger log = FluentLogger.forEnclosingClass();
@@ -42,36 +37,19 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 					Thread.class,
 					"thread");
 
-	// TODO scope + thread to use stubs instead of Nullable?
-	private volatile @Nullable DeferredContextScope scope;
+	// TODO thread to use stubs instead of Nullable?
 	private volatile @Nullable Thread thread; // TODO: atomicThread
 
-	protected AbstractSubmittableFuture(
-			@Nullable DeferredContextScope scope)
-	{
-		this.scope = (scope == null) ? AsyncContextScope.newDeferredScope(sourceClass()) : scope;
-	}
+	protected AbstractSubmittableFuture() {}
 
-	@RequiresApi(api = VERSION_CODES.O) protected AbstractSubmittableFuture(
-			@Nullable DeferredContextScope scope, Instant time)
+	@RequiresApi(api = VERSION_CODES.O) protected AbstractSubmittableFuture(Instant time)
 	{
 		super(time);
-		this.scope = (scope == null) ? AsyncContextScope.newDeferredScope(sourceClass()) : scope;
 	}
 
-	protected AbstractSubmittableFuture(
-			@Nullable DeferredContextScope scope, long delay, TimeUnit delayUnit)
+	protected AbstractSubmittableFuture(long delay, TimeUnit delayUnit)
 	{
 		super(delay, delayUnit);
-		this.scope = (scope == null) ? AsyncContextScope.newDeferredScope(sourceClass()) : scope;
-	}
-
-	@Override public RunnablePriority getRunnablePriority() {
-		AsyncContext context = this.scope.getAsyncContext();
-		if (context == null) {
-			return RunnablePriority.PRIORITY_NA;
-		}
-		return context.getOrDefault(RunnablePriority.class, RunnablePriority.PRIORITY_DEFAULT);
 	}
 
 	// consume must either complete the future or call setResult(future);
@@ -122,7 +100,7 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 	}
 
 	@Override public final void run() {
-		try (AsyncContextScope ignored = checkNotNull(scope).resumeAsyncContext()) {
+		try (AsyncContextScope ignored = resumeAsyncContext()) {
 			try {
 				if (startRunning()) { // if changed to STATE_RUNNING
 					execute();
@@ -142,7 +120,6 @@ public abstract class AbstractSubmittableFuture<O> extends AbstractFuture<O>
 			FutureListener<? super O> listener)
 	{
 		super.afterDone(result, exception, mayInterruptIfRunning, listener);
-		scope = null;
 		atomicThread.lazySet(this, null);
 	}
 

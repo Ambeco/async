@@ -29,7 +29,7 @@ public abstract class AbstractFutureCompleteCombiner<I, O> extends AbstractListe
 	protected AbstractFutureCompleteCombiner(
 			@NonNull Collection<? extends Future<? extends I>> futures, Executor executor)
 	{
-		super(null, executor);
+		super(executor);
 		if (futures instanceof ImmutableList) {
 			//noinspection rawtypes
 			this.parents = (ImmutableList) futures;

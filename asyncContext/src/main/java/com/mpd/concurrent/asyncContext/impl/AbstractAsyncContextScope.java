@@ -14,7 +14,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.checker.nullness.qual.PolyNull;
 
 public abstract class AbstractAsyncContextScope implements AsyncContextScope, AsyncContext {
-	private static final int MAX_TO_STRING_DEPTH = 20;
+	public static final int MAX_TO_STRING_DEPTH = 20;
 
 	private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
@@ -38,7 +38,6 @@ public abstract class AbstractAsyncContextScope implements AsyncContextScope, As
 	public AbstractAsyncContextScope(@CompileTimeConstant Object name, @Nullable AsyncContextScope parent) {
 		this.name = name;
 		this.parent = parent;
-		log.atFinest().log("Pushing AsyncContext %s onto stack %s", name, parent);
 	}
 
 	@Override public void privateOnChildComplete(AsyncContext child) {
@@ -71,7 +70,7 @@ public abstract class AbstractAsyncContextScope implements AsyncContextScope, As
 		sb.append(name);
 	}
 
-	public @Override @MonotonicNonNull AsyncContextScope getParent() {
+	public @Override @MonotonicNonNull AsyncContextScope getParentScope() {
 		return parent;
 	}
 
@@ -214,6 +213,7 @@ public abstract class AbstractAsyncContextScope implements AsyncContextScope, As
 			if (oldScope != null) {
 				newScope = config.get().onNewRootInExistingScope(oldScope, newScope);
 			}
+			log.atFinest().log("Starting new root scope %s", name);
 			currentScope.set(newScope);
 			return newScope;
 		}
@@ -229,9 +229,10 @@ public abstract class AbstractAsyncContextScope implements AsyncContextScope, As
 		@Override public AsyncContextScope resumeAsyncContext() {
 			previousScope = currentScope.get();
 			AsyncContextScope newScope = this;
-			if (previousScope != null && previousScope != getParent()) {
+			if (previousScope != null && previousScope != getParentScope()) {
 				newScope = config.get().onResumeOverLeakedScope(previousScope, newScope);
 			}
+			log.atFinest().log("Resuming deferred scope %s", getName());
 			currentScope.set(newScope);
 			return this;
 		}
@@ -241,6 +242,7 @@ public abstract class AbstractAsyncContextScope implements AsyncContextScope, As
 			if (currentScope != this) {
 				config.get().onEndOverLeakedScope(currentScope, this, previousScope);
 			}
+			log.atFinest().log("Exiting deferred scope %s", getName());
 			AsyncContextScope.currentScope.set(previousScope);
 			privateOnChildComplete(this);
 		}

@@ -57,67 +57,65 @@ public interface Executor extends AutoCloseable {
 	}
 
 	default Future<?> submit(Runnable task) {
-		return execute(new FutureRunnable<Void>(null, task));
+		return execute(new FutureRunnable<Void>(task));
 	}
 
 	default Future<?> submit(Runnable task, RunnablePriority priority) {
-		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return execute(new FutureRunnable<Void>(scope, task));
+		FutureRunnable<Void> future = new FutureRunnable<>(task);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		return execute(future);
 	}
 
 	default <O> Future<O> submit(Runnable task, O result) {
-		return execute(new FutureRunnable<O>(null, task, result));
+		return execute(new FutureRunnable<O>(task, result));
 	}
 
 	default <O> Future<O> submit(Runnable task, O result, RunnablePriority priority) {
-		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return execute(new FutureRunnable<O>(scope, task, result));
+		FutureRunnable<O> future = new FutureRunnable<>(task, result);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		return execute(future);
 	}
 
 	default <O> Future<O> submit(Callable<O> task) {
-		return execute(new FutureCallable<>(null, task));
+		return execute(new FutureCallable<>(task));
 	}
 
 	default <O> Future<O> submit(Callable<O> task, RunnablePriority priority) {
-		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return execute(new FutureCallable<>(scope, task));
+		FutureCallable<O> future = new FutureCallable<>(task);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		return execute(future);
 	}
 
 	default <O> Future<O> submitAsync(AsyncCallable<O> task) {
-		return execute(new FutureAsyncCallable<>(null, task));
+		return execute(new FutureAsyncCallable<>(task));
 	}
 
 	default <O> Future<O> submitAsync(AsyncCallable<O> task, RunnablePriority priority) {
 		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
 		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return execute(new FutureAsyncCallable<>(scope, task));
+		return execute(new FutureAsyncCallable<>(task));
 	}
 
 	@Deprecated default void execute(Runnable task) {
 		if (task instanceof SubmittableFuture<?>) {
 			execute((SubmittableFuture<?>) task);
 		} else {
-			execute(new FutureRunnable<Void>(null, task));
+			execute(new FutureRunnable<Void>(task));
 		}
 	}
 
 	@Deprecated default void execute(Runnable task, RunnablePriority priority) {
-		if (task instanceof SubmittableFuture<?>) {
-			execute((SubmittableFuture<?>) task);
-		} else {
-			DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-			scope.getAsyncContext().put(RunnablePriority.class, priority);
-			execute(new FutureRunnable<Void>(scope, task));
-		}
+		SubmittableFuture<?>
+				future =
+				(task instanceof SubmittableFuture<?>) ? (SubmittableFuture<?>) task : new FutureRunnable<>(task);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		execute(future);
 	}
 
 	default <O> SchedulableFuture<O> schedule(SchedulableFuture<O> task) {
 		long delayMs = task.getDelay(TimeUnit.MILLISECONDS);
 		Preconditions.checkArgument(delayMs > 0);
-		FutureRunnable<Void> delayed = new FutureRunnable<>(null, () -> {}, null, delayMs, TimeUnit.MILLISECONDS);
+		FutureRunnable<Void> delayed = new FutureRunnable<>(() -> {}, null, delayMs, TimeUnit.MILLISECONDS);
 		if (task instanceof AbstractListenerFuture) {
 			delayed.setListener((AbstractListenerFuture<O>) task);
 		} else {
@@ -137,66 +135,66 @@ public interface Executor extends AutoCloseable {
 	}
 
 	@RequiresApi(api = VERSION_CODES.O) default Future<?> schedule(Runnable task, Instant time) {
-		return schedule(new FutureRunnable<>(null, task, null, time));
+		return schedule(new FutureRunnable<>(task, null, time));
 	}
 
 	default Future<?> schedule(Runnable task, long delay, TimeUnit unit) {
-		return schedule(new FutureRunnable<>(null, task, null, delay, unit));
+		return schedule(new FutureRunnable<>(task, null, delay, unit));
 	}
 
 	@RequiresApi(api = VERSION_CODES.O)
 	default Future<?> schedule(Runnable task, Instant time, RunnablePriority priority) {
-		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return schedule(new FutureRunnable<>(scope, task, null, time));
+		FutureRunnable<Void> future = new FutureRunnable<>(task, null, time);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(future);
 	}
 
 	default Future<?> schedule(Runnable task, long delay, TimeUnit unit, RunnablePriority priority) {
-		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return schedule(new FutureRunnable<>(scope, task, null, delay, unit));
+		FutureRunnable<Void> future = new FutureRunnable<>(task, null, delay, unit);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(future);
 	}
 
 	@RequiresApi(api = VERSION_CODES.O) default <O> Future<O> schedule(Callable<O> task, Instant time) {
-		return schedule(new FutureCallable<>(null, task, time));
+		return schedule(new FutureCallable<>(task, time));
 	}
 
 	default <O> Future<O> schedule(Callable<O> task, long delay, TimeUnit unit) {
-		return schedule(new FutureCallable<>(null, task, delay, unit));
+		return schedule(new FutureCallable<>(task, delay, unit));
 	}
 
 	@RequiresApi(api = VERSION_CODES.O)
 	default <O> Future<O> schedule(Callable<O> task, Instant time, RunnablePriority priority) {
-		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return schedule(new FutureCallable<>(scope, task, time));
+		FutureCallable<O> future = new FutureCallable<>(task, time);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(future);
 	}
 
 	default <O> Future<O> schedule(Callable<O> task, long delay, TimeUnit unit, RunnablePriority priority) {
-		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return schedule(new FutureCallable<>(scope, task, delay, unit));
+		FutureCallable<O> future = new FutureCallable<>(task, delay, unit);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(future);
 	}
 
 	@RequiresApi(api = VERSION_CODES.O) default <O> Future<O> scheduleAsync(AsyncCallable<O> task, Instant time) {
-		return schedule(new FutureAsyncCallable<>(null, task, time));
+		return schedule(new FutureAsyncCallable<>(task, time));
 	}
 
 	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, long delay, TimeUnit unit) {
-		return schedule(new FutureAsyncCallable<>(null, task, delay, unit));
+		return schedule(new FutureAsyncCallable<>(task, delay, unit));
 	}
 
 	@RequiresApi(api = VERSION_CODES.O)
 	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, Instant time, RunnablePriority priority) {
-		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return schedule(new FutureAsyncCallable<>(scope, task, time));
+		FutureAsyncCallable<O> future = new FutureAsyncCallable<>(task, time);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(future);
 	}
 
 	default <O> Future<O> scheduleAsync(AsyncCallable<O> task, long delay, TimeUnit unit, RunnablePriority priority) {
-		DeferredContextScope scope = AsyncContextScope.newDeferredScope(task);
-		scope.getAsyncContext().put(RunnablePriority.class, priority);
-		return schedule(new FutureAsyncCallable<>(scope, task, delay, unit));
+		FutureAsyncCallable<O> future = new FutureAsyncCallable<>(task, delay, unit);
+		future.getAsyncContext().put(RunnablePriority.class, priority);
+		return schedule(future);
 	}
 
 	@ThreadInExecutorEnum int ownsThread(Thread thread);

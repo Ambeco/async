@@ -5,7 +5,6 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.RequiresApi;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
-import com.mpd.concurrent.asyncContext.AsyncContextScope.DeferredContextScope;
 import com.mpd.concurrent.executors.Executor;
 import com.mpd.concurrent.futures.Future;
 import com.mpd.concurrent.futures.FutureListener;
@@ -35,24 +34,21 @@ public abstract class AbstractListenerFuture<O> extends AbstractSubmittableFutur
 	// TODO executor to use stub instead of Nullable?
 	private volatile @Nullable Executor executor; // TODO: atomicExecutor
 
-	protected AbstractListenerFuture(
-			@Nullable DeferredContextScope scope, @NonNull Executor executor)
+	protected AbstractListenerFuture(@NonNull Executor executor)
 	{
-		super(scope);
+		super();
 		this.executor = executor;
 	}
 
-	@RequiresApi(api = VERSION_CODES.O) protected AbstractListenerFuture(
-			@Nullable DeferredContextScope scope, Instant time)
+	@RequiresApi(api = VERSION_CODES.O) protected AbstractListenerFuture(Instant time)
 	{
-		super(scope, time);
+		super(time);
 		this.executor = null;
 	}
 
-	protected AbstractListenerFuture(
-			@Nullable DeferredContextScope scope, @NonNull Executor executor, long delay, TimeUnit delayUnit)
+	protected AbstractListenerFuture(@NonNull Executor executor, long delay, TimeUnit delayUnit)
 	{
-		super(scope, delay, delayUnit);
+		super(delay, delayUnit);
 		this.executor = executor;
 	}
 

@@ -30,7 +30,7 @@ public class ThreadPoolExecutor implements AndAlsoJavaExecutor {
 	private static final long DEFAULT_KEEP_ALIVE_TIME = 10;
 	private static final TimeUnit DEFAULT_KEEP_ALIVE_UNIT = TimeUnit.SECONDS;
 	private static final int DEFAULT_POOL_SIZE = 8;
-	private static final SubmittableFuture<?> TIMEOUT_PILL_RUNNABLE = new FutureRunnable<>(null, () -> {});
+	private static final SubmittableFuture<?> TIMEOUT_PILL_RUNNABLE = new FutureRunnable<>(() -> {});
 	private final List<Thread> threads;
 	private final BlockingQueue<SubmittableFuture<?>> queue;
 	private final ArrayList<ExecutorListener> listeners = new ArrayList<>();
